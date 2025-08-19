@@ -4976,11 +4976,8 @@ app.post('/verify-unified-credentials', async (req, res) => {
 app.use((req, res) => {
     res.status(404).render('404', { url: req.url });
 });
-app.get("/",(req, res) => {
-    res.send("Hello from the server")
-});
 
-app.listen(PORT,"0.0.0.0", () => {
+app.listen(PORT, () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
 
