@@ -1,7 +1,4 @@
 {
-  "scripts":{
-    "start": "node app.js"
-  }
   "dependencies": {
     "@faker-js/faker": "^9.6.0",
     "@tensorflow/tfjs": "^4.22.0",
@@ -36,6 +33,9 @@
     "twilio": "^5.5.1",
     "uuid": "^11.1.0",
     "validator": "^13.12.0"
+  },
+  "scripts":{
+    "start": "node app.js"
   }
 }
 
