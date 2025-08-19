@@ -42,6 +42,9 @@ app.use((req, res, next) => {
     
     next();
 });
+
+console.log("MONGODB_URI:", process.env.MONGODB_URI ? "Found" : "Missing");
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'phar23',
     resave: false,
