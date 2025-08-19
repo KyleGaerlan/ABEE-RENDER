@@ -1,0 +1,644 @@
+<style>
+    /* Add these styles to the existing <style> section in index.ejs */
+.tour-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.btn-view {
+    display: inline-block;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    transition: all 0.3s ease;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-view:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.btn-book {
+    display: inline-block;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #f26523 0%, #e55a14 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    transition: all 0.3s ease;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(242, 101, 35, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-book:hover {
+    background: linear-gradient(135deg, #e55a14 0%, #d9531e 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(242, 101, 35, 0.4);
+    color: white;
+}
+
+/* Active states */
+.btn-view:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-book:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(242, 101, 35, 0.3);
+}
+
+/* Responsive adjustments for carousel */
+@media (max-width: 768px) {
+    .tour-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .btn-view,
+    .btn-book {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-view,
+    .btn-book {
+        padding: 6px 10px;
+        font-size: 11px;
+        letter-spacing: 0.3px;
+    }
+}
+
+.promo-banner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+    color: white;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 2;
+    line-height: 1.3;
+}
+
+.promo-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.promo-end-date {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin: 2px auto 4px auto;
+    max-width: 90%;
+}
+
+.end-date-label {
+    font-weight: normal;
+    opacity: 0.9;
+}
+
+.end-date-time {
+    font-weight: bold;
+    display: block;
+    margin-top: 1px;
+}
+
+.promo-countdown {
+    display: block;
+}
+
+.countdown-text {
+    font-size: 9px;
+    opacity: 0.9;
+}
+
+.countdown-timer {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.tour-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: block;
+    text-decoration: none;
+}
+
+.tour-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 18px 35px rgba(0,0,0,0.15);
+}
+
+.tour-card .tour-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.tour-card:hover .tour-image {
+    transform: scale(1.05);
+}
+
+.tour-card .tour-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 25px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 50%;
+    transition: background 0.3s ease;
+}
+
+.tour-card .tour-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    line-height: 1.2;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+    color: #f26523;
+}
+
+.tour-card .tour-destination {
+    font-family: 'Lato', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+
+.tour-card .promo-banner + .tour-image {
+    margin-top: 0;
+}
+
+@media (max-width: 768px) {
+    .promo-banner {
+        font-size: 10px;
+        padding: 8px 6px;
+    }
+    
+    .promo-label {
+        font-size: 11px;
+        margin-bottom: 3px;
+    }
+    
+    .promo-end-date {
+        font-size: 9px;
+        padding: 1px 4px;
+        margin: 1px auto 3px auto;
+    }
+    
+    .countdown-text {
+        font-size: 8px;
+    }
+    
+    .countdown-timer {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .promo-banner {
+        font-size: 9px;
+        padding: 6px 4px;
+    }
+    
+    .promo-label {
+        font-size: 10px;
+    }
+    
+    .promo-end-date {
+        font-size: 8px;
+    }
+    
+    .end-date-time {
+        font-size: 8px;
+    }
+    
+    .countdown-timer {
+        font-size: 8px;
+    }
+}
+.tour-content {
+    padding: 20px;
+    padding-bottom: 23px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Styles for the Login Required Modal */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    justify-content: center; /* Center content horizontally */
+    align-items: center; /* Center content vertically */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto; /* Center the modal */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 400px; /* Max width for larger screens */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    text-align: center;
+    position: relative;
+}
+
+.modal-content h2 {
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.modal-content .close-modal-btn {
+        color: #aaa;
+        position: absolute;
+        top: 10px;
+        left: 160px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+
+.modal-content .close-modal-btn:hover,
+.modal-content .close-modal-btn:focus {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+.modal-content .btn-primary {
+    background-color: #f26523;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.modal-content .btn-primary:hover {
+    background-color: #d9531e;
+}
+</style>
+<div class="featured-tours">
+    <h1>Featured Tours</h1>
+    <div class="tour-carousel-container">
+        <button class="carousel-control prev" id="prevTour">❮</button>
+        <div class="tour-carousel" id="tourCarousel">
+            <div class="tour-carousel-inner" id="tourCarouselInner">
+                <div class="loading-spinner">Loading tours...</div>
+            </div>
+        </div>
+        <button class="carousel-control next" id="nextTour">❯</button>
+    </div>
+    <div class="carousel-dots" id="carouselDots">
+    </div>
+</div>
+
+<!-- Login Required Modal for tour-carousel.ejs -->
+<div id="loginRequiredModalCarousel" class="modal">
+    <div class="modal-content">
+        <button class="close-modal-btn" id="closeLoginRequiredModalCarousel">&times;</button>
+        <h2>Login Required</h2>
+        <p>You need to be logged in to book a tour. Please log in or create an account to continue.</p>
+        <button id="loginFromCarouselBtn" class="btn-primary">Login / Sign Up</button>
+    </div>
+</div>
+
+<script>
+// Define isLoggedIn variable globally
+let isLoggedIn = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Check authentication status on page load
+    fetch('/check-auth')
+        .then(response => response.json())
+        .then(data => {
+            isLoggedIn = data.isLoggedIn;
+        })
+        .catch(error => {
+            console.error('Error checking auth status for carousel:', error);
+            isLoggedIn = false; // Assume not logged in on error
+        });
+
+    loadFeaturedTours();
+
+    // Event listeners for the Login Required Modal in tour-carousel.ejs
+    const loginRequiredModalCarousel = document.getElementById('loginRequiredModalCarousel');
+    const closeLoginRequiredModalCarouselBtn = document.getElementById('closeLoginRequiredModalCarousel');
+    const loginFromCarouselBtn = document.getElementById('loginFromCarouselBtn');
+
+    if (closeLoginRequiredModalCarouselBtn) {
+        closeLoginRequiredModalCarouselBtn.addEventListener('click', function() {
+            loginRequiredModalCarousel.style.display = 'none';
+        });
+    }
+
+    if (loginFromCarouselBtn) {
+        loginFromCarouselBtn.addEventListener('click', function() {
+            sessionStorage.setItem('openLoginModal', 'true');
+            window.location.href = '/'; // Redirect to home page to open login modal
+        });
+    }
+
+    // Close modal if user clicks outside of it
+    window.addEventListener('click', function(event) {
+        if (event.target == loginRequiredModalCarousel) {
+            loginRequiredModalCarousel.style.display = 'none';
+        }
+    });
+});
+
+function loadFeaturedTours() {
+    fetch('/api/tours?featured=true&limit=10')
+        .then(response => response.json())
+        .then(data => {
+            const carouselInner = document.getElementById('tourCarouselInner');
+            const dotsContainer = document.getElementById('carouselDots');
+            
+            if (data.success && data.tours && data.tours.length > 0) {
+                carouselInner.innerHTML = '';
+                dotsContainer.innerHTML = '';
+                
+                data.tours.forEach((tour, index) => {
+                    const tourCard = createTourCard(tour);
+                    carouselInner.appendChild(tourCard);
+                    
+                    const dot = document.createElement('span');
+                    dot.className = `dot ${index === 0 ? 'active' : ''}`;
+                    dot.addEventListener('click', () => goToSlide(index));
+                    dotsContainer.appendChild(dot);
+                });
+                
+                initializeCarousel();
+                
+                setTimeout(() => {
+                    startCountdowns();
+                }, 100);
+            } else {
+                carouselInner.innerHTML = '<div class="no-tours">No featured tours available</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading featured tours:', error);
+            document.getElementById('tourCarouselInner').innerHTML = '<div class="no-tours">Error loading tours</div>';
+        });
+}
+
+function createTourCard(tour) {
+    const cardLink = document.createElement('a');
+    cardLink.href = `/tour/${tour._id}`;
+    cardLink.className = 'tour-card';
+    
+    const imageUrl = tour.imageUrl || '/images/placeholder-tour.jpg';
+    
+    let promoHtml = '';
+    if (tour.isPromoActive && tour.promoEndTime) {
+        const endTime = new Date(tour.promoEndTime);
+        const now = new Date();
+        
+        if (endTime > now) {
+            const endDateOptions = {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Manila',
+                timeZoneName: 'short'
+            };
+            
+            const formattedEndDate = endTime.toLocaleString('en-PH', endDateOptions);
+            
+            promoHtml = `
+                <div class="promo-banner">
+                    <span class="promo-label">🔥 LIMITED TIME OFFER!</span>
+                    <div class="promo-end-date">
+                        <span class="end-date-label">Ends:</span>
+                        <span class="end-date-time">${formattedEndDate}</span>
+                    </div>
+                    <div class="promo-countdown" data-end-time="${tour.promoEndTime}">
+                        <span class="countdown-text">Time left: </span>
+                        <span class="countdown-timer">Calculating...</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    cardLink.innerHTML = `
+        ${promoHtml}
+        <img src="${imageUrl}" alt="${tour.title}" class="tour-image">
+        <div class="tour-content">
+            <h3 class="tour-title">${tour.title}</h3>
+            <p class="tour-destination">${tour.country}</p>
+        </div>
+    `;
+
+    return cardLink;
+}
+
+function startCountdowns() {
+    const countdownElements = document.querySelectorAll('.promo-countdown');
+    console.log('Carousel: Found countdown elements:', countdownElements.length);
+    
+    countdownElements.forEach((element, index) => {
+        const endTimeStr = element.dataset.endTime;
+        console.log(`Carousel: Processing countdown ${index + 1}, end time:`, endTimeStr);
+        
+        if (!endTimeStr) {
+            console.error('Carousel: No end time found for countdown element');
+            return;
+        }
+        
+        const endTime = new Date(endTimeStr);
+        const timerElement = element.querySelector('.countdown-timer');
+        
+        if (!timerElement) {
+            console.error('Carousel: No timer element found');
+            return;
+        }
+        
+        function updateCountdown() {
+            const now = new Date();
+            const timeLeft = endTime - now;
+            
+            if (timeLeft <= 0) {
+                timerElement.textContent = 'EXPIRED';
+                timerElement.style.background = 'rgba(255, 0, 0, 0.3)';
+                element.style.opacity = '0.7';
+                return;
+            }
+            
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            if (days > 0) {
+                timerElement.textContent = `${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                timerElement.textContent = `${hours}h ${minutes}m ${seconds}s`;
+            } else {
+                timerElement.textContent = `${minutes}m ${seconds}s`;
+                timerElement.style.background = 'rgba(255, 0, 0, 0.3)';
+                timerElement.style.animation = 'pulse 1s infinite';
+            }
+        }
+        updateCountdown();
+        const interval = setInterval(updateCountdown, 1000);
+        setTimeout(() => {
+            if (new Date() >= endTime) {
+                clearInterval(interval);
+            }
+        }, Math.max(0, endTime - new Date()));
+    });
+}
+
+let currentSlide = 0;
+let totalSlides = 0;
+let autoSlideInterval;
+
+function initializeCarousel() {
+    const slides = document.querySelectorAll('.tour-card');
+    totalSlides = slides.length;
+    
+    if (totalSlides === 0) return;
+    
+    const prevBtn = document.getElementById('prevTour');
+    const nextBtn = document.getElementById('nextTour');
+    
+    if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+    if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+    
+    startAutoSlide();
+    
+    const carousel = document.getElementById('tourCarousel');
+    if (carousel) {
+        carousel.addEventListener('mouseenter', stopAutoSlide);
+        carousel.addEventListener('mouseleave', startAutoSlide);
+    }
+}
+
+function goToSlide(slideIndex) {
+    const carouselInner = document.getElementById('tourCarouselInner');
+    const dots = document.querySelectorAll('.dot');
+    
+    currentSlide = slideIndex;
+    
+    if (carouselInner) {
+        carouselInner.style.transform = `translateX(-${currentSlide * 100}%)`;
+    }
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlide);
+    });
+}
+
+function nextSlide() {
+    currentSlide = (currentSlide + 1) % totalSlides;
+    goToSlide(currentSlide);
+}
+
+function prevSlide() {
+    currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+    goToSlide(currentSlide);
+}
+
+function startAutoSlide() {
+    stopAutoSlide();
+    autoSlideInterval = setInterval(nextSlide, 5000);
+}
+
+function stopAutoSlide() {
+    if (autoSlideInterval) {
+        clearInterval(autoSlideInterval);
+    }
+}
+
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+`;
+document.head.appendChild(style);
+
+</script>

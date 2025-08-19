@@ -1,0 +1,522 @@
+// File: views/tour-detail.ejs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= tour.title %> - A.BEE Travel and Tours</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/fontstyle.css">
+    <style>
+        .tour-container {
+            max-width: 1000px;
+            margin: 120px auto 50px;
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tour-header {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .tour-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tour-title {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .tour-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+
+        .meta-item::before {
+            margin-right: 5px;
+        }
+
+        .meta-destination::before {
+            content: "📍";
+        }
+
+        .meta-duration::before {
+            content: "⏱️";
+        }
+
+        .meta-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f26523;
+        }
+
+        .meta-price::before {
+            content: "💰";
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #ffc107;
+            color: #212529;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .tour-description {
+            margin-bottom: 30px;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #333;
+            margin: 30px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f26523;
+        }
+
+        .highlights-list,
+        .inclusions-list,
+        .exclusions-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 30px;
+        }
+
+        .highlights-list li,
+        .inclusions-list li,
+        .exclusions-list li {
+            padding: 8px 0;
+            position: relative;
+            padding-left: 30px;
+            color: #444;
+        }
+
+        .highlights-list li::before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+        }
+
+        .inclusions-list li::before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+
+        .exclusions-list li::before {
+            content: "❌";
+            position: absolute;
+            left: 0;
+        }
+
+        .itinerary-container {
+            margin-bottom: 30px;
+        }
+
+        .itinerary-day {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .day-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f26523;
+        }
+
+        .day-title {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .day-description {
+            color: #444;
+            line-height: 1.6;
+        }
+
+        .booking-section {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .booking-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .booking-description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .btn-book-tour {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #f26523;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            border: none; /* Ensure it's a button-like element */
+            cursor: pointer;
+        }
+
+        .btn-book-tour:hover {
+            background-color: #d9531e;
+        }
+
+        @media (max-width: 768px) {
+            .tour-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .tour-image {
+                height: 250px;
+            }
+        }
+
+        /* Styles for the Login Required Modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center; /* Center content horizontally */
+            align-items: center; /* Center content vertically */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto; /* Center the modal */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+            max-width: 400px; /* Max width for larger screens */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-content h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-content .close-modal-btn {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            left: 160px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .modal-content .close-modal-btn:hover,
+        .modal-content .close-modal-btn:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+            background-color: transparent;
+        }
+
+        .modal-content .btn-primary {
+            background-color: #f26523;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-content .btn-primary:hover {
+            background-color: #d9531e;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/images/Image-logo.png" alt="Logo">
+            <img src="/images/Text-logo.png" alt="Logo">
+        </div>
+        <div class="top-contact-bar">
+            <div class="contact-info">
+                <span style="display: none">📞 09361055665</span>
+            <a href="https://www.facebook.com/abeetravelandtours" target="_blank" class="contact-icon" style="visibility: hidden">
+                <img src="/images/communication.png" alt="Facebook" class="facebook-logo">
+            </a>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tours">Tours</a></li>
+                <li id="loginBtnWrapper">
+                    <button id="loginBtn">Login</button>
+                </li>
+                <li id="userProfile" style="display: none;">
+                    <a href="javascript:void(0);" id="profileIconWrapper">
+                        <img src="/images/profile.png" alt="User Profile" id="profileIcon" class="profile-icon">
+                    </a>
+                    <ul id="profileDropdown" class="dropdown-menu" style="display: none;">
+                        <li><a href="/profile">Profile</a></li>
+                        <li><a href="/settings">Settings</a></li>
+                        <li><a href="/logout" id="logoutBtn">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="tour-container">
+        <div class="tour-header">
+            <img src="<%= tour.imageUrl %>" alt="<%= tour.title %>" class="tour-image">
+            <% if (tour.featured) { %>
+                <div class="featured-badge">Featured Tour</div>
+            <% } %>
+            <h1 class="tour-title"><%= tour.title %></h1>
+            <div class="tour-meta">
+                <div class="meta-item meta-destination"><%= tour.destination %>, <%= tour.country || 'N/A' %></div>
+                <div class="meta-item meta-duration"><%= tour.duration %> <%= tour.durationUnit %></div>
+                <div class="meta-item meta-price">₱<%= tour.price.toLocaleString() %></div>
+            </div>            
+        </div>
+
+        <div class="tour-description">
+            <%= tour.description %>
+        </div>
+
+        <% if (tour.highlights && tour.highlights.length > 0) { %>
+            <h2 class="section-title">Highlights</h2>
+            <ul class="highlights-list">
+                <% tour.highlights.forEach(highlight => { %>
+                    <li><%= highlight %></li>
+                <% }); %>
+            </ul>
+        <% } %>
+
+        <% if (tour.itinerary && tour.itinerary.length > 0) { %>
+            <h2 class="section-title">Itinerary</h2>
+            <div class="itinerary-container">
+                <% tour.itinerary.sort((a, b) => a.day - b.day).forEach(day => { %>
+                    <div class="itinerary-day">
+                        <div class="day-header">
+                            <div class="day-number">Day <%= day.day %></div>
+                            <div class="day-title"><%= day.title %></div>
+                        </div>
+                        <div class="day-description"><%= day.description %></div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+
+        <% if (tour.inclusions && tour.inclusions.length > 0) { %>
+            <h2 class="section-title">What's Included</h2>
+            <ul class="inclusions-list">
+                <% tour.inclusions.forEach(inclusion => { %>
+                    <li><%= inclusion %></li>
+                <% }); %>
+            </ul>
+        <% } %>
+
+        <% if (tour.exclusions && tour.exclusions.length > 0) { %>
+            <h2 class="section-title">What's Not Included</h2>
+            <ul class="exclusions-list">
+                <% tour.exclusions.forEach(exclusion => { %>
+                    <li><%= exclusion %></li>
+                <% }); %>
+            </ul>
+        <% } %>
+
+        <div class="booking-section">
+            <h2 class="booking-title">Ready to Experience This Amazing Tour?</h2>
+            <p class="booking-description">Book now to secure your spot and embark on an unforgettable journey!</p>
+            <!-- Changed from <a> to <button> and added data-tour-id -->
+            <button type="button" class="btn-book-tour" data-tour-id="<%= tour._id %>">Book This Tour</button>
+        </div>
+    </div>
+
+    <!-- NEW: Login Required Modal for tour-detail.ejs -->
+    <div id="loginRequiredModalDetail" class="modal">
+        <div class="modal-content">
+            <button class="close-modal-btn" id="closeLoginRequiredModalDetail">&times;</button>
+            <h2>Login Required</h2>
+            <p>You need to be logged in to book a tour. Please log in or create an account to continue.</p>
+            <button id="loginFromDetailBtn" class="btn-primary">Login / Sign Up</button>
+        </div>
+    </div>
+
+    <footer class="footer-columns">
+        <div class="footer-content">
+            <div class="footer-left">
+                <h3>Contact Us</h3>
+                <p>📞 (044) 604 7273</p>
+                <p>📞 09361055665</p>
+                <p>📧 <a href="mailto:abeetravelandtours@gmail.com">abeetravelandtours@gmail.com</a></p>
+            </div>
+            <div class="footer-right">
+            <h3>Follow Us</h3>
+            <a href="https://www.facebook.com/abeetravelandtours" target="_blank">
+                <img src="/images/communication.png" alt="Facebook" class="social-icon facebook-logo">
+            </a>
+            <a href="https://www.instagram.com/a.bee_travelandtours/" target="_blank">
+                <img src="/images/instagram.png" alt="Instagram" class="social-icon instagram-logo">
+            </a>
+        </div>
+        </div>
+        <p class="footer-bottom">Copyright &copy; 2025 A.BEE Travel and Tours Website. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Define isLoggedIn variable globally
+        let isLoggedIn = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication status
+            fetch('/check-auth')
+                .then(response => response.json())
+                .then(data => {
+                    isLoggedIn = data.isLoggedIn;
+                    if (data.isLoggedIn) {
+                        document.getElementById('loginBtnWrapper').style.display = 'none';
+                        document.getElementById('userProfile').style.display = 'block';
+                    } else {
+                        document.getElementById('loginBtnWrapper').style.display = 'block';
+                        document.getElementById('userProfile').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking auth status:', error);
+                    isLoggedIn = false; // Assume not logged in on error
+                });
+            
+            // Profile dropdown functionality
+            const profileIcon = document.getElementById('profileIconWrapper');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            if (profileIcon) {
+                profileIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+                });
+            }
+            
+            document.addEventListener('click', function() {
+                if (profileDropdown) {
+                    profileDropdown.style.display = 'none';
+                }
+            });
+            
+            // Login button functionality (for header login button)
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', function() {
+                    sessionStorage.setItem('openLoginModal', 'true'); // Set flag to open modal on home page
+                    window.location.href = '/'; // Redirect to home page
+                });
+            }
+
+            // NEW: Event listener for the "Book This Tour" button
+            const bookTourButton = document.querySelector('.btn-book-tour');
+            if (bookTourButton) {
+                bookTourButton.addEventListener('click', function() {
+                    const tourId = this.dataset.tourId; // Get tour ID from data attribute
+                    handleBookTourClickDetail(tourId);
+                });
+            }
+
+            // NEW: Event listeners for the Login Required Modal in tour-detail.ejs
+            const loginRequiredModalDetail = document.getElementById('loginRequiredModalDetail');
+            const closeLoginRequiredModalDetailBtn = document.getElementById('closeLoginRequiredModalDetail');
+            const loginFromDetailBtn = document.getElementById('loginFromDetailBtn');
+
+            if (closeLoginRequiredModalDetailBtn) {
+                closeLoginRequiredModalDetailBtn.addEventListener('click', function() {
+                    loginRequiredModalDetail.style.display = 'none';
+                });
+            }
+
+            if (loginFromDetailBtn) {
+                loginFromDetailBtn.addEventListener('click', function() {
+                    sessionStorage.setItem('openLoginModal', 'true');
+                    window.location.href = '/'; // Redirect to home page to open login modal
+                });
+            }
+
+            // Close modal if user clicks outside of it
+            window.addEventListener('click', function(event) {
+                if (event.target == loginRequiredModalDetail) {
+                    loginRequiredModalDetail.style.display = 'none';
+                }
+            });
+        });
+
+        // NEW FUNCTION: handleBookTourClickDetail
+        function handleBookTourClickDetail(tourId) {
+            const loginRequiredModalDetail = document.getElementById('loginRequiredModalDetail');
+            if (isLoggedIn) {
+                window.location.href = `/book-tour?id=${tourId}`;
+            } else {
+                loginRequiredModalDetail.style.display = 'flex';
+            }
+        }
+    </script>
+</body>
+</html>

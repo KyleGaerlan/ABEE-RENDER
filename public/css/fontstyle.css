@@ -1,0 +1,224 @@
+/* Elegant Professional Design */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap');
+
+:root {
+  --primary-color: #2c3e50;
+  --secondary-color: #e74c3c;
+  --accent-color: #3498db;
+  --text-color: #2c3e50;
+  --light-bg: #f5f5f5;
+  --dark-bg: #1a1a1a;
+  --border-radius: 6px;
+  --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  --transition: all 0.3s ease;
+}
+
+body, html {
+  font-family: 'Lato', sans-serif;
+  color: var(--text-color);
+  line-height: 1.7;
+  background-color: #ffffff;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6,
+.section-title {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Header styling */
+header {
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 12px 20px;
+}
+
+.logo img {
+  height: 38px;
+}
+
+.top-contact-bar {
+  background-color: var(--primary-color);
+  padding: 6px 30px;
+}
+
+nav ul {
+  margin-left: auto;
+  gap: 30px;
+}
+
+nav ul li a, 
+nav ul li button {
+  font-weight: 400;
+  font-size: 1rem;
+  color: var(--text-color);
+  transition: var(--transition);
+  position: relative;
+}
+
+nav ul li a:after, 
+nav ul li button:after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -5px;
+  left: 0;
+  background-color: var(--secondary-color);
+  transition: var(--transition);
+}
+
+nav ul li a:hover:after, 
+nav ul li button:hover:after {
+  width: 100%;
+}
+
+/* Login button styling */
+#loginBtnWrapper {
+  background-color: var(--secondary-color);
+  border-radius: var(--border-radius);
+  padding: 6px 20px;
+}
+
+#loginBtn {
+  font-weight: 700;
+}
+
+/* Hero section */
+.hero-section {
+  margin-top: 90px;
+}
+
+.hero-content .container {
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  border-radius: var(--border-radius);
+  padding: 40px;
+}
+
+.hero-content h1 {
+  font-weight: 700;
+  font-size: 2.8rem;
+  margin-bottom: 25px;
+  font-family: 'Playfair Display', serif;
+}
+
+.btn-book-tour {
+  background-color: var(--secondary-color);
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  padding: 12px 30px;
+  font-size: 1.05rem;
+  transition: var(--transition);
+}
+
+.btn-book-tour:hover {
+  background-color: #c0392b;
+}
+
+/* Services section */
+.section-title {
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 50px;
+  font-size: 2.5rem;
+  font-family: 'Playfair Display', serif;
+}
+
+.section-title:after {
+  background-color: var(--secondary-color);
+  height: 3px;
+  width: 80px;
+  margin-top: 20px;
+}
+
+.service-card {
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+  border: 1px solid #eee;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.service-icon {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  color: var(--secondary-color);
+}
+
+.service-card h3 {
+  font-weight: 600;
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+  color: var(--text-color);
+  font-family: 'Playfair Display', serif;
+}
+
+.service-link {
+  background-color: var(--secondary-color);
+  border-radius: var(--border-radius);
+  padding: 10px 25px;
+  font-weight: 700;
+  margin-top: 20px;
+  display: inline-block;
+}
+
+/* Footer */
+.footer-columns {
+  background-color: var(--primary-color);
+  padding: 70px 0 30px;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-left h3, 
+.footer-center h3, 
+.footer-right h3 {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 25px;
+  position: relative;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+}
+
+.footer-left h3:after, 
+.footer-center h3:after, 
+.footer-right h3:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 50px;
+  height: 2px;
+  background-color: var(--secondary-color);
+}
+
+.contact-submit-btn {
+  background-color: var(--secondary-color);
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  padding: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  
+  .hero-content .container {
+    width: 85%;
+    padding: 30px;
+  }
+  
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+}

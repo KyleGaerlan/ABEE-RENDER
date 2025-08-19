@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Management - A.BEE Travel and Tours</title>
+    <link rel="stylesheet" href="/css/useradmin.css">
+    <style>
+        .tour-form-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .tour-list-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 25px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .dynamic-list {
+            margin-top: 10px;
+        }
+        
+        .dynamic-list-item {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .dynamic-list-item input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        .dynamic-list-item button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        
+        .add-item-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        
+        .itinerary-day {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .itinerary-day h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .remove-day-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .submit-btn {
+            background-color: #f26523;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            background-color: #d55a1f;
+        }
+        
+        .tour-list {
+            margin-top: 20px;
+        }
+        
+        .tour-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tour-item:last-child {
+            border-bottom: none;
+        }
+        
+        .tour-info {
+            flex-grow: 1;
+        }
+        
+        .tour-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .tour-meta {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .tour-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .tour-actions button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .edit-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .feature-btn {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .unfeature-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .tour-image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            color: white;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .notification.success {
+            background-color: #28a745;
+        }
+        
+        .notification.error {
+            background-color: #dc3545;
+        }
+        
+        /* Mobile menu toggle button */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background-color: #f26523;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .menu-toggle-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-toggle span {
+            display: block;
+            position: absolute;
+            width: 22px;
+            height: 2px;
+            background-color: white;
+            transition: all 0.3s ease;
+            left: 9px; /* Centered within the 40px button */
+        }
+
+        .menu-toggle span:nth-child(1) {
+            top: 14px;
+        }
+
+        .menu-toggle span:nth-child(2) {
+            top: 19px;
+        }
+
+        .menu-toggle span:nth-child(3) {
+            top: 24px;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg);
+            top: 19px;
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg);
+            top: 19px;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+        
+        /* Responsive styles with !important to override external CSS */
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block !important;
+            }
+
+            .sidebar {
+                position: fixed !important;
+                left: -250px !important;
+                top: 0 !important;
+                height: 100% !important;
+                width: 250px !important;
+                z-index: 999 !important;
+                transition: left 0.3s ease !important;
+                overflow-y: auto !important;
+                margin-left: 0 !important; /* Override any margin */
+            }
+
+            .sidebar.active {
+                left: 0 !important;
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding: 20px !important;
+                padding-top: 60px !important;
+            }
+
+            .sidebar-overlay.active {
+                display: block !important;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tour-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .tour-actions {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+         /* Add these styles to your existing <style> section */
+    .booking-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 700px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .close-modal {
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .modal-footer {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .hide-btn {
+        background-color: #6366f1;
+        color: white;
+    }
+    
+    .show-btn {
+        background-color: #8b5cf6;
+        color: white;
+    }
+    
+    .hidden-tour {
+        opacity: 0.6;
+        background-color: #f9fafb;
+    }
+    
+    .visibility-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        margin-left: 10px;
+        background-color: #ef4444;
+        color: white;
+    }
+    /* Add this to the existing <style> section in admin-tour-post.ejs */
+#promoSection {
+    border: 2px solid #f26523;
+    background: linear-gradient(135deg, #fff8f0 0%, #fef5e7 100%);
+    box-shadow: 0 4px 8px rgba(242, 101, 35, 0.1);
+}
+
+#promoSection h4 {
+    border-bottom: 2px solid #f26523;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+#promoSection .form-group label {
+    font-weight: 600;
+    color: #333;
+}
+
+#promoSection input[type="number"],
+#promoSection input[type="date"],
+#promoSection input[type="time"] {
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+#promoSection input[type="number"]:focus,
+#promoSection input[type="date"]:focus,
+#promoSection input[type="time"]:focus {
+    border-color: #f26523;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(242, 101, 35, 0.1);
+}
+
+#promoEndDisplay {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Make the promotional checkbox more prominent */
+input[type="checkbox"]#isPromoActive {
+    transform: scale(1.2);
+    margin-right: 10px;
+}
+
+label[for="isPromoActive"] {
+    font-weight: 600;
+    color: #f26523;
+    font-size: 16px;
+}
+
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" id="menuToggle">
+        <div class="menu-toggle-inner">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <img src="/images/Image-logo.png" alt="Company Logo">
+        </div>
+        <div class="admin-info" style="display: none;">
+            <p>Welcome, <span id="adminName"><%= admin.firstName %> <%= admin.lastName %></span></p>
+            <p class="admin-role" id="adminRole">Role: <%= admin.role %></p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin-dashboard">Dashboard</a>
+            
+            <% if (admin.role !== 'employee') { %>
+                <a href="/admin-users">Users</a>
+                <a href="/admin-approvals">Account Approvals</a>
+            <% } %>
+            
+            <a href="/admin-bookings">Bookings</a>
+            <a href="/admin-tours">Tours</a>
+            <a href="/admin-messages">Messages</a>
+            <a href="#" onclick="handleAdminLogout()">Logout</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1>Tour Management</h1>
+        </header>
+
+        <div class="tour-form-container">
+            <h2 id="formTitle">Create New Tour</h2>
+            <form id="tourForm" enctype="multipart/form-data">
+                <input type="hidden" id="tourId" name="tourId">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="title">Tour Title*</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="destination">Destination*</label>
+                        <input type="text" id="destination" name="destination" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="country">Country*</label>
+                        <select id="country" name="country" required>
+                            <option value="">Select a country</option>
+                            <option value="Afghanistan">Afghanistan</option>
+                            <option value="Albania">Albania</option>
+                            <option value="Algeria">Algeria</option>
+                            <option value="Andorra">Andorra</option>
+                            <option value="Angola">Angola</option>
+                            <option value="Antigua and Barbuda">Antigua and Barbuda</option>
+                            <option value="Argentina">Argentina</option>
+                            <option value="Armenia">Armenia</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Austria">Austria</option>
+                            <option value="Azerbaijan">Azerbaijan</option>
+                            <option value="Bahamas">Bahamas</option>
+                            <option value="Bahrain">Bahrain</option>
+                            <option value="Bangladesh">Bangladesh</option>
+                            <option value="Barbados">Barbados</option>
+                            <option value="Belarus">Belarus</option>
+                            <option value="Belgium">Belgium</option>
+                            <option value="Belize">Belize</option>
+                            <option value="Benin">Benin</option>
+                            <option value="Bhutan">Bhutan</option>
+                            <option value="Bolivia">Bolivia</option>
+                            <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+                            <option value="Botswana">Botswana</option>
+                            <option value="Brazil">Brazil</option>
+                            <option value="Brunei">Brunei</option>
+                            <option value="Bulgaria">Bulgaria</option>
+                            <option value="Burkina Faso">Burkina Faso</option>
+                            <option value="Burundi">Burundi</option>
+                            <option value="Cabo Verde">Cabo Verde</option>
+                            <option value="Cambodia">Cambodia</option>
+                            <option value="Cameroon">Cameroon</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Central African Republic">Central African Republic</option>
+                            <option value="Chad">Chad</option>
+                            <option value="Chile">Chile</option>
+                            <option value="China">China</option>
+                            <option value="Colombia">Colombia</option>
+                            <option value="Comoros">Comoros</option>
+                            <option value="Congo">Congo</option>
+                            <option value="Costa Rica">Costa Rica</option>
+                            <option value="Croatia">Croatia</option>
+                            <option value="Cuba">Cuba</option>
+                            <option value="Cyprus">Cyprus</option>
+                            <option value="Czech Republic">Czech Republic</option>
+                            <option value="Denmark">Denmark</option>
+                            <option value="Djibouti">Djibouti</option>
+                            <option value="Dominica">Dominica</option>
+                            <option value="Dominican Republic">Dominican Republic</option>
+                            <option value="East Timor">East Timor</option>
+                            <option value="Ecuador">Ecuador</option>
+                            <option value="Egypt">Egypt</option>
+                            <option value="El Salvador">El Salvador</option>
+                            <option value="Equatorial Guinea">Equatorial Guinea</option>
+                            <option value="Eritrea">Eritrea</option>
+                            <option value="Estonia">Estonia</option>
+                            <option value="Eswatini">Eswatini</option>
+                            <option value="Ethiopia">Ethiopia</option>
+                            <option value="Fiji">Fiji</option>
+                            <option value="Finland">Finland</option>
+                            <option value="France">France</option>
+                            <option value="Gabon">Gabon</option>
+                            <option value="Gambia">Gambia</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Germany">Germany</option>
+                            <option value="Ghana">Ghana</option>
+                            <option value="Greece">Greece</option>
+                            <option value="Grenada">Grenada</option>
+                            <option value="Guatemala">Guatemala</option>
+                            <option value="Guinea">Guinea</option>
+                            <option value="Guinea-Bissau">Guinea-Bissau</option>
+                            <option value="Guyana">Guyana</option>
+                            <option value="Haiti">Haiti</option>
+                            <option value="Honduras">Honduras</option>
+                            <option value="Hungary">Hungary</option>
+                            <option value="Iceland">Iceland</option>
+                            <option value="India">India</option>
+                            <option value="Indonesia">Indonesia</option>
+                            <option value="Iran">Iran</option>
+                            <option value="Iraq">Iraq</option>
+                            <option value="Ireland">Ireland</option>
+                            <option value="Israel">Israel</option>
+                            <option value="Italy">Italy</option>
+                            <option value="Jamaica">Jamaica</option>
+                            <option value="Japan">Japan</option>
+                            <option value="Jordan">Jordan</option>
+                            <option value="Kazakhstan">Kazakhstan</option>
+                            <option value="Kenya">Kenya</option>
+                            <option value="Kiribati">Kiribati</option>
+                            <option value="Korea, North">Korea, North</option>
+                            <option value="Korea, South">Korea, South</option>
+                            <option value="Kosovo">Kosovo</option>
+                            <option value="Kuwait">Kuwait</option>
+                            <option value="Kyrgyzstan">Kyrgyzstan</option>
+                            <option value="Laos">Laos</option>
+                            <option value="Latvia">Latvia</option>
+                            <option value="Lebanon">Lebanon</option>
+                            <option value="Lesotho">Lesotho</option>
+                            <option value="Liberia">Liberia</option>
+                            <option value="Libya">Libya</option>
+                            <option value="Liechtenstein">Liechtenstein</option>
+                            <option value="Lithuania">Lithuania</option>
+                            <option value="Luxembourg">Luxembourg</option>
+                            <option value="Madagascar">Madagascar</option>
+                            <option value="Malawi">Malawi</option>
+                            <option value="Malaysia">Malaysia</option>
+                            <option value="Maldives">Maldives</option>
+                            <option value="Mali">Mali</option>
+                            <option value="Malta">Malta</option>
+                            <option value="Marshall Islands">Marshall Islands</option>
+                            <option value="Mauritania">Mauritania</option>
+                            <option value="Mauritius">Mauritius</option>
+                            <option value="Mexico">Mexico</option>
+                            <option value="Micronesia">Micronesia</option>
+                            <option value="Moldova">Moldova</option>
+                            <option value="Monaco">Monaco</option>
+                            <option value="Mongolia">Mongolia</option>
+                            <option value="Montenegro">Montenegro</option>
+                            <option value="Morocco">Morocco</option>
+                            <option value="Mozambique">Mozambique</option>
+                            <option value="Myanmar">Myanmar</option>
+                            <option value="Namibia">Namibia</option>
+                            <option value="Nauru">Nauru</option>
+                            <option value="Nepal">Nepal</option>
+                            <option value="Netherlands">Netherlands</option>
+                            <option value="New Zealand">New Zealand</option>
+                            <option value="Nicaragua">Nicaragua</option>
+                            <option value="Niger">Niger</option>
+                            <option value="Nigeria">Nigeria</option>
+                            <option value="North Macedonia">North Macedonia</option>
+                            <option value="Norway">Norway</option>
+                            <option value="Oman">Oman</option>
+                            <option value="Pakistan">Pakistan</option>
+                            <option value="Palau">Palau</option>
+                            <option value="Palestine">Palestine</option>
+                            <option value="Panama">Panama</option>
+                            <option value="Papua New Guinea">Papua New Guinea</option>
+                            <option value="Paraguay">Paraguay</option>
+                            <option value="Peru">Peru</option>
+                            <option value="Philippines">Philippines</option>
+                            <option value="Poland">Poland</option>
+                            <option value="Portugal">Portugal</option>
+                            <option value="Qatar">Qatar</option>
+                            <option value="Romania">Romania</option>
+                            <option value="Russia">Russia</option>
+                            <option value="Rwanda">Rwanda</option>
+                            <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+                            <option value="Saint Lucia">Saint Lucia</option>
+                            <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+                            <option value="Samoa">Samoa</option>
+                            <option value="San Marino">San Marino</option>
+                            <option value="Sao Tome and Principe">Sao Tome and Principe</option>
+                            <option value="Saudi Arabia">Saudi Arabia</option>
+                            <option value="Senegal">Senegal</option>
+                            <option value="Serbia">Serbia</option>
+                            <option value="Seychelles">Seychelles</option>
+                            <option value="Sierra Leone">Sierra Leone</option>
+                            <option value="Singapore">Singapore</option>
+                            <option value="Slovakia">Slovakia</option>
+                            <option value="Slovenia">Slovenia</option>
+                            <option value="Solomon Islands">Solomon Islands</option>
+                            <option value="Somalia">Somalia</option>
+                            <option value="South Africa">South Africa</option>
+                            <option value="South Sudan">South Sudan</option>
+                            <option value="Spain">Spain</option>
+                            <option value="Sri Lanka">Sri Lanka</option>
+                            <option value="Sudan">Sudan</option>
+                            <option value="Suriname">Suriname</option>
+                            <option value="Sweden">Sweden</option>
+                            <option value="Switzerland">Switzerland</option>
+                            <option value="Syria">Syria</option>
+                            <option value="Taiwan">Taiwan</option>
+                            <option value="Tajikistan">Tajikistan</option>
+                            <option value="Tanzania">Tanzania</option>
+                            <option value="Thailand">Thailand</option>
+                            <option value="Togo">Togo</option>
+                            <option value="Tonga">Tonga</option>
+                            <option value="Trinidad and Tobago">Trinidad and Tobago</option>
+                            <option value="Tunisia">Tunisia</option>
+                            <option value="Turkey">Turkey</option>
+                            <option value="Turkmenistan">Turkmenistan</option>
+                            <option value="Tuvalu">Tuvalu</option>
+                            <option value="Uganda">Uganda</option>
+                            <option value="Ukraine">Ukraine</option>
+                            <option value="United Arab Emirates">United Arab Emirates</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="United States">United States</option>
+                            <option value="Uruguay">Uruguay</option>
+                            <option value="Uzbekistan">Uzbekistan</option>
+                            <option value="Vanuatu">Vanuatu</option>
+                            <option value="Vatican City">Vatican City</option>
+                            <option value="Venezuela">Venezuela</option>
+                            <option value="Vietnam">Vietnam</option>
+                            <option value="Yemen">Yemen</option>
+                            <option value="Zambia">Zambia</option>
+                            <option value="Zimbabwe">Zimbabwe</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="price">Price*</label>
+                        <input type="number" id="price" name="price" min="0" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="duration">Duration*</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="duration" name="duration" min="1" style="width: 70%;" required>
+                            <select id="durationUnit" name="durationUnit" style="width: 30%;">
+                                <option value="days">Days</option>
+                                <option value="weeks">Weeks</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tourImage">Tour Image*</label>
+                        <input type="file" id="tourImage" name="tourImage" accept="image/*" required>
+                        <img id="imagePreview" class="tour-image-preview" style="display: none;">
+                    </div>
+                    
+<div class="form-group">
+    <label for="featured">Featured Tour</label>
+    <input type="checkbox" id="featured" name="featured">
+</div>
+
+<div class="form-group">
+    <label for="isPromoActive">Promotional Tour</label>
+    <input type="checkbox" id="isPromoActive" name="isPromoActive">
+</div>
+
+<div id="promoSection" class="form-group full-width" style="display: none; background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 15px;">
+    <h4 style="color: #f26523; margin-bottom: 15px;">🔥 Promotional Settings</h4>
+    
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="promoDuration">Promo Duration (Days)*</label>
+            <input type="number" id="promoDuration" name="promoDuration" min="1" max="365" placeholder="e.g., 10" style="width: 100%;">
+            <small style="color: #666;">How many days should this promotion last?</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="promoStartDate">Start Date*</label>
+            <input type="date" id="promoStartDate" name="promoStartDate" style="width: 100%;">
+            <small style="color: #666;">When should the promotion start?</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="promoStartTime">Start Time (Philippine Time)*</label>
+            <input type="time" id="promoStartTime" name="promoStartTime" style="width: 100%;">
+            <small style="color: #666;">What time should it start? (24-hour format)</small>
+        </div>
+    </div>
+    
+    <div class="form-group" style="margin-top: 20px;">
+        <div id="promoEndDisplay" style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
+            <strong style="color: #155724;">📅 Promo will end on:</strong> 
+            <span id="promoEndText" style="color: #155724; font-weight: bold;">Please fill in the fields above</span>
+        </div>
+    </div>
+</div>
+
+                <div class="form-group full-width">
+                    <label for="description">Description*</label>
+                    <textarea id="description" name="description" required></textarea>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label>Highlights</label>
+                    <div id="highlightsList" class="dynamic-list"></div>
+                    <button type="button" class="add-item-btn" onclick="addHighlight()">Add Highlight</button>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label>Inclusions</label>
+                    <div id="inclusionsList" class="dynamic-list"></div>
+                    <button type="button" class="add-item-btn" onclick="addInclusion()">Add Inclusion</button>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label>Exclusions</label>
+                    <div id="exclusionsList" class="dynamic-list"></div>
+                    <button type="button" class="add-item-btn" onclick="addExclusion()">Add Exclusion</button>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label>Itinerary</label>
+                    <div id="itineraryList"></div>
+                    <button type="button" class="add-item-btn" onclick="addItineraryDay()">Add Day</button>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">Create Tour</button>
+                <button type="button" class="submit-btn" id="cancelBtn" style="background-color: #6c757d; margin-left: 10px; display: none;" onclick="cancelEdit()">Cancel</button>
+            </form>
+        </div>
+
+        <div class="tour-list-container">
+            <h2>Existing Tours</h2>
+            <div id="tourList" class="tour-list">
+                <p>Loading tours...</p>
+            </div>
+        </div>
+    </div>
+<!-- Add this before the closing </body> tag -->
+<!-- Hide/Show Confirmation Modal -->
+<div id="visibilityConfirmModal" class="booking-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h2 id="visibilityModalTitle">Confirm Action</h2>
+            <span class="close-modal" onclick="closeVisibilityModal()">&times;</span>
+        </div>
+        <div style="padding: 20px; text-align: center;">
+            <p id="visibilityModalMessage">Are you sure you want to proceed with this action?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn" style="background-color: #6c757d; color: white;" onclick="closeVisibilityModal()">Cancel</button>
+            <button class="modal-btn" id="confirmVisibilityBtn" style="background-color: #f26523; color: white;">Confirm</button>
+        </div>
+    </div>
+</div>
+
+    <script>
+        let currentlyEditing = null;
+        let tours = [];
+        let currentTourId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize form
+            addHighlight();
+            addInclusion();
+            addExclusion();
+            addItineraryDay();
+            
+            // Set up form submission
+            document.getElementById('tourForm').addEventListener('submit', handleFormSubmit);
+            
+            // Set up image preview
+            document.getElementById('tourImage').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.getElementById('imagePreview');
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Mobile menu toggle functionality
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            
+            if (menuToggle && sidebar && sidebarOverlay) {
+                menuToggle.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    sidebar.classList.toggle('active');
+                    sidebarOverlay.classList.toggle('active');
+                    
+                    // Prevent scrolling when sidebar is open
+                    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+                });
+                
+                sidebarOverlay.addEventListener('click', function() {
+                    menuToggle.classList.remove('active');
+                    sidebar.classList.remove('active');
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+                
+                // Close sidebar when clicking on a link (for mobile)
+                const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth <= 768) {
+                            menuToggle.classList.remove('active');
+                            sidebar.classList.remove('active');
+                            sidebarOverlay.classList.remove('active');
+                            document.body.style.overflow = '';
+                        }
+                    });
+                });
+            }
+            
+            // Load existing tours
+            fetchTours();
+        });
+
+        function addHighlight() {
+            const container = document.getElementById('highlightsList');
+            const index = container.children.length;
+            
+            const item = document.createElement('div');
+            item.className = 'dynamic-list-item';
+            item.innerHTML = `
+                <input type="text" name="highlights" placeholder="Enter highlight">
+                <button type="button" onclick="removeItem(this)">Remove</button>
+            `;
+            
+            container.appendChild(item);
+        }
+
+        function addInclusion() {
+            const container = document.getElementById('inclusionsList');
+            const index = container.children.length;
+            
+            const item = document.createElement('div');
+            item.className = 'dynamic-list-item';
+            item.innerHTML = `
+                <input type="text" name="inclusions" placeholder="Enter inclusion">
+                <button type="button" onclick="removeItem(this)">Remove</button>
+            `;
+            
+            container.appendChild(item);
+        }
+
+        function addExclusion() {
+            const container = document.getElementById('exclusionsList');
+            const index = container.children.length;
+            
+            const item = document.createElement('div');
+            item.className = 'dynamic-list-item';
+            item.innerHTML = `
+                <input type="text" name="exclusions" placeholder="Enter exclusion">
+                <button type="button" onclick="removeItem(this)">Remove</button>
+            `;
+            
+            container.appendChild(item);
+        }
+
+        function addItineraryDay() {
+            const container = document.getElementById('itineraryList');
+            const index = container.children.length;
+            
+            const day = document.createElement('div');
+            day.className = 'itinerary-day';
+            day.innerHTML = `
+                <h4>
+                    Day ${index + 1}
+                    <button type="button" class="remove-day-btn" onclick="removeItineraryDay(this)">Remove</button>
+                </h4>
+                <div class="form-group">
+                    <label>Day Number</label>
+                    <input type="number" name="itinerary[${index}][day]" value="${index + 1}" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" name="itinerary[${index}][title]" placeholder="Day title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="itinerary[${index}][description]" placeholder="Day description" required></textarea>
+                </div>
+            `;
+            
+            container.appendChild(day);
+        }
+
+        function removeItem(button) {
+            const item = button.parentElement;
+            item.parentElement.removeChild(item);
+        }
+
+        function removeItineraryDay(button) {
+            const day = button.closest('.itinerary-day');
+            day.parentElement.removeChild(day);
+            
+            // Renumber days
+            const days = document.querySelectorAll('.itinerary-day');
+            days.forEach((day, index) => {
+                day.querySelector('h4').innerText = `Day ${index + 1}`;
+                day.querySelector('input[name$="[day]"]').value = index + 1;
+            });
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(e.target);
+                
+                // Check if we're editing or creating
+                const isEditing = !!currentlyEditing;
+                const url = isEditing ? `/api/tours/${currentlyEditing}` : '/api/tours';
+                const method = isEditing ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to save tour');
+                }
+                
+                showNotification(isEditing ? 'Tour updated successfully!' : 'Tour created successfully!', 'success');
+                resetForm();
+                fetchTours();
+                
+            } catch (error) {
+                console.error('Error saving tour:', error);
+                showNotification(error.message || 'Failed to save tour', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('tourForm').reset();
+            document.getElementById('tourId').value = '';
+            document.getElementById('formTitle').innerText = 'Create New Tour';
+            document.getElementById('submitBtn').innerText = 'Create Tour';
+            document.getElementById('cancelBtn').style.display = 'none';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('tourImage').required = true;
+            
+            // Reset dynamic lists
+            document.getElementById('highlightsList').innerHTML = '';
+            document.getElementById('inclusionsList').innerHTML = '';
+            document.getElementById('exclusionsList').innerHTML = '';
+            document.getElementById('itineraryList').innerHTML = '';
+            
+            addHighlight();
+            addInclusion();
+            addExclusion();
+            addItineraryDay();
+            
+            currentlyEditing = null;
+        }
+        async function fetchTours() {
+    try {
+        const response = await fetch('/api/admin/tours', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch tours');
+        }
+        
+        const data = await response.json();
+        tours = data.tours;
+        
+        renderTourList();
+        
+    } catch (error) {
+        console.error('Error fetching tours:', error);
+        document.getElementById('tourList').innerHTML = '<p>Error loading tours. Please try again.</p>';
+    }
+}
+// Update the renderTourList function in admin-tour-post.ejs
+function renderTourList() {
+    const container = document.getElementById('tourList');
+    
+    if (!tours || tours.length === 0) {
+        container.innerHTML = '<p>No tours found. Create your first tour above!</p>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    tours.forEach(tour => {
+        const item = document.createElement('div');
+        item.className = `tour-item ${tour.hidden ? 'hidden-tour' : ''}`;
+        
+        let promoStatus = '';
+        if (tour.isPromoActive && tour.promoEndTime) {
+            const endTime = new Date(tour.promoEndTime);
+            const now = new Date();
+            
+            if (endTime > now) {
+                const timeLeft = endTime - now;
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                
+                promoStatus = `<span style="color: #ff6b6b; margin-left: 10px;">🔥 Promo ends in ${days}d ${hours}h</span>`;
+            } else {
+                promoStatus = '<span style="color: #999; margin-left: 10px;">⏰ Promo expired</span>';
+            }
+        }
+        
+        item.innerHTML = `
+            <div class="tour-info">
+                <div class="tour-title">
+                    ${tour.title}
+                    ${tour.hidden ? '<span class="visibility-badge">Hidden</span>' : ''}
+                    ${promoStatus}
+                </div>
+                <div class="tour-meta">
+                    ${tour.destination}, ${tour.country || 'N/A'} | ₱${tour.price.toFixed(2)} | ${tour.duration} ${tour.durationUnit}
+                    ${tour.featured ? '<span style="color: #ffc107; margin-left: 10px;">★ Featured</span>' : ''}
+                </div>
+            </div>
+            <div class="tour-actions">
+                <button class="edit-btn" onclick="editTour('${tour._id}')">Edit</button>
+                <button class="${tour.featured ? 'unfeature-btn' : 'feature-btn'}" 
+                        onclick="toggleFeatured('${tour._id}', ${!tour.featured})">
+                    ${tour.featured ? 'Unfeature' : 'Feature'}
+                </button>
+                <button class="${tour.hidden ? 'show-btn' : 'hide-btn'}" 
+                        onclick="toggleVisibility('${tour._id}', ${!tour.hidden})">
+                    ${tour.hidden ? 'Show' : 'Hide'}
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(item);
+    });
+}
+
+
+// Add these functions to handle tour visibility
+function toggleVisibility(id, hidden) {
+    currentTourId = id;
+    
+    const tour = tours.find(t => t._id === id);
+    if (!tour) return;
+    
+    const title = hidden ? 'Hide Tour' : 'Show Tour';
+    const message = hidden 
+        ? 'Are you sure you want to hide this tour? It will no longer be visible to users on the website.'
+        : 'Are you sure you want to show this tour? It will become visible to users on the website.';
+    
+    document.getElementById('visibilityModalTitle').textContent = title;
+    document.getElementById('visibilityModalMessage').textContent = message;
+    
+    const confirmBtn = document.getElementById('confirmVisibilityBtn');
+    confirmBtn.textContent = hidden ? 'Hide Tour' : 'Show Tour';
+    confirmBtn.style.backgroundColor = hidden ? '#6366f1' : '#8b5cf6';
+    confirmBtn.onclick = () => confirmToggleVisibility(id, hidden);
+    
+    document.getElementById('visibilityConfirmModal').style.display = 'block';
+}
+
+function closeVisibilityModal() {
+    document.getElementById('visibilityConfirmModal').style.display = 'none';
+    currentTourId = null;
+}
+
+async function confirmToggleVisibility(id, hidden) {
+    try {
+        const response = await fetch(`/api/tours/${id}/visibility`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ hidden }),
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to update tour visibility');
+        }
+        
+        const result = await response.json();
+        
+        // Update the tour in our local array
+        const tourIndex = tours.findIndex(t => t._id === id);
+        if (tourIndex !== -1) {
+            tours[tourIndex].hidden = hidden;
+        }
+        
+        showNotification(`Tour ${hidden ? 'hidden' : 'shown'} successfully`, 'success');
+        renderTourList();
+        
+    } catch (error) {
+        console.error('Error toggling tour visibility:', error);
+        showNotification(error.message || 'Failed to update tour visibility', 'error');
+    } finally {
+        closeVisibilityModal();
+    }
+}
+
+// Replace the deleteTour function with this
+function deleteTour(id) {
+    toggleVisibility(id, true);
+}
+async function editTour(id) {
+    try {
+        const response = await fetch(`/api/tours/${id}`, {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch tour details');
+        }
+        
+        const tour = await response.json();
+        
+        // Set form to edit mode
+        document.getElementById('tourId').value = tour._id;
+        document.getElementById('formTitle').innerText = 'Edit Tour';
+        document.getElementById('submitBtn').innerText = 'Update Tour';
+        document.getElementById('cancelBtn').style.display = 'inline-block';
+        
+        // Fill form fields
+        document.getElementById('title').value = tour.title;
+        document.getElementById('destination').value = tour.destination;
+        document.getElementById('country').value = tour.country || ''; // Set country value
+        document.getElementById('price').value = tour.price;
+        document.getElementById('duration').value = tour.duration;
+        document.getElementById('durationUnit').value = tour.durationUnit || 'days';
+        document.getElementById('description').value = tour.description;
+        document.getElementById('featured').checked = tour.featured;
+        
+        // Set image preview if available
+        if (tour.imageUrl) {
+            const preview = document.getElementById('imagePreview');
+            preview.src = tour.imageUrl;
+            preview.style.display = 'block';
+            document.getElementById('tourImage').required = false;
+        }
+        
+        // Clear existing dynamic lists
+        document.getElementById('highlightsList').innerHTML = '';
+        document.getElementById('inclusionsList').innerHTML = '';
+        document.getElementById('exclusionsList').innerHTML = '';
+        document.getElementById('itineraryList').innerHTML = '';
+        
+        // Add highlights
+        if (tour.highlights && tour.highlights.length > 0) {
+            tour.highlights.forEach(highlight => {
+                const container = document.getElementById('highlightsList');
+                const item = document.createElement('div');
+                item.className = 'dynamic-list-item';
+                item.innerHTML = `
+                    <input type="text" name="highlights" value="${highlight}" placeholder="Enter highlight">
+                    <button type="button" onclick="removeItem(this)">Remove</button>
+                `;
+                container.appendChild(item);
+            });
+        } else {
+            addHighlight();
+        }
+        
+        // Add inclusions
+        if (tour.inclusions && tour.inclusions.length > 0) {
+            tour.inclusions.forEach(inclusion => {
+                const container = document.getElementById('inclusionsList');
+                const item = document.createElement('div');
+                item.className = 'dynamic-list-item';
+                item.innerHTML = `
+                    <input type="text" name="inclusions" value="${inclusion}" placeholder="Enter inclusion">
+                    <button type="button" onclick="removeItem(this)">Remove</button>
+                `;
+                container.appendChild(item);
+            });
+        } else {
+            addInclusion();
+        }
+        
+        // Add exclusions
+        if (tour.exclusions && tour.exclusions.length > 0) {
+            tour.exclusions.forEach(exclusion => {
+                const container = document.getElementById('exclusionsList');
+                const item = document.createElement('div');
+                item.className = 'dynamic-list-item';
+                item.innerHTML = `
+                    <input type="text" name="exclusions" value="${exclusion}" placeholder="Enter exclusion">
+                    <button type="button" onclick="removeItem(this)">Remove</button>
+                `;
+                container.appendChild(item);
+            });
+        } else {
+            addExclusion();
+        }
+        
+        // Add itinerary days
+        if (tour.itinerary && tour.itinerary.length > 0) {
+            tour.itinerary.forEach((day, index) => {
+                const container = document.getElementById('itineraryList');
+                const dayElement = document.createElement('div');
+                dayElement.className = 'itinerary-day';
+                dayElement.innerHTML = `
+                    <h4>
+                        Day ${day.day}
+                        <button type="button" class="remove-day-btn" onclick="removeItineraryDay(this)">Remove</button>
+                    </h4>
+                    <div class="form-group">
+                        <label>Day Number</label>
+                        <input type="number" name="itinerary[${index}][day]" value="${day.day}" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" name="itinerary[${index}][title]" value="${day.title}" placeholder="Day title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="itinerary[${index}][description]" placeholder="Day description" required>${day.description}</textarea>
+                    </div>
+                `;
+                container.appendChild(dayElement);
+            });
+        } else {
+            addItineraryDay();
+        }
+        
+        // Set current editing ID
+        currentlyEditing = tour._id;
+        
+        // Scroll to form
+        document.querySelector('.tour-form-container').scrollIntoView({ behavior: 'smooth' });
+        
+    } catch (error) {
+        console.error('Error editing tour:', error);
+        showNotification('Failed to load tour details', 'error');
+    }
+}
+
+        async function toggleFeatured(id, featured) {
+            try {
+                const response = await fetch(`/api/tours/${id}/featured`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ featured }),
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update featured status');
+                }
+                
+                showNotification(`Tour ${featured ? 'featured' : 'unfeatured'} successfully`, 'success');
+                fetchTours();
+                
+            } catch (error) {
+                console.error('Error toggling featured status:', error);
+                showNotification(error.message || 'Failed to update featured status', 'error');
+            }
+        }
+
+        async function deleteTour(id) {
+            if (!confirm('Are you sure you want to delete this tour? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/tours/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete tour');
+                }
+                
+                showNotification('Tour deleted successfully', 'success');
+                fetchTours();
+                
+            } catch (error) {
+                console.error('Error deleting tour:', error);
+                showNotification(error.message || 'Failed to delete tour', 'error');
+            }
+        }
+
+        function cancelEdit() {
+            resetForm();
+        }
+
+        function showNotification(message, type) {
+            // Remove any existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => {
+                notification.remove();
+            });
+            
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function handleAdminLogout() {
+            fetch('/api/admin/logout', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(() => {
+                localStorage.removeItem('isAdminLoggedIn');
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminRole');
+                localStorage.removeItem('adminName');
+                window.location.href = '/';
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                showNotification('Logout failed. Please try again.', 'error');
+            });
+        }
+
+        // Add this to the existing script section in admin-tour-post.ejs
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('promoStartDate').min = today;
+    
+    // Promotional tour checkbox handler
+    const isPromoActiveCheckbox = document.getElementById('isPromoActive');
+    const promoSection = document.getElementById('promoSection');
+    
+    if (isPromoActiveCheckbox) {
+        isPromoActiveCheckbox.addEventListener('change', function() {
+            const promoDurationInput = document.getElementById('promoDuration');
+            const promoStartDateInput = document.getElementById('promoStartDate');
+            const promoStartTimeInput = document.getElementById('promoStartTime');
+            
+            if (this.checked) {
+                promoSection.style.display = 'block';
+                promoDurationInput.required = true;
+                promoStartDateInput.required = true;
+                promoStartTimeInput.required = true;
+                
+                // Set default values if empty
+                if (!promoStartDateInput.value) {
+                    promoStartDateInput.value = today;
+                }
+                if (!promoStartTimeInput.value) {
+                    promoStartTimeInput.value = '09:00';
+                }
+                if (!promoDurationInput.value) {
+                    promoDurationInput.value = '7';
+                }
+                
+                updatePromoEndDisplay();
+            } else {
+                promoSection.style.display = 'none';
+                promoDurationInput.required = false;
+                promoStartDateInput.required = false;
+                promoStartTimeInput.required = false;
+                updatePromoEndDisplay();
+            }
+        });
+    }
+    
+    // Update promo end display when values change
+    function updatePromoEndDisplay() {
+        const promoDuration = document.getElementById('promoDuration').value;
+        const promoStartDate = document.getElementById('promoStartDate').value;
+        const promoStartTime = document.getElementById('promoStartTime').value;
+        const promoEndText = document.getElementById('promoEndText');
+        
+        if (promoDuration && promoStartDate && promoStartTime && document.getElementById('isPromoActive').checked) {
+            try {
+                const startDateTime = new Date(`${promoStartDate}T${promoStartTime}:00`);
+                const endDateTime = new Date(startDateTime.getTime() + (parseInt(promoDuration) * 24 * 60 * 60 * 1000));
+                
+                const options = {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Asia/Manila',
+                    timeZoneName: 'short'
+                };
+                
+                promoEndText.textContent = endDateTime.toLocaleString('en-PH', options);
+                promoEndText.style.color = '#155724';
+            } catch (error) {
+                promoEndText.textContent = 'Invalid date/time combination';
+                promoEndText.style.color = '#721c24';
+            }
+        } else {
+            promoEndText.textContent = 'Please fill in the fields above';
+            promoEndText.style.color = '#856404';
+        }
+    }
+    
+    // Add event listeners for real-time updates
+    document.getElementById('promoDuration').addEventListener('input', updatePromoEndDisplay);
+    document.getElementById('promoStartDate').addEventListener('change', updatePromoEndDisplay);
+    document.getElementById('promoStartTime').addEventListener('change', updatePromoEndDisplay);
+    
+    // Validate duration input
+    document.getElementById('promoDuration').addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value < 1) {
+            this.value = 1;
+        } else if (value > 365) {
+            this.value = 365;
+        }
+        updatePromoEndDisplay();
+    });
+});
+
+    </script>
+</body>
+</html>

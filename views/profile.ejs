@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - A.BEE Travel and Tours</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/fontstyle.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 120px auto 50px;
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .profile-header p {
+            color: #666;
+        }
+
+        .profile-form {
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+        .btn-update {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #f26523;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-update:hover {
+            background-color: #d9531e;
+        }
+
+        .success-message {
+            padding: 10px;
+            background-color: #d4edda;
+            color: #155724;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            padding: 10px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        /* Mobile navbar styles */
+.hamburger-menu {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 21px;
+    cursor: pointer;
+    margin-right: 20px;
+    z-index: 1001;
+}
+
+.hamburger-menu span {
+    display: block;
+    height: 3px;
+    width: 100%;
+    background-color: #333;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.overlay-bg {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.overlay-bg.active {
+    display: block;
+}
+
+/* Hamburger menu animation */
+.hamburger-menu.active span:nth-child(1) {
+    transform: translateY(9px) rotate(45deg);
+}
+
+.hamburger-menu.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-menu.active span:nth-child(3) {
+    transform: translateY(-9px) rotate(-45deg);
+}
+
+/* Mobile menu styles */
+@media (max-width: 768px) {
+    .hamburger-menu {
+        display: flex;
+        position: absolute;
+        right: 20px;
+        top: 20px;
+    }
+    
+    nav ul {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 250px;
+        background-color: white;
+        flex-direction: column;
+        padding: 60px 20px 30px;
+        transition: right 0.3s ease;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        margin-left: 0;
+        align-items: flex-start;
+        gap: 15px;
+        overflow-y: auto;
+    }
+    
+    nav ul.active {
+        right: 0;
+    }
+    
+    nav ul li {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    nav ul li a, 
+    nav ul li button {
+        display: block;
+        width: 100%;
+        padding: 8px 0;
+        text-align: left;
+        font-size: 16px;
+    }
+}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/images/Image-logo.png" alt="Logo">
+            <img src="/images/Text-logo.png" alt="Logo">
+        </div>
+        <div class="top-contact-bar">
+            <div class="contact-info">
+                <span style="display: none">📞 09361055665</span>
+            <a href="https://www.facebook.com/abeetravelandtours" target="_blank" class="contact-icon" style="visibility: hidden">
+                <img src="/images/communication.png" alt="Facebook" class="facebook-logo">
+            </a>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                
+                
+                <li><a href="/">Home</a></li>
+                <li id="loginBtnWrapper" style="display: none;">
+                    <button id="loginBtn">Login</button>
+                </li>
+                <li id="userProfile">
+                    <a href="javascript:void(0);" id="profileIconWrapper">
+                        <img src="/images/profile.png" alt="User Profile" id="profileIcon" class="profile-icon">
+                    </a>
+                    <ul id="profileDropdown" class="dropdown-menu" style="display: none;">
+                        <li><a href="/profile">Profile</a></li>
+                        <li><a href="/settings">Settings</a></li>
+                        <li><a href="/logout" id="logoutBtn">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1>Your Profile</h1>
+            <p>Update your personal information</p>
+        </div>
+
+        <div id="successMessage" class="success-message">Profile updated successfully!</div>
+        <div id="errorMessage" class="error-message">Error updating profile. Please try again.</div>
+
+        <form id="profileForm" class="profile-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" value="<%= user.firstName || '' %>">
+                </div>
+                <div class="form-group">
+                    <label for="middleInitial">Middle Initial</label>
+                    <input type="text" id="middleInitial" name="middleInitial" value="<%= user.middleInitial || '' %>" maxlength="3" style="width: 22%;">
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" value="<%= user.lastName || '' %>">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="suffix">Suffix (Optional)</label>
+                <select id="suffix" name="suffix">
+                    <option value="" <%= !user.suffix ? 'selected' : '' %>>None</option>
+                    <option value="Jr." <%= user.suffix === 'Jr.' ? 'selected' : '' %>>Jr.</option>
+                    <option value="Sr." <%= user.suffix === 'Sr.' ? 'selected' : '' %>>Sr.</option>
+                    <option value="II" <%= user.suffix === 'II' ? 'selected' : '' %>>II</option>
+                    <option value="III" <%= user.suffix === 'III' ? 'selected' : '' %>>III</option>
+                    <option value="IV" <%= user.suffix === 'IV' ? 'selected' : '' %>>IV</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="<%= user.username %>" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" value="<%= user.email %>" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber" value="<%= user.phoneNumber || '' %>" pattern="[0-9]{11}" placeholder="09XXXXXXXXX">
+            </div>
+
+                        <div class="form-row">
+                <div class="form-group">
+                    <label for="birthdate">Birthdate</label>
+                    <input type="date" id="birthdate" name="birthdate" value="<%= user.birthdate ? new Date(user.birthdate).toISOString().split('T')[0] : '' %>">
+                </div>
+                <div class="form-group">
+                    <label for="sex">Sex</label>
+                    <select id="sex" name="sex">
+                        <option value="" <%= !user.sex ? 'selected' : '' %>>Select</option>
+                        <option value="male" <%= user.sex === 'male' ? 'selected' : '' %>>Male</option>
+                        <option value="female" <%= user.sex === 'female' ? 'selected' : '' %>>Female</option>
+                        <option value="other" <%= user.sex === 'other' ? 'selected' : '' %>>Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="nationality">Nationality</label>
+                <select id="nationality" name="nationality">
+                    <option value="" <%= !user.nationality ? 'selected' : '' %>>Select Nationality</option>
+                    <option value="Afghan" <%= user.nationality === 'Afghan' ? 'selected' : '' %>>Afghan</option>
+                    <option value="Albanian" <%= user.nationality === 'Albanian' ? 'selected' : '' %>>Albanian</option>
+                    <option value="Algerian" <%= user.nationality === 'Algerian' ? 'selected' : '' %>>Algerian</option>
+                    <option value="American" <%= user.nationality === 'American' ? 'selected' : '' %>>American</option>
+                    <option value="Andorran" <%= user.nationality === 'Andorran' ? 'selected' : '' %>>Andorran</option>
+                    <option value="Angolan" <%= user.nationality === 'Angolan' ? 'selected' : '' %>>Angolan</option>
+                    <option value="Antiguans" <%= user.nationality === 'Antiguans' ? 'selected' : '' %>>Antiguans</option>
+                    <option value="Argentinean" <%= user.nationality === 'Argentinean' ? 'selected' : '' %>>Argentinean</option>
+                    <option value="Armenian" <%= user.nationality === 'Armenian' ? 'selected' : '' %>>Armenian</option>
+                    <option value="Australian" <%= user.nationality === 'Australian' ? 'selected' : '' %>>Australian</option>
+                    <option value="Austrian" <%= user.nationality === 'Austrian' ? 'selected' : '' %>>Austrian</option>
+                    <option value="Azerbaijani" <%= user.nationality === 'Azerbaijani' ? 'selected' : '' %>>Azerbaijani</option>
+                    <option value="Bahamian" <%= user.nationality === 'Bahamian' ? 'selected' : '' %>>Bahamian</option>
+                    <option value="Bahraini" <%= user.nationality === 'Bahraini' ? 'selected' : '' %>>Bahraini</option>
+                    <option value="Bangladeshi" <%= user.nationality === 'Bangladeshi' ? 'selected' : '' %>>Bangladeshi</option>
+                    <option value="Barbadian" <%= user.nationality === 'Barbadian' ? 'selected' : '' %>>Barbadian</option>
+                    <option value="Barbudans" <%= user.nationality === 'Barbudans' ? 'selected' : '' %>>Barbudans</option>
+                    <option value="Batswana" <%= user.nationality === 'Batswana' ? 'selected' : '' %>>Batswana</option>
+                    <option value="Belarusian" <%= user.nationality === 'Belarusian' ? 'selected' : '' %>>Belarusian</option>
+                    <option value="Belgian" <%= user.nationality === 'Belgian' ? 'selected' : '' %>>Belgian</option>
+                    <option value="Belizean" <%= user.nationality === 'Belizean' ? 'selected' : '' %>>Belizean</option>
+                    <option value="Beninese" <%= user.nationality === 'Beninese' ? 'selected' : '' %>>Beninese</option>
+                    <option value="Bhutanese" <%= user.nationality === 'Bhutanese' ? 'selected' : '' %>>Bhutanese</option>
+                    <option value="Bolivian" <%= user.nationality === 'Bolivian' ? 'selected' : '' %>>Bolivian</option>
+                    <option value="Bosnian" <%= user.nationality === 'Bosnian' ? 'selected' : '' %>>Bosnian</option>
+                    <option value="Brazilian" <%= user.nationality === 'Brazilian' ? 'selected' : '' %>>Brazilian</option>
+                    <option value="British" <%= user.nationality === 'British' ? 'selected' : '' %>>British</option>
+                    <option value="Bruneian" <%= user.nationality === 'Bruneian' ? 'selected' : '' %>>Bruneian</option>
+                    <option value="Bulgarian" <%= user.nationality === 'Bulgarian' ? 'selected' : '' %>>Bulgarian</option>
+                    <option value="Burkinabe" <%= user.nationality === 'Burkinabe' ? 'selected' : '' %>>Burkinabe</option>
+                    <option value="Burmese" <%= user.nationality === 'Burmese' ? 'selected' : '' %>>Burmese</option>
+                    <option value="Burundian" <%= user.nationality === 'Burundian' ? 'selected' : '' %>>Burundian</option>
+                    <option value="Cambodian" <%= user.nationality === 'Cambodian' ? 'selected' : '' %>>Cambodian</option>
+                    <option value="Cameroonian" <%= user.nationality === 'Cameroonian' ? 'selected' : '' %>>Cameroonian</option>
+                    <option value="Canadian" <%= user.nationality === 'Canadian' ? 'selected' : '' %>>Canadian</option>
+                    <option value="Cape Verdean" <%= user.nationality === 'Cape Verdean' ? 'selected' : '' %>>Cape Verdean</option>
+                    <option value="Central African" <%= user.nationality === 'Central African' ? 'selected' : '' %>>Central African</option>
+                    <option value="Chadian" <%= user.nationality === 'Chadian' ? 'selected' : '' %>>Chadian</option>
+                    <option value="Chilean" <%= user.nationality === 'Chilean' ? 'selected' : '' %>>Chilean</option>
+                    <option value="Chinese" <%= user.nationality === 'Chinese' ? 'selected' : '' %>>Chinese</option>
+                    <option value="Colombian" <%= user.nationality === 'Colombian' ? 'selected' : '' %>>Colombian</option>
+                    <option value="Comoran" <%= user.nationality === 'Comoran' ? 'selected' : '' %>>Comoran</option>
+                    <option value="Congolese" <%= user.nationality === 'Congolese' ? 'selected' : '' %>>Congolese</option>
+                    <option value="Costa Rican" <%= user.nationality === 'Costa Rican' ? 'selected' : '' %>>Costa Rican</option>
+                    <option value="Croatian" <%= user.nationality === 'Croatian' ? 'selected' : '' %>>Croatian</option>
+                    <option value="Cuban" <%= user.nationality === 'Cuban' ? 'selected' : '' %>>Cuban</option>
+                    <option value="Cypriot" <%= user.nationality === 'Cypriot' ? 'selected' : '' %>>Cypriot</option>
+                    <option value="Czech" <%= user.nationality === 'Czech' ? 'selected' : '' %>>Czech</option>
+                    <option value="Danish" <%= user.nationality === 'Danish' ? 'selected' : '' %>>Danish</option>
+                    <option value="Djibouti" <%= user.nationality === 'Djibouti' ? 'selected' : '' %>>Djibouti</option>
+                    <option value="Dominican" <%= user.nationality === 'Dominican' ? 'selected' : '' %>>Dominican</option>
+                    <option value="Dutch" <%= user.nationality === 'Dutch' ? 'selected' : '' %>>Dutch</option>
+                    <option value="East Timorese" <%= user.nationality === 'East Timorese' ? 'selected' : '' %>>East Timorese</option>
+                    <option value="Ecuadorean" <%= user.nationality === 'Ecuadorean' ? 'selected' : '' %>>Ecuadorean</option>
+                    <option value="Egyptian" <%= user.nationality === 'Egyptian' ? 'selected' : '' %>>Egyptian</option>
+                    <option value="Emirian" <%= user.nationality === 'Emirian' ? 'selected' : '' %>>Emirian</option>
+                    <option value="Equatorial Guinean" <%= user.nationality === 'Equatorial Guinean' ? 'selected' : '' %>>Equatorial Guinean</option>
+                    <option value="Eritrean" <%= user.nationality === 'Eritrean' ? 'selected' : '' %>>Eritrean</option>
+                    <option value="Estonian" <%= user.nationality === 'Estonian' ? 'selected' : '' %>>Estonian</option>
+                    <option value="Ethiopian" <%= user.nationality === 'Ethiopian' ? 'selected' : '' %>>Ethiopian</option>
+                    <option value="Fijian" <%= user.nationality === 'Fijian' ? 'selected' : '' %>>Fijian</option>
+                    <option value="Filipino" <%= user.nationality === 'Filipino' ? 'selected' : '' %>>Filipino</option>
+                    <option value="Finnish" <%= user.nationality === 'Finnish' ? 'selected' : '' %>>Finnish</option>
+                    <option value="French" <%= user.nationality === 'French' ? 'selected' : '' %>>French</option>
+                    <option value="Gabonese" <%= user.nationality === 'Gabonese' ? 'selected' : '' %>>Gabonese</option>
+                    <option value="Gambian" <%= user.nationality === 'Gambian' ? 'selected' : '' %>>Gambian</option>
+                    <option value="Georgian" <%= user.nationality === 'Georgian' ? 'selected' : '' %>>Georgian</option>
+                    <option value="German" <%= user.nationality === 'German' ? 'selected' : '' %>>German</option>
+                    <option value="Ghanaian" <%= user.nationality === 'Ghanaian' ? 'selected' : '' %>>Ghanaian</option>
+                    <option value="Greek" <%= user.nationality === 'Greek' ? 'selected' : '' %>>Greek</option>
+                    <option value="Grenadian" <%= user.nationality === 'Grenadian' ? 'selected' : '' %>>Grenadian</option>
+                    <option value="Guatemalan" <%= user.nationality === 'Guatemalan' ? 'selected' : '' %>>Guatemalan</option>
+                    <option value="Guinea-Bissauan" <%= user.nationality === 'Guinea-Bissauan' ? 'selected' : '' %>>Guinea-Bissauan</option>
+                    <option value="Guinean" <%= user.nationality === 'Guinean' ? 'selected' : '' %>>Guinean</option>
+                    <option value="Guyanese" <%= user.nationality === 'Guyanese' ? 'selected' : '' %>>Guyanese</option>
+                    <option value="Haitian" <%= user.nationality === 'Haitian' ? 'selected' : '' %>>Haitian</option>
+                    <option value="Herzegovinian" <%= user.nationality === 'Herzegovinian' ? 'selected' : '' %>>Herzegovinian</option>
+                    <option value="Honduran" <%= user.nationality === 'Honduran' ? 'selected' : '' %>>Honduran</option>
+                    <option value="Hungarian" <%= user.nationality === 'Hungarian' ? 'selected' : '' %>>Hungarian</option>
+                    <option value="I-Kiribati" <%= user.nationality === 'I-Kiribati' ? 'selected' : '' %>>I-Kiribati</option>
+                    <option value="Icelander" <%= user.nationality === 'Icelander' ? 'selected' : '' %>>Icelander</option>
+                    <option value="Indian" <%= user.nationality === 'Indian' ? 'selected' : '' %>>Indian</option>
+                    <option value="Indonesian" <%= user.nationality === 'Indonesian' ? 'selected' : '' %>>Indonesian</option>
+                    <option value="Iranian" <%= user.nationality === 'Iranian' ? 'selected' : '' %>>Iranian</option>
+                    <option value="Iraqi" <%= user.nationality === 'Iraqi' ? 'selected' : '' %>>Iraqi</option>
+                    <option value="Irish" <%= user.nationality === 'Irish' ? 'selected' : '' %>>Irish</option>
+                    <option value="Israeli" <%= user.nationality === 'Israeli' ? 'selected' : '' %>>Israeli</option>
+                    <option value="Italian" <%= user.nationality === 'Italian' ? 'selected' : '' %>>Italian</option>
+                    <option value="Ivorian" <%= user.nationality === 'Ivorian' ? 'selected' : '' %>>Ivorian</option>
+                    <option value="Jamaican" <%= user.nationality === 'Jamaican' ? 'selected' : '' %>>Jamaican</option>
+                    <option value="Japanese" <%= user.nationality === 'Japanese' ? 'selected' : '' %>>Japanese</option>
+                    <option value="Jordanian" <%= user.nationality === 'Jordanian' ? 'selected' : '' %>>Jordanian</option>
+                    <option value="Kazakhstani" <%= user.nationality === 'Kazakhstani' ? 'selected' : '' %>>Kazakhstani</option>
+                    <option value="Kenyan" <%= user.nationality === 'Kenyan' ? 'selected' : '' %>>Kenyan</option>
+                    <option value="Kittian and Nevisian" <%= user.nationality === 'Kittian and Nevisian' ? 'selected' : '' %>>Kittian and Nevisian</option>
+                    <option value="Kuwaiti" <%= user.nationality === 'Kuwaiti' ? 'selected' : '' %>>Kuwaiti</option>
+                    <option value="Kyrgyz" <%= user.nationality === 'Kyrgyz' ? 'selected' : '' %>>Kyrgyz</option>
+                    <option value="Laotian" <%= user.nationality === 'Laotian' ? 'selected' : '' %>>Laotian</option>
+                    <option value="Latvian" <%= user.nationality === 'Latvian' ? 'selected' : '' %>>Latvian</option>
+                    <option value="Lebanese" <%= user.nationality === 'Lebanese' ? 'selected' : '' %>>Lebanese</option>
+                    <option value="Liberian" <%= user.nationality === 'Liberian' ? 'selected' : '' %>>Liberian</option>
+                    <option value="Libyan" <%= user.nationality === 'Libyan' ? 'selected' : '' %>>Libyan</option>
+                    <option value="Liechtensteiner" <%= user.nationality === 'Liechtensteiner' ? 'selected' : '' %>>Liechtensteiner</option>
+                    <option value="Lithuanian" <%= user.nationality === 'Lithuanian' ? 'selected' : '' %>>Lithuanian</option>
+                    <option value="Luxembourger" <%= user.nationality === 'Luxembourger' ? 'selected' : '' %>>Luxembourger</option>
+                    <option value="Macedonian" <%= user.nationality === 'Macedonian' ? 'selected' : '' %>>Macedonian</option>
+                    <option value="Malagasy" <%= user.nationality === 'Malagasy' ? 'selected' : '' %>>Malagasy</option>
+                    <option value="Malawian" <%= user.nationality === 'Malawian' ? 'selected' : '' %>>Malawian</option>
+                    <option value="Malaysian" <%= user.nationality === 'Malaysian' ? 'selected' : '' %>>Malaysian</option>
+                    <option value="Maldivan" <%= user.nationality === 'Maldivan' ? 'selected' : '' %>>Maldivan</option>
+                    <option value="Malian" <%= user.nationality === 'Malian' ? 'selected' : '' %>>Malian</option>
+                    <option value="Maltese" <%= user.nationality === 'Maltese' ? 'selected' : '' %>>Maltese</option>
+                    <option value="Marshallese" <%= user.nationality === 'Marshallese' ? 'selected' : '' %>>Marshallese</option>
+                    <option value="Mauritanian" <%= user.nationality === 'Mauritanian' ? 'selected' : '' %>>Mauritanian</option>
+                    <option value="Mauritian" <%= user.nationality === 'Mauritian' ? 'selected' : '' %>>Mauritian</option>
+                    <option value="Mexican" <%= user.nationality === 'Mexican' ? 'selected' : '' %>>Mexican</option>
+                    <option value="Micronesian" <%= user.nationality === 'Micronesian' ? 'selected' : '' %>>Micronesian</option>
+                    <option value="Moldovan" <%= user.nationality === 'Moldovan' ? 'selected' : '' %>>Moldovan</option>
+                    <option value="Monacan" <%= user.nationality === 'Monacan' ? 'selected' : '' %>>Monacan</option>
+                    <option value="Mongolian" <%= user.nationality === 'Mongolian' ? 'selected' : '' %>>Mongolian</option>
+                    <option value="Moroccan" <%= user.nationality === 'Moroccan' ? 'selected' : '' %>>Moroccan</option>
+                    <option value="Mosotho" <%= user.nationality === 'Mosotho' ? 'selected' : '' %>>Mosotho</option>
+                    <option value="Motswana" <%= user.nationality === 'Motswana' ? 'selected' : '' %>>Motswana</option>
+                    <option value="Mozambican" <%= user.nationality === 'Mozambican' ? 'selected' : '' %>>Mozambican</option>
+                    <option value="Namibian" <%= user.nationality === 'Namibian' ? 'selected' : '' %>>Namibian</option>
+                    <option value="Nauruan" <%= user.nationality === 'Nauruan' ? 'selected' : '' %>>Nauruan</option>
+                    <option value="Nepalese" <%= user.nationality === 'Nepalese' ? 'selected' : '' %>>Nepalese</option>
+                    <option value="New Zealander" <%= user.nationality === 'New Zealander' ? 'selected' : '' %>>New Zealander</option>
+                    <option value="Ni-Vanuatu" <%= user.nationality === 'Ni-Vanuatu' ? 'selected' : '' %>>Ni-Vanuatu</option>
+                    <option value="Nicaraguan" <%= user.nationality === 'Nicaraguan' ? 'selected' : '' %>>Nicaraguan</option>
+                    <option value="Nigerian" <%= user.nationality === 'Nigerian' ? 'selected' : '' %>>Nigerian</option>
+                    <option value="Nigerien" <%= user.nationality === 'Nigerien' ? 'selected' : '' %>>Nigerien</option>
+                    <option value="North Korean" <%= user.nationality === 'North Korean' ? 'selected' : '' %>>North Korean</option>
+                    <option value="Northern Irish" <%= user.nationality === 'Northern Irish' ? 'selected' : '' %>>Northern Irish</option>
+                    <option value="Norwegian" <%= user.nationality === 'Norwegian' ? 'selected' : '' %>>Norwegian</option>
+                    <option value="Omani" <%= user.nationality === 'Omani' ? 'selected' : '' %>>Omani</option>
+                    <option value="Pakistani" <%= user.nationality === 'Pakistani' ? 'selected' : '' %>>Pakistani</option>
+                    <option value="Palauan" <%= user.nationality === 'Palauan' ? 'selected' : '' %>>Palauan</option>
+                    <option value="Panamanian" <%= user.nationality === 'Panamanian' ? 'selected' : '' %>>Panamanian</option>
+                    <option value="Papua New Guinean" <%= user.nationality === 'Papua New Guinean' ? 'selected' : '' %>>Papua New Guinean</option>
+                    <option value="Paraguayan" <%= user.nationality === 'Paraguayan' ? 'selected' : '' %>>Paraguayan</option>
+                    <option value="Peruvian" <%= user.nationality === 'Peruvian' ? 'selected' : '' %>>Peruvian</option>
+                    <option value="Polish" <%= user.nationality === 'Polish' ? 'selected' : '' %>>Polish</option>
+                    <option value="Portuguese" <%= user.nationality === 'Portuguese' ? 'selected' : '' %>>Portuguese</option>
+                    <option value="Qatari" <%= user.nationality === 'Qatari' ? 'selected' : '' %>>Qatari</option>
+                    <option value="Romanian" <%= user.nationality === 'Romanian' ? 'selected' : '' %>>Romanian</option>
+                    <option value="Russian" <%= user.nationality === 'Russian' ? 'selected' : '' %>>Russian</option>
+                    <option value="Rwandan" <%= user.nationality === 'Rwandan' ? 'selected' : '' %>>Rwandan</option>
+                    <option value="Saint Lucian" <%= user.nationality === 'Saint Lucian' ? 'selected' : '' %>>Saint Lucian</option>
+                    <option value="Salvadoran" <%= user.nationality === 'Salvadoran' ? 'selected' : '' %>>Salvadoran</option>
+                    <option value="Samoan" <%= user.nationality === 'Samoan' ? 'selected' : '' %>>Samoan</option>
+                    <option value="San Marinese" <%= user.nationality === 'San Marinese' ? 'selected' : '' %>>San Marinese</option>
+                    <option value="Sao Tomean" <%= user.nationality === 'Sao Tomean' ? 'selected' : '' %>>Sao Tomean</option>
+                    <option value="Saudi" <%= user.nationality === 'Saudi' ? 'selected' : '' %>>Saudi</option>
+                    <option value="Scottish" <%= user.nationality === 'Scottish' ? 'selected' : '' %>>Scottish</option>
+                    <option value="Senegalese" <%= user.nationality === 'Senegalese' ? 'selected' : '' %>>Senegalese</option>
+                    <option value="Serbian" <%= user.nationality === 'Serbian' ? 'selected' : '' %>>Serbian</option>
+                    <option value="Seychellois" <%= user.nationality === 'Seychellois' ? 'selected' : '' %>>Seychellois</option>
+                    <option value="Sierra Leonean" <%= user.nationality === 'Sierra Leonean' ? 'selected' : '' %>>Sierra Leonean</option>
+                    <option value="Singaporean" <%= user.nationality === 'Singaporean' ? 'selected' : '' %>>Singaporean</option>
+                    <option value="Slovakian" <%= user.nationality === 'Slovakian' ? 'selected' : '' %>>Slovakian</option>
+                    <option value="Slovenian" <%= user.nationality === 'Slovenian' ? 'selected' : '' %>>Slovenian</option>
+                    <option value="Solomon Islander" <%= user.nationality === 'Solomon Islander' ? 'selected' : '' %>>Solomon Islander</option>
+                    <option value="Somali" <%= user.nationality === 'Somali' ? 'selected' : '' %>>Somali</option>
+                    <option value="South African" <%= user.nationality === 'South African' ? 'selected' : '' %>>South African</option>
+                    <option value="South Korean" <%= user.nationality === 'South Korean' ? 'selected' : '' %>>South Korean</option>
+                    <option value="Spanish" <%= user.nationality === 'Spanish' ? 'selected' : '' %>>Spanish</option>
+                    <option value="Sri Lankan" <%= user.nationality === 'Sri Lankan' ? 'selected' : '' %>>Sri Lankan</option>
+                    <option value="Sudanese" <%= user.nationality === 'Sudanese' ? 'selected' : '' %>>Sudanese</option>
+                    <option value="Surinamer" <%= user.nationality === 'Surinamer' ? 'selected' : '' %>>Surinamer</option>
+                    <option value="Swazi" <%= user.nationality === 'Swazi' ? 'selected' : '' %>>Swazi</option>
+                    <option value="Swedish" <%= user.nationality === 'Swedish' ? 'selected' : '' %>>Swedish</option>
+                    <option value="Swiss" <%= user.nationality === 'Swiss' ? 'selected' : '' %>>Swiss</option>
+                    <option value="Syrian" <%= user.nationality === 'Syrian' ? 'selected' : '' %>>Syrian</option>
+                    <option value="Taiwanese" <%= user.nationality === 'Taiwanese' ? 'selected' : '' %>>Taiwanese</option>
+                    <option value="Tajik" <%= user.nationality === 'Tajik' ? 'selected' : '' %>>Tajik</option>
+                    <option value="Tanzanian" <%= user.nationality === 'Tanzanian' ? 'selected' : '' %>>Tanzanian</option>
+                    <option value="Thai" <%= user.nationality === 'Thai' ? 'selected' : '' %>>Thai</option>
+                    <option value="Togolese" <%= user.nationality === 'Togolese' ? 'selected' : '' %>>Togolese</option>
+                    <option value="Tongan" <%= user.nationality === 'Tongan' ? 'selected' : '' %>>Tongan</option>
+                    <option value="Trinidadian or Tobagonian" <%= user.nationality === 'Trinidadian or Tobagonian' ? 'selected' : '' %>>Trinidadian or Tobagonian</option>
+                    <option value="Tunisian" <%= user.nationality === 'Tunisian' ? 'selected' : '' %>>Tunisian</option>
+                    <option value="Turkish" <%= user.nationality === 'Turkish' ? 'selected' : '' %>>Turkish</option>
+                    <option value="Tuvaluan" <%= user.nationality === 'Tuvaluan' ? 'selected' : '' %>>Tuvaluan</option>
+                    <option value="Ugandan" <%= user.nationality === 'Ugandan' ? 'selected' : '' %>>Ugandan</option>
+                    <option value="Ukrainian" <%= user.nationality === 'Ukrainian' ? 'selected' : '' %>>Ukrainian</option>
+                    <option value="Uruguayan" <%= user.nationality === 'Uruguayan' ? 'selected' : '' %>>Uruguayan</option>
+                    <option value="Uzbekistani" <%= user.nationality === 'Uzbekistani' ? 'selected' : '' %>>Uzbekistani</option>
+                    <option value="Venezuelan" <%= user.nationality === 'Venezuelan' ? 'selected' : '' %>>Venezuelan</option>
+                    <option value="Vietnamese" <%= user.nationality === 'Vietnamese' ? 'selected' : '' %>>Vietnamese</option>
+                    <option value="Welsh" <%= user.nationality === 'Welsh' ? 'selected' : '' %>>Welsh</option>
+                    <option value="Yemenite" <%= user.nationality === 'Yemenite' ? 'selected' : '' %>>Yemenite</option>
+                    <option value="Zambian" <%= user.nationality === 'Zambian' ? 'selected' : '' %>>Zambian</option>
+                    <option value="Zimbabwean" <%= user.nationality === 'Zimbabwean' ? 'selected' : '' %>>Zimbabwean</option>
+                </select>
+            </div>
+
+            </div>
+
+            <button type="submit" class="btn-update">Update Profile</button>
+        </form>
+    </div>
+
+    <footer class="footer-columns">
+        <div class="footer-content">
+            <div class="footer-left">
+                <h3>Contact Us</h3>
+                <p>📞 (044) 604 7273</p>
+                <p>📞 09361055665</p>
+                <p>📧 <a href="mailto:abeetravelandtours@gmail.com">abeetravelandtours@gmail.com</a></p>
+            </div>
+            <div class="footer-right">
+            <h3>Follow Us</h3>
+            <a href="https://www.facebook.com/abeetravelandtours" target="_blank">
+                <img src="/images/communication.png" alt="Facebook" class="social-icon facebook-logo">
+            </a>
+            <a href="https://www.instagram.com/a.bee_travelandtours/" target="_blank">
+                <img src="/images/instagram.png" alt="Instagram" class="social-icon instagram-logo">
+            </a>
+        </div>
+        </div>
+        <p class="footer-bottom">Copyright &copy; 2025 A.BEE Travel and Tours Website. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Profile dropdown functionality
+            const profileIcon = document.getElementById('profileIconWrapper');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            profileIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+            });
+            
+            document.addEventListener('click', function() {
+                profileDropdown.style.display = 'none';
+            });
+            
+            // Notification dropdown functionality
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            
+            if (notificationIcon) {
+                notificationIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.style.display = notificationDropdown.style.display === 'block' ? 'none' : 'block';
+                });
+            }
+            
+            // Form submission
+            const profileForm = document.getElementById('profileForm');
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            // Update the form submission code in the script section
+profileForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Update the formData object in the form submission event listener
+const formData = {
+    firstName: document.getElementById('firstName').value,
+    middleInitial: document.getElementById('middleInitial').value,
+    lastName: document.getElementById('lastName').value,
+    suffix: document.getElementById('suffix').value,
+    phoneNumber: document.getElementById('phoneNumber').value,
+    birthdate: document.getElementById('birthdate').value,
+    sex: document.getElementById('sex').value,
+    nationality: document.getElementById('nationality').value  // Add this line
+};
+
+    
+    fetch('/update-profile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        } else {
+            errorMessage.textContent = data.message || 'Error updating profile. Please try again.';
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error updating profile:', error);
+        errorMessage.textContent = 'Error updating profile. Please try again.';
+        errorMessage.style.display = 'block';
+        successMessage.style.display = 'none';
+    });
+});
+
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+    // Add hamburger menu for mobile view
+    const header = document.querySelector('header');
+    if (header && !header.querySelector('.hamburger-menu')) {
+        // Create hamburger menu
+        const hamburgerMenu = document.createElement('div');
+        hamburgerMenu.className = 'hamburger-menu';
+        hamburgerMenu.innerHTML = '<span></span><span></span><span></span>';
+        header.appendChild(hamburgerMenu);
+        
+        // Create overlay background
+        if (!document.querySelector('.overlay-bg')) {
+            const overlayBg = document.createElement('div');
+            overlayBg.className = 'overlay-bg';
+            document.body.appendChild(overlayBg);
+        }
+    }
+    // Update navigation menu - replace "Home" with "Go Back"
+const navUl = document.querySelector('nav ul');
+if (navUl) {
+    const homeLink = navUl.querySelector('li a[href="/"]');
+    if (homeLink) {
+        homeLink.textContent = 'Home';
+        homeLink.href = '/';  // Change this to point to home page
+    }
+}
+
+    
+    // Mobile menu toggle functionality
+    const hamburgerMenu = document.querySelector('.hamburger-menu');
+    const navMenu = document.querySelector('nav ul');
+    const overlayBg = document.querySelector('.overlay-bg');
+    
+    if (hamburgerMenu && navMenu && overlayBg) {
+        hamburgerMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.classList.toggle('active');
+            navMenu.classList.toggle('active');
+            overlayBg.classList.toggle('active');
+            
+            // Prevent body scrolling when menu is open
+            document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+        });
+        
+        // Close menu when clicking overlay
+        overlayBg.addEventListener('click', function() {
+            hamburgerMenu.classList.remove('active');
+            navMenu.classList.remove('active');
+            this.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
+    
+    // Fix for profile icon click functionality
+    const profileIconWrapper = document.getElementById('profileIconWrapper');
+    const profileDropdown = document.getElementById('profileDropdown');
+    
+    if (profileIconWrapper && profileDropdown) {
+        // Remove any existing event listeners by cloning and replacing the element
+        const newProfileIconWrapper = profileIconWrapper.cloneNode(true);
+        profileIconWrapper.parentNode.replaceChild(newProfileIconWrapper, profileIconWrapper);
+        
+        // Add new event listener with stopPropagation
+        newProfileIconWrapper.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // This is crucial to prevent the event from bubbling up
+            
+            // Toggle dropdown visibility
+            if (profileDropdown.style.display === 'block') {
+                profileDropdown.style.display = 'none';
+            } else {
+                profileDropdown.style.display = 'block';
+            }
+            
+            // Prevent the mobile menu from closing
+            if (window.innerWidth <= 768 && navMenu.classList.contains('active')) {
+                e.stopImmediatePropagation(); // Stop all other handlers from executing
+            }
+        });
+    }
+    
+    // Similar fix for notification icon
+    const notificationIcon = document.getElementById('notificationIcon');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    
+    if (notificationIcon && notificationDropdown) {
+        // Remove any existing event listeners
+        const newNotificationIcon = notificationIcon.cloneNode(true);
+        notificationIcon.parentNode.replaceChild(newNotificationIcon, notificationIcon);
+        
+        // Add new event listener with stopPropagation
+        newNotificationIcon.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // This is crucial to prevent the event from bubbling up
+            
+            // Toggle dropdown visibility
+            if (notificationDropdown.style.display === 'block') {
+                notificationDropdown.style.display = 'none';
+            } else {
+                notificationDropdown.style.display = 'block';
+            }
+            
+            // Prevent the mobile menu from closing
+            if (window.innerWidth <= 768 && navMenu.classList.contains('active')) {
+                e.stopImmediatePropagation(); // Stop all other handlers from executing
+            }
+        });
+    }
+    
+    // Prevent clicks on dropdown from closing the mobile menu
+    if (profileDropdown) {
+        profileDropdown.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768 && navMenu.classList.contains('active')) {
+                e.stopPropagation(); // Prevent event from reaching document
+            }
+        });
+    }
+    
+    if (notificationDropdown) {
+        notificationDropdown.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768 && navMenu.classList.contains('active')) {
+                e.stopPropagation(); // Prevent event from reaching document
+            }
+        });
+    }
+});
+    </script>
+</body>
+</html>

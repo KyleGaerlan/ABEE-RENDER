@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Users</title>
+    <link rel="stylesheet" href="/css/useradmin.css">
+    <style>
+        .user-table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .no-users {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .edit-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #userSearch {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 250px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 5px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background-color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .pagination button.active {
+            background-color: #f26523;
+            color: white;
+            border-color: #f26523;
+        }
+
+        .pagination button:hover:not(.active) {
+            background-color: #f5f5f5;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background-color: #f26523;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .error-message, .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .error-message {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .success-message {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #deleteConfirmModal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .delete-modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .delete-modal-title {
+            margin-top: 0;
+            color: #dc3545;
+        }
+
+        .delete-modal-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Mobile menu toggle button */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background-color: #f26523;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .menu-toggle-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-toggle span {
+            display: block;
+            position: absolute;
+            width: 22px;
+            height: 2px;
+            background-color: white;
+            transition: all 0.3s ease;
+            left: 9px; /* Centered within the 40px button */
+        }
+
+        .menu-toggle span:nth-child(1) {
+            top: 14px;
+        }
+
+        .menu-toggle span:nth-child(2) {
+            top: 19px;
+        }
+
+        .menu-toggle span:nth-child(3) {
+            top: 24px;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg);
+            top: 19px;
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg);
+            top: 19px;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        /* Responsive styles with !important to override external CSS */
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block !important;
+            }
+
+            .sidebar {
+                position: fixed !important;
+                left: -250px !important;
+                top: 0 !important;
+                height: 100% !important;
+                width: 250px !important;
+                z-index: 999 !important;
+                transition: left 0.3s ease !important;
+                overflow-y: auto !important;
+                margin-left: 0 !important; /* Override any margin */
+            }
+
+            .sidebar.active {
+                left: 0 !important;
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding: 20px !important;
+                padding-top: 60px !important;
+            }
+
+            .sidebar-overlay.active {
+                display: block !important;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            #userSearch {
+                width: 100%;
+            }
+
+            .modal-content {
+                width: 90%;
+                margin: 20% auto;
+            }
+
+            .delete-modal-content {
+                width: 90%;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }.activate-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.deactivate-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" id="menuToggle">
+        <div class="menu-toggle-inner">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <img src="/images/Image-logo.png" alt="Company Logo">
+        </div>
+        <div class="admin-info" style="display: none;">
+            <p>Welcome, <span id="adminName">Admin</span></p>
+            <p class="admin-role" id="adminRole">Role: Admin</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin-dashboard">Dashboard</a>
+            
+            <% if (admin.role !== 'employee') { %>
+                <a href="/admin-users">Users</a>
+                <a href="/admin-approvals">Account Approvals</a>
+            <% } %>
+            
+            <a href="/admin-bookings">Bookings</a>
+            <a href="/admin-tours">Tours</a>
+            <a href="/admin-messages">Messages</a>
+            <a href="#" onclick="handleAdminLogout()">Logout</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header class="dashboard-header">
+            <h1>User Management</h1>
+            <div class="search-container">
+                <input type="text" id="userSearch" placeholder="Search users...">
+            </div>
+        </header>
+
+        <div class="user-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Birthdate</th>
+                        <th>Sex</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <% if (users && users.length > 0) { %>
+                        <% users.forEach(user => { %>
+                            <tr>
+                                <td><%= user.username %></td>
+                                <td><%= user.email %></td>
+                                <td><%= user.phoneNumber %></td>
+                                <td><%= user.firstName || 'N/A' %></td>
+                                <td><%= user.lastName || 'N/A' %></td>
+                                <td><%= user.birthdate ? new Date(user.birthdate).toLocaleDateString() : 'N/A' %></td>
+                                <td><%= user.sex || 'N/A' %></td>
+                                <td class="user-actions">
+                                    <button class="action-btn <%= user.isActive ? 'deactivate-btn' : 'activate-btn' %>" 
+                                            data-id="<%= user._id %>" 
+                                            data-active="<%= user.isActive %>"
+                                            data-username="<%= user.username %>">
+                                        <%= user.isActive ? 'Deactivate' : 'Activate' %>
+                                    </button>
+                                </td>
+                                
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="8" class="no-users">No users found.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+            
+            <div class="pagination" id="pagination">
+                <!-- Pagination will be generated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for editing user -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Edit User</h2>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label for="editUsername">Username</label>
+                    <input type="text" id="editUsername" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="editPhone">Phone</label>
+                    <input type="text" id="editPhone">
+                </div>
+                <div class="form-group">
+                    <label for="editFirstName">First Name</label>
+                    <input type="text" id="editFirstName">
+                </div>
+                <div class="form-group">
+                    <label for="editLastName">Last Name</label>
+                    <input type="text" id="editLastName">
+                </div>
+                <div class="form-group">
+                    <label for="editBirthdate">Birthdate</label>
+                    <input type="date" id="editBirthdate">
+                </div>
+                <div class="form-group">
+                    <label for="editSex">Sex</label>
+                    <select id="editSex">
+                        <option value="">Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                    <button type="button" class="btn-secondary" id="cancelEdit">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div id="deleteConfirmModal" class="modal">
+        <div class="delete-modal-content">
+            <h3 class="delete-modal-title">Confirm Deletion</h3>
+            <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+            <div class="delete-modal-actions">
+                <button id="confirmDelete" class="btn-delete">Yes, Delete</button>
+                <button id="cancelDelete" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="error-message" style="display: none;"></div>
+    <script>
+        let userToDelete = null;
+    
+        // Debug function to log API requests
+        function logApiRequest(method, url, data = null) {
+            console.log(`API ${method} Request to: ${url}`);
+            if (data) {
+                console.log('Request data:', data);
+            }
+        }
+    
+        // First, add this function to check authentication
+        async function checkAdminAuth() {
+            try {
+                const response = await fetch('/api/admin/check-auth', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                return data.isAuthenticated;
+            } catch (error) {
+                console.error('Error checking authentication:', error);
+                return false;
+            }
+        }
+    
+        // Initialize admin info
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check authentication first
+            const isAuthenticated = await checkAdminAuth();
+            if (!isAuthenticated) {
+                showNotification('Your session has expired. Please log in again.', 'error');
+                setTimeout(() => {
+                    window.location.href = '/admin';
+                }, 2000);
+                return;
+            }
+    
+            // Set admin info
+            const adminName = localStorage.getItem('adminName') || 'Admin';
+            const adminRole = localStorage.getItem('adminRole') || 'admin';
+            
+            document.getElementById('adminName').textContent = adminName;
+            document.getElementById('adminRole').textContent = `Role: ${adminRole}`;
+            
+            // Setup search functionality
+            const searchInput = document.getElementById('userSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', filterUsers);
+                console.log('Search input listener added');
+            } else {
+                console.error('Search input element not found');
+            }
+            
+            // Setup pagination
+            setupPagination();
+    
+            // Add periodic session check
+            setInterval(async () => {
+                const isStillAuthenticated = await checkAdminAuth();
+                if (!isStillAuthenticated) {
+                    showNotification('Your session has expired. Please log in again.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 2000);
+                }
+            }, 5 * 60 * 1000); // Check every 5 minutes
+            
+            // Mobile menu toggle functionality
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            
+            menuToggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                
+                // Prevent scrolling when sidebar is open
+                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+            });
+            
+            sidebarOverlay.addEventListener('click', function() {
+                menuToggle.classList.remove('active');
+                sidebar.classList.remove('active');
+                this.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close sidebar when clicking on a link (for mobile)
+            const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        menuToggle.classList.remove('active');
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+        });
+    
+        function filterUsers() {
+            console.log('Filtering users...');
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            console.log('Search term:', searchTerm);
+            
+            const rows = document.querySelectorAll('#userTableBody tr');
+            console.log('Found', rows.length, 'rows');
+            
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                if (!row.cells || row.cells.length < 7) {
+                    console.log('Invalid row structure:', row);
+                    return;
+                }
+                
+                const username = row.cells[0].textContent.toLowerCase();
+                const email = row.cells[1].textContent.toLowerCase();
+                const firstName = row.cells[3].textContent.toLowerCase();
+                const lastName = row.cells[4].textContent.toLowerCase();
+                
+                const matchesSearch = username.includes(searchTerm) || 
+                                     email.includes(searchTerm) || 
+                                     firstName.includes(searchTerm) || 
+                                     lastName.includes(searchTerm);
+                
+                row.style.display = matchesSearch ? '' : 'none';
+                
+                if (matchesSearch) visibleCount++;
+            });
+            
+            console.log('Visible rows after filtering:', visibleCount);
+            
+            // Update pagination after filtering
+            setupPagination();
+        }
+    
+        function setupPagination() {
+            const rowsPerPage = 10;
+            const rows = Array.from(document.querySelectorAll('#userTableBody tr')).filter(row => 
+                row.style.display !== 'none'
+            );
+            
+            console.log('Setting up pagination for', rows.length, 'visible rows');
+            
+            const pageCount = Math.ceil(rows.length / rowsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // Don't show pagination if there's only one page or no data
+            if (pageCount <= 1) return;
+            
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '«';
+            prevBtn.addEventListener('click', () => {
+                const activePage = document.querySelector('.pagination button.active');
+                if (activePage && activePage.previousElementSibling && 
+                    activePage.previousElementSibling.tagName === 'BUTTON') {
+                    activePage.previousElementSibling.click();
+                }
+            });
+            pagination.appendChild(prevBtn);
+            
+            // Page buttons
+            for (let i = 1; i <= pageCount; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.pagination button').forEach(btn => 
+                        btn.classList.remove('active')
+                    );
+                    pageBtn.classList.add('active');
+                    showPage(i, rowsPerPage, rows);
+                });
+                
+                if (i === 1) pageBtn.classList.add('active');
+                pagination.appendChild(pageBtn);
+            }
+            
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '»';
+            nextBtn.addEventListener('click', () => {
+                const activePage = document.querySelector('.pagination button.active');
+                if (activePage && activePage.nextElementSibling && 
+                    activePage.nextElementSibling.tagName === 'BUTTON') {
+                    activePage.nextElementSibling.click();
+                }
+            });
+            pagination.appendChild(nextBtn);
+            
+            // Show first page
+            showPage(1, rowsPerPage, rows);
+        }
+    
+        function showPage(pageNum, rowsPerPage, rows) {
+            const startIndex = (pageNum - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            
+            rows.forEach((row, index) => {
+                row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+            });
+        }
+    // Add event listener for activate/deactivate buttons
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('activate-btn') || e.target.classList.contains('deactivate-btn')) {
+        const userId = e.target.getAttribute('data-id');
+        const isActive = e.target.getAttribute('data-active') === 'true';
+        const username = e.target.getAttribute('data-username');
+        
+        console.log(`Toggling status for user ${username} (${userId}): currently ${isActive ? 'active' : 'inactive'}`);
+        
+        toggleUserStatus(userId, !isActive, e.target);
+    }
+});
+
+async function toggleUserStatus(userId, newStatus, buttonElement) {
+    try {
+        const response = await fetch(`/api/users/${userId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ isActive: newStatus }),
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to update user status');
+        }
+        
+        // Update the button text and data attribute
+        buttonElement.textContent = newStatus ? 'Deactivate' : 'Activate';
+        buttonElement.setAttribute('data-active', newStatus);
+        
+        // Update button style
+        if (newStatus) {
+            buttonElement.classList.remove('activate-btn');
+            buttonElement.classList.add('deactivate-btn');
+        } else {
+            buttonElement.classList.remove('deactivate-btn');
+            buttonElement.classList.add('activate-btn');
+        }
+        
+        showNotification(`User ${newStatus ? 'activated' : 'deactivated'} successfully`, 'success');
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        showNotification(error.message || 'Failed to update user status. Please try again.', 'error');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-btn')) {
+        const userId = e.target.getAttribute('data-id');
+        const isActive = e.target.getAttribute('data-active') === 'true';
+        toggleUserStatus(userId, !isActive, e.target);
+    }
+});
+
+async function toggleUserStatus(userId, newStatus, buttonElement) {
+    try {
+        const response = await fetch(`/api/users/${userId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ isActive: newStatus }),
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to update user status');
+        }
+        
+        // Update the button text and data attribute
+        buttonElement.textContent = newStatus ? 'Deactivate' : 'Activate';
+        buttonElement.setAttribute('data-active', newStatus);
+        
+        // Update button style
+        if (newStatus) {
+            buttonElement.classList.remove('activate-btn');
+            buttonElement.classList.add('deactivate-btn');
+        } else {
+            buttonElement.classList.remove('deactivate-btn');
+            buttonElement.classList.add('activate-btn');
+        }
+        
+        showNotification(`User ${newStatus ? 'activated' : 'deactivated'} successfully`, 'success');
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        showNotification(error.message || 'Failed to update user status. Please try again.', 'error');
+    }
+}
+
+    
+        function openEditModal(userId) {
+            // In a real implementation, you would fetch user data from the server
+            // For now, we'll just populate with data from the table
+            const row = document.querySelector(`button[data-id="${userId}"]`).closest('tr');
+            
+            document.getElementById('editUserId').value = userId;
+            document.getElementById('editUsername').value = row.cells[0].textContent;
+            document.getElementById('editEmail').value = row.cells[1].textContent;
+            document.getElementById('editPhone').value = row.cells[2].textContent;
+            document.getElementById('editFirstName').value = row.cells[3].textContent === 'N/A' ? '' : row.cells[3].textContent;
+            document.getElementById('editLastName').value = row.cells[4].textContent === 'N/A' ? '' : row.cells[4].textContent;
+            
+            const birthdate = row.cells[5].textContent;
+            if (birthdate !== 'N/A') {
+                // Convert date to YYYY-MM-DD format for input
+                const date = new Date(birthdate);
+                const formattedDate = date.toISOString().split('T')[0];
+                document.getElementById('editBirthdate').value = formattedDate;
+            } else {
+                document.getElementById('editBirthdate').value = '';
+            }
+            
+            document.getElementById('editSex').value = row.cells[6].textContent === 'N/A' ? '' : row.cells[6].textContent;
+            
+            // Show the modal
+            const modal = document.getElementById('editUserModal');
+            modal.style.display = 'block';
+        }
+    
+        // Close modal when clicking the X
+        document.querySelector('.close-modal').addEventListener('click', function() {
+            document.getElementById('editUserModal').style.display = 'none';
+        });
+    
+        // Close modal when clicking cancel
+        document.getElementById('cancelEdit').addEventListener('click', function() {
+            document.getElementById('editUserModal').style.display = 'none';
+        });
+    
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('editUserModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+            
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            if (event.target === deleteModal) {
+                deleteModal.style.display = 'none';
+            }
+        });
+    
+        // Handle form submission
+        document.getElementById('editUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('editUserId').value;
+            const userData = {
+                phoneNumber: document.getElementById('editPhone').value,
+                firstName: document.getElementById('editFirstName').value,
+                lastName: document.getElementById('editLastName').value,
+                birthdate: document.getElementById('editBirthdate').value,
+                sex: document.getElementById('editSex').value
+            };
+            
+            // Send update request to server
+            updateUser(userId, userData);
+        });
+    
+        async function updateUser(userId, userData) {
+            logApiRequest('PUT', `/api/users/${userId}`, userData);
+            
+            // First check if admin is authenticated
+            const isAuthenticated = await checkAdminAuth();
+            if (!isAuthenticated) {
+                showNotification('Your session has expired. Please log in again.', 'error');
+                setTimeout(() => {
+                    window.location.href = '/admin';
+                }, 2000);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData),
+                    credentials: 'include'
+                });
+                
+                console.log(`Update response status: ${response.status}`);
+                
+                // Handle non-JSON responses
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (response.status === 401) {
+                        throw new Error('Your session has expired. Please log in again.');
+                    } else {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text.substring(0, 500));
+                        throw new Error(`Server returned status ${response.status}. Check console for details.`);
+                    }
+                }
+                
+                const data = await response.json();
+                console.log('Update response data:', data);
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to update user');
+                }
+                
+                // Update the table row with new data
+                const row = document.querySelector(`button[data-id="${userId}"]`).closest('tr');
+                row.cells[2].textContent = userData.phoneNumber;
+                row.cells[3].textContent = userData.firstName || 'N/A';
+                row.cells[4].textContent = userData.lastName || 'N/A';
+                row.cells[5].textContent = userData.birthdate ? new Date(userData.birthdate).toLocaleDateString() : 'N/A';
+                row.cells[6].textContent = userData.sex || 'N/A';
+                
+                // Close the modal
+                document.getElementById('editUserModal').style.display = 'none';
+                
+                // Show success message
+                showNotification('User updated successfully', 'success');
+            } catch (error) {
+                console.error('Error updating user:', error);
+                showNotification(error.message || 'Failed to update user. Please try again.', 'error');
+                
+                if (error.message.includes('session has expired')) {
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 2000);
+                }
+            }
+        }
+    
+        // Delete user functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-btn')) {
+                const userId = e.target.getAttribute('data-id');
+                console.log('Delete button clicked for user ID:', userId);
+                userToDelete = userId;
+                document.getElementById('deleteConfirmModal').style.display = 'block';
+            }
+        });
+    
+        // Handle delete confirmation
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (userToDelete) {
+                console.log('Confirming deletion for user ID:', userToDelete);
+                deleteUser(userToDelete);
+                document.getElementById('deleteConfirmModal').style.display = 'none';
+                userToDelete = null;
+            }
+        });
+    
+        // Handle delete cancellation
+        document.getElementById('cancelDelete').addEventListener('click', function() {
+            console.log('Deletion cancelled');
+            document.getElementById('deleteConfirmModal').style.display = 'none';
+            userToDelete = null;
+        });
+    
+        async function deleteUser(userId) {
+            logApiRequest('DELETE', `/api/users/${userId}`);
+            
+            // First check if admin is authenticated
+            const isAuthenticated = await checkAdminAuth();
+            if (!isAuthenticated) {
+                showNotification('Your session has expired. Please log in again.', 'error');
+                setTimeout(() => {
+                    window.location.href = '/admin';
+                }, 2000);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                console.log(`Delete response status: ${response.status}`);
+                
+                // Handle non-JSON responses
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (response.status === 401) {
+                        throw new Error('Your session has expired. Please log in again.');
+                    } else {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text.substring(0, 500));
+                        throw new Error(`Server returned status ${response.status}. Check console for details.`);
+                    }
+                }
+                
+                const data = await response.json();
+                console.log('Delete response data:', data);
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to delete user');
+                }
+                
+                // Remove the row from the table
+                const row = document.querySelector(`button[data-id="${userId}"]`).closest('tr');
+                row.remove();
+                
+                // Show success message
+                showNotification('User deleted successfully', 'success');
+                
+                // Update pagination
+                setupPagination();
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                showNotification(error.message || 'Failed to delete user. Please try again.', 'error');
+                
+                if (error.message.includes('session has expired')) {
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 2000);
+                }
+            }
+        }
+    
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = type === 'success' ? 'success-message' : 'error-message';
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    
+        function handleAdminLogout() {
+            fetch('/api/admin/logout', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(() => {
+                localStorage.removeItem('isAdminLoggedIn');
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminRole');
+                localStorage.removeItem('adminName');
+                window.location.href = '/';
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                showNotification('Logout failed. Please try again.', 'error');
+            });
+        }
+    </script>
+    </body>
+    </html>
