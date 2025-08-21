@@ -3950,13 +3950,15 @@ h3 {
     }
 }
 
-/* Small phones (like 320px width) */
 @media (max-width: 480px) {
     .hero-section {
         min-height: 70vh;
-        padding: 15px;
+        padding: 1px;
+        width: 383px;
     }
-
+    .hero-content .container{
+        margin-right: 30px;
+    }
     .hero-content h1 {
         font-size: 1.5rem;
         line-height: 1.3;
