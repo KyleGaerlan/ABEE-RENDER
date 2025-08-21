@@ -3953,7 +3953,7 @@ h3 {
 /* Small phones (like 320px width) */
 @media (max-width: 480px) {
     .hero-section {
-        min-height: 100vh; /* full screen on tiny devices */
+        min-height: 70vh;
         padding: 15px;
     }
 
