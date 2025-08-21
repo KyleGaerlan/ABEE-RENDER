@@ -3922,13 +3922,14 @@ h3 {
 
 @media (max-width: 768px) {
     .hero-section {
-        height: 80vh;
+        height: 100vh;
         margin-top: 70px;
     }
     
     .hero-content .container {
         padding: 25px;
         width: 70%;
+        height: 400px;
     }
     
     .hero-content h1 {
