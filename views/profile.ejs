@@ -285,7 +285,7 @@
 
             <div class="form-group">
                 <label for="phoneNumber">Phone Number</label>
-                <input type="tel" id="phoneNumber" name="phoneNumber" value="<%= user.phoneNumber || '' %>" pattern="[0-9]{11}" placeholder="09XXXXXXXXX">
+                <input type="tel" id="phoneNumber" name="phoneNumber" value="<%= user.phoneNumber || '' %>" pattern="[0-9+()\-\s]{7,25}" placeholder="+63 912 345 6789">
             </div>
 
                         <div class="form-row">
