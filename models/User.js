@@ -1,4 +1,3 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const DailyUserCount = require('./DailyUserCount');
@@ -17,7 +16,7 @@ const userSchema = new mongoose.Schema({
       type: String, 
       required: true, 
       trim: true, 
-      match: [/^\d{11}$/, 'Please provide a valid phone number']
+      match: [/^[0-9+()\-\s]{7,25}$/, 'Please provide a valid phone number']
   },
   firstName: { type: String, trim: true, default: null },
   middleInitial: { type: String, trim: true, default: null },
