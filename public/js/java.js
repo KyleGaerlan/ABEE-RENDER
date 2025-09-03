@@ -368,9 +368,28 @@ elements.logoutBtn?.addEventListener("click", async (e) => {
         if (event.target === elements.accountPendingModal) {
             closeModal(elements.accountPendingModal);
         }
+        
     }); 
+    if (elements.adminVerificationModalClose) {
+        elements.adminVerificationModalClose.addEventListener('click', function() {
+            closeModal(elements.adminVerificationModal);
+            clearInterval(adminVerificationTimer);
+        });
+    }
+    if (elements.accountPendingModalClose) {
+        elements.accountPendingModalClose.addEventListener('click', function() {
+            closeModal(elements.accountPendingModal);
+            openModal(elements.adminLoginModal);
+        });
+    }
+    if (elements.accountPendingBtn) {
+        elements.accountPendingBtn.addEventListener('click', function() {
+            closeModal(elements.accountPendingModal);
+            openModal(elements.LoginModal);
+        });
+    }
     
-    // Password validation feedback for signup 
+    // Signup password validation for signup (using jQuery
     const signupPassword = document.getElementById('signup-password'); 
     if (signupPassword) { 
         signupPassword.addEventListener('input', function() { 
