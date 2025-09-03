@@ -42,9 +42,6 @@ app.use((req, res, next) => {
     
     next();
 });
-
-console.log("MONGODB_URI:", process.env.MONGODB_URI ? "Found" : "Missing");
-
 app.use(session({
     secret: process.env.SESSION_SECRET || 'phar23',
     resave: false,
@@ -351,6 +348,78 @@ apiRouter.put('/users/:userId', checkAdminAuth, async (req, res) => {
 
 
 app.use('/api', apiRouter);
+app.post('/admin-signup', async (req, res) => {
+    try {
+        const {
+            firstName,
+            lastName,
+            username,
+            email,
+            password,
+            phoneNumber,
+            role,
+        } = req.body;
+
+        if (!firstName || !lastName || !username || !email || !password || !phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required'
+            });
+        }
+
+        const existingAdmin = await Admin.findOne({ 
+            $or: [{ email }, { username }] 
+        });
+        
+        if (existingAdmin) {
+            if (existingAdmin.status === 'pending') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Your account request is already pending approval'
+                });
+            }
+            
+            return res.status(400).json({
+                success: false,
+                message: 'Email or username already in use'
+            });
+        }
+
+        const admin = new Admin({
+            firstName,
+            lastName,
+            username,
+            email,
+            password,
+            phoneNumber,
+            role: role || 'employee',
+            status: 'pending',
+            isVerified: false
+        });
+
+        await admin.save();
+
+        await notifyAdminsAboutNewRequest(admin);
+
+        res.status(201).json({
+            success: true,
+            message: 'Admin account request submitted successfully. Awaiting approval.'
+        });
+    } catch (error) {
+        console.error('❌ Admin signup error:', error);
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email or username already in use'
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: 'Error creating admin account'
+        });
+    }
+});
 app.post('/api/admin/send-verification', async (req, res) => {
     const { email } = req.body;
     
