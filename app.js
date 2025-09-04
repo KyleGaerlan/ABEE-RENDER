@@ -72,7 +72,15 @@ const checkAdminAuth = (req, res, next) => {
     }
     next();
 };
+const checkRole = (roles) => {
+    return (req, res, next) => {
+        if (!req.session.admin || !roles.includes(req.session.admin.role)) {
 
+            return res.status(403).redirect('/error');
+        }
+        next();
+    };
+};
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -682,12 +690,10 @@ app.post('/check-email', async (req, res) => {
 app.get('/admin', (req, res) => {
     res.render('admin');
 });
-// Update the admin login endpoint
 app.post('/api/admin/login', async (req, res) => {
     console.log('Admin login request received:', req.body);
     const { email, password, captchaVerified } = req.body;
 
-    // Require captcha verification
     if (!captchaVerified) {
         return res.status(400).json({ 
             success: false, 
@@ -732,9 +738,19 @@ app.post('/api/admin/login', async (req, res) => {
             role: admin.role
         };
         
+        let redirectUrl;
+        if (admin.role === 'admin') {
+            redirectUrl = '/admin-dashboard';
+        } else if (admin.role === 'employee') {
+            redirectUrl = '/employee-dashboard';
+        } else {
+            redirectUrl = '/'; // Fallback redirect
+        }
+
         return res.json({
             success: true,
             message: 'Login successful',
+            redirectUrl: redirectUrl,
             admin: {
                 id: admin._id,
                 firstName: admin.firstName,
@@ -751,8 +767,6 @@ app.post('/api/admin/login', async (req, res) => {
         });
     }
 });
-
-// Add endpoint to verify admin credentials before captcha
 app.post('/api/admin/verify-credentials', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -786,12 +800,11 @@ app.post('/api/admin/verify-credentials', async (req, res) => {
     }
 });
 
-
 app.get('/admin-dashboard', checkAdminAuth, (req, res) => {
     res.render('admin-dashboard', { admin: req.session.admin });
 });
 
-app.get('/admin-users', checkAdminAuth, async (req, res) => {
+app.get('/admin-users', checkAdminAuth, checkRole(['admin']), async (req, res) => {
     try {
         const users = await User.find();
         res.render('admin-users', { admin: req.session.admin, users });
@@ -800,25 +813,204 @@ app.get('/admin-users', checkAdminAuth, async (req, res) => {
         res.status(500).send('Error fetching users');
     }
 });
+app.get('/employee-dashboard', checkAdminAuth, checkRole(['admin','employee']), (req, res) => {
+    res.render('employee-dashboard', { admin: req.session.admin });
+});
 
-app.get('/admin-bookings', checkAdminAuth, (req, res) => {
+app.get('/admin-bookings', checkAdminAuth, checkRole(['admin', 'employee']), (req, res) => {
     res.render('admin-bookings', { admin: req.session.admin });
 });
 
-app.get('/admin-tours', checkAdminAuth, (req, res) => {
-    res.render('admin-tour-post', { admin: req.session.admin });
-});
+app.get('/api/employee-performance', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
+    try {
+        const adminId = req.session.admin.id;
+        const isAdmin = req.session.admin.role === 'admin';
 
-app.get('/admin-messages', checkAdminAuth, (req, res) => {
-    res.render('admin-messages', { admin: req.session.admin });
-});
-app.get('/admin-approvals', checkAdminAuth, (req, res) => {
-    if (req.session.admin.role === 'employee') {
-        return res.redirect('/admin-dashboard');
+        if (isAdmin) {
+            // Admin view: get performance for all employees
+            const performance = await Booking.aggregate([
+                { $match: { status: { $in: ['confirmed', 'completed'] } } },
+                {
+                    $facet: {
+                        confirmed: [
+                            { $match: { status: 'confirmed', confirmedBy: { $ne: null } } },
+                            { $group: { _id: '$confirmedBy', count: { $sum: 1 } } }
+                        ],
+                        completed: [
+                            { $match: { status: 'completed', completedBy: { $ne: null } } },
+                            { $group: { _id: '$completedBy', count: { $sum: 1 } } }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        allStats: {
+                            $concatArrays: [
+                                { $map: { input: "$confirmed", as: "c", in: { employeeId: "$$c._id", confirmed: "$$c.count", completed: 0 } } },
+                                { $map: { input: "$completed", as: "p", in: { employeeId: "$$p._id", confirmed: 0, completed: "$$p.count" } } }
+                            ]
+                        }
+                    }
+                },
+                { $unwind: "$allStats" },
+                {
+                    $group: {
+                        _id: "$allStats.employeeId",
+                        totalConfirmed: { $sum: "$allStats.confirmed" },
+                        totalCompleted: { $sum: "$allStats.completed" }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'admins', // The collection name for your Admin model
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'employeeDetails'
+                    }
+                },
+                { $unwind: "$employeeDetails" },
+                {
+                    $project: {
+                        employeeId: '$_id',
+                        employeeName: { $concat: ["$employeeDetails.firstName", " ", "$employeeDetails.lastName"] },
+                        totalConfirmed: 1,
+                        totalCompleted: 1,
+                        _id: 0
+                    }
+                },
+                { $sort: { totalCompleted: -1, totalConfirmed: -1 } }
+            ]);
+
+            // For the chart, we can show totals for the admin's own activity or overall activity
+            const adminPerformance = await getEmployeePerformance(adminId);
+            adminPerformance.overallPerformance = performance;
+            res.json({ success: true, ...adminPerformance });
+        } else {
+            // Employee view: get their own performance
+            const employeePerformance = await getEmployeePerformance(adminId);
+            res.json({ success: true, ...employeePerformance });
+        }
+    } catch (error) {
+        console.error('Error fetching employee performance:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
-    res.render('admin-approvals', { admin: req.session.admin });
+});
+app.post('/api/bookings/:id/complete', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found' });
+        }
+
+        booking.status = 'completed';
+        booking.completedBy = req.session.admin.id;
+        booking.completedAt = new Date();
+        await booking.save();
+
+        res.json({ success: true, message: 'Booking marked as completed', booking });
+    } catch (error) {
+        console.error('Error completing booking:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 });
 
+// Helper function to get individual employee performance
+async function getEmployeePerformance(employeeId) {
+    const confirmedBookings = await Booking.find({ confirmedBy: employeeId, status: 'confirmed' });
+    const completedBookings = await Booking.find({ completedBy: employeeId, status: 'completed' });
+
+    const totalConfirmedBookings = confirmedBookings.length;
+    const totalCompletedBookings = completedBookings.length;
+
+    // Use a Set to avoid double counting revenue for bookings confirmed and completed by the same employee
+    const uniqueBookings = new Map();
+    [...confirmedBookings, ...completedBookings].forEach(booking => {
+        uniqueBookings.set(booking._id.toString(), booking);
+    });
+
+    const totalRevenue = Array.from(uniqueBookings.values()).reduce((sum, booking) => sum + booking.totalAmount, 0);
+
+    const bookingsByMonth = Array.from(uniqueBookings.values()).reduce((acc, booking) => {
+        const month = new Date(booking.createdAt).toLocaleString('default', { month: 'long' });
+        if (!acc[month]) {
+            acc[month] = { confirmed: 0, completed: 0 };
+        }
+        if (booking.status === 'confirmed') acc[month].confirmed++;
+        if (booking.status === 'completed') acc[month].completed++;
+        return acc;
+    }, {});
+
+    return { totalConfirmedBookings, totalCompletedBookings, totalRevenue, bookingsByMonth };
+}
+
+
+app.get('/api/admin/employee-performance', checkAdminAuth, checkRole(['admin']), async (req, res) => {
+    try {
+        const performance = await Booking.aggregate([
+            {
+                $match: {
+                    status: { $in: ['confirmed', 'completed'] }
+                }
+            },
+            {
+                $facet: {
+                    confirmed: [
+                        { $match: { status: 'confirmed', confirmedBy: { $ne: null } } },
+                        { $group: { _id: '$confirmedBy', count: { $sum: 1 } } }
+                    ],
+                    completed: [
+                        { $match: { status: 'completed', completedBy: { $ne: null } } },
+                        { $group: { _id: '$completedBy', count: { $sum: 1 } } }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    allStats: {
+                        $concatArrays: [
+                            { $map: { input: "$confirmed", as: "c", in: { employeeId: "$$c._id", confirmed: "$$c.count", completed: 0 } } },
+                            { $map: { input: "$completed", as: "p", in: { employeeId: "$$p._id", confirmed: 0, completed: "$$p.count" } } }
+                        ]
+                    }
+                }
+            },
+            { $unwind: "$allStats" },
+            {
+                $group: {
+                    _id: "$allStats.employeeId",
+                    totalConfirmed: { $sum: "$allStats.confirmed" },
+                    totalCompleted: { $sum: "$allStats.completed" }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'admins', // The collection name for your Admin model
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'employeeDetails'
+                }
+            },
+            {
+                $unwind: "$employeeDetails"
+            },
+            {
+                $project: {
+                    employeeId: '$_id',
+                    employeeName: { $concat: ["$employeeDetails.firstName", " ", "$employeeDetails.lastName"] },
+                    totalConfirmed: 1,
+                    totalCompleted: 1,
+                    _id: 0
+                }
+            },
+            { $sort: { totalCompleted: -1, totalConfirmed: -1 } }
+        ]);
+
+        res.json({ success: true, performance });
+    } catch (error) {
+        console.error('Error fetching overall employee performance:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
 app.post('/api/admin/login-redirect', async (req, res) => {
     console.log('Admin login redirect request received:', req.body);
     const { email, password, role } = req.body;
@@ -835,7 +1027,7 @@ app.post('/api/admin/login-redirect', async (req, res) => {
             return res.redirect('/admin?error=invalid-role');
         }
         
-        if (!admin.isVerified) {
+        if (!admin.isVerified || admin.status !== 'active') { // Updated logic
             return res.redirect('/admin?error=pending-approval');
         }
         
@@ -855,12 +1047,19 @@ app.post('/api/admin/login-redirect', async (req, res) => {
         };
         
         console.log('Admin login successful, redirecting to dashboard');
-        return res.redirect('/admin-dashboard');
+        if (admin.role === 'admin') {
+            return res.redirect('/admin-dashboard');
+        } else if (admin.role === 'employee') {
+            return res.redirect('/employee-dashboard');
+        }
+        // Fallback for other roles if any
+        return res.redirect('/');
     } catch (error) {
         console.error('❌ Admin Login Error:', error);
         return res.redirect('/admin?error=server-error');
     }
 });
+
 app.get('/admin-approvals', checkAdminAuth, (req, res) => {
     res.render('admin-approvals', { admin: req.session.admin });
 });
@@ -1759,21 +1958,14 @@ app.get("/my-bookings", async (req, res) => {
         res.status(500).send("Error fetching bookings.");
     }
 });
-
 app.post('/api/admin/login', async (req, res) => {
     console.log('Admin login request received:', req.body);
-    const { email, password, otpVerified } = req.body;
-    if (!otpVerified && !req.session.adminOtpVerified) {
+    const { email, password, captchaVerified } = req.body;
+
+    if (!captchaVerified) {
         return res.status(400).json({ 
             success: false, 
-            message: 'OTP verification required' 
-        });
-    }
-    
-    if (req.session.adminOtpVerified && req.session.adminVerifiedEmail !== email) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'OTP verification mismatch' 
+            message: 'CAPTCHA verification required' 
         });
     }
 
@@ -1806,9 +1998,6 @@ app.post('/api/admin/login', async (req, res) => {
             });
         }
 
-        delete req.session.adminOtpVerified;
-        delete req.session.adminVerifiedEmail;
-
         req.session.admin = {
             id: admin._id,
             firstName: admin.firstName,
@@ -1817,9 +2006,19 @@ app.post('/api/admin/login', async (req, res) => {
             role: admin.role
         };
         
+        let redirectUrl;
+        if (admin.role === 'admin') {
+            redirectUrl = '/admin-dashboard';
+        } else if (admin.role === 'employee') {
+            redirectUrl = '/employee-dashboard';
+        } else {
+            redirectUrl = '/'; // Fallback redirect
+        }
+
         return res.json({
             success: true,
             message: 'Login successful',
+            redirectUrl: redirectUrl,
             admin: {
                 id: admin._id,
                 firstName: admin.firstName,
@@ -3228,18 +3427,61 @@ app.get('/api/admin/tours', checkAdminAuth, async (req, res) => {
 app.patch('/api/admin/bookings/:bookingId/status', checkAdminAuth, async (req, res) => {
     try {
         const { bookingId } = req.params;
-        const { status, startDate } = req.body;
+        const { status } = req.body;
+        const adminId = req.session.admin.id;
 
         if (!status) {
-            return res.status(400).json({ error: "Missing status." });
+            return res.status(400).json({ success: false, message: "Missing status." });
         }
 
         const booking = await Booking.findById(bookingId);
 
         if (!booking) {
-            return res.status(404).json({ error: "Booking not found." });
+            return res.status(404).json({ success: false, message: "Booking not found." });
         }
 
+        if (['confirmed', 'completed', 'cancelled'].includes(booking.status) && status === 'pending') {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Cannot revert booking from ${booking.status} to pending.` 
+            });
+        }
+
+        // Update status and track who made the change
+        booking.status = status;
+        const statusUpdate = {
+            status: status,
+            updatedBy: adminId,
+            updatedAt: new Date()
+        };
+        booking.statusChangeHistory.push(statusUpdate);
+
+        if (status === 'confirmed') {
+            booking.confirmedBy = adminId;
+            booking.confirmedAt = new Date();
+        } else if (status === 'completed') {
+            booking.completedBy = adminId;
+            booking.completedAt = new Date();
+        } else if (status === 'cancelled') {
+            booking.cancelledBy = adminId;
+            booking.cancelledAt = new Date();
+        }
+
+        await booking.save();
+
+        res.json({ 
+            success: true, 
+            message: "Booking status updated successfully.", 
+            booking 
+        });
+    } catch (error) {
+        console.error("❌ Error updating booking status:", error);
+        res.status(500).json({ success: false, message: "Failed to update booking status." });
+    }
+});
+app.delete('/api/admin/bookings/:bookingId', checkAdminAuth, async (req, res) => {
+    try {
+        const { bookingId } = req.params;
         // If start date is being changed, check if we should auto-cancel
         if (startDate && booking.startDate) {
             const originalDate = new Date(booking.startDate);
@@ -3789,9 +4031,6 @@ app.get('/api/bookings/:bookingId', isAuthenticated, async (req, res) => {
             message: 'Failed to fetch booking details'
         });
     }
-});
-app.get('/admin-bookings', checkAdminAuth, (req, res) => {
-    res.render('admin-bookings', { admin: req.session.admin });
 });
 cron.schedule('*/1 * * * *', async () => {  // Run every minute
     try {
