@@ -517,12 +517,12 @@ label[for="isPromoActive"] {
             <p class="admin-role" id="adminRole">Role: <%= admin.role %></p>
         </div>
         <nav class="sidebar-nav">
-            <a href="/admin-dashboard">Dashboard</a>
-            
+           <a href="/admin-dashboard">Dashboard</a>
             <% if (admin.role !== 'employee') { %>
                 <a href="/admin-users">Users</a>
                 <a href="/admin-approvals">Account Approvals</a>
             <% } %>
+            <a href="/employee-dashboard">Employee</a>
             
             <a href="/admin-bookings">Bookings</a>
             <a href="/admin-tours">Tours</a>
