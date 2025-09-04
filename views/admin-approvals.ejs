@@ -338,11 +338,11 @@
         </div>
         <nav class="sidebar-nav">
             <a href="/admin-dashboard">Dashboard</a>
-            
             <% if (admin.role !== 'employee') { %>
                 <a href="/admin-users">Users</a>
                 <a href="/admin-approvals">Account Approvals</a>
             <% } %>
+            <a href="/employee-dashboard">Employee</a>
             
             <a href="/admin-bookings">Bookings</a>
             <a href="/admin-tours">Tours</a>
@@ -615,5 +615,26 @@
         }
     });
     </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            // Close sidebar when clicking outside of it
+            menuToggle.classList.remove('active');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    });
+</script>
+
 </body>
 </html>
