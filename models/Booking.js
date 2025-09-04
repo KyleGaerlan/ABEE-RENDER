@@ -2,6 +2,12 @@ const { citySeasons, countrySeasons } = require('../config/seasons');
 const mongoose = require("mongoose");
 const DailyBookingCount = require("./DailyBookingCount");
 
+const statusChangeSchema = new mongoose.Schema({
+    status: { type: String, required: true },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
+    updatedAt: { type: Date, default: Date.now }
+}, { _id: false });
+
 const bookingSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   bookingId: { type: String, unique: true },
@@ -22,8 +28,15 @@ const bookingSchema = new mongoose.Schema({
   paymentId: { type: String },
   receiptUrl: { type: String },
   totalAmount: { type: Number, required: true },
-  status: { type: String, enum: ["pending", "confirmed", "cancelled", "completed"], default: "pending" },
+ status: { type: String, enum: ["pending", "confirmed", "cancelled", "completed"], default: "pending" },
   archived: { type: Boolean, default: false },
+  confirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+  completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+  cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+  confirmedAt: { type: Date },
+  completedAt: { type: Date },
+  cancelledAt: { type: Date },
+  statusChangeHistory: [statusChangeSchema],
   tourDetails: {
     title: { type: String },
     destination: { type: String },
