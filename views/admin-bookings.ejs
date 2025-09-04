@@ -480,17 +480,16 @@
         </div>
         <nav class="sidebar-nav">
             <a href="/admin-dashboard">Dashboard</a>
-            
             <% if (admin.role !== 'employee') { %>
                 <a href="/admin-users">Users</a>
                 <a href="/admin-approvals">Account Approvals</a>
             <% } %>
+            <a href="/employee-dashboard">Employee</a>
             
             <a href="/admin-bookings">Bookings</a>
             <a href="/admin-tours">Tours</a>
             <a href="/admin-messages">Messages</a>
             <a href="#" onclick="handleAdminLogout()">Logout</a>
-        </nav>
     </div>
 
     <div class="main-content">
@@ -1047,8 +1046,7 @@ function viewBookingDetails(bookingId) {
             document.getElementById('bookingModal').style.display = 'none';
             currentBookingId = null;
         }
-    
-        function editBookingStatus(bookingId) {
+    function editBookingStatus(bookingId) {
             const booking = allBookings.find(b => b._id === bookingId);
             if (!booking) return;
     
@@ -1062,7 +1060,8 @@ function viewBookingDetails(bookingId) {
             // Create status selection UI
             const statusOptions = ['pending', 'confirmed', 'cancelled', 'completed'];
             const currentStatus = booking.status.toLowerCase();
-            
+            const isFinalStatus = ['confirmed', 'completed', 'cancelled'].includes(currentStatus);
+
             const bookingDetails = document.getElementById('bookingDetails');
             
             // Add status selection form at the top
@@ -1071,16 +1070,18 @@ function viewBookingDetails(bookingId) {
                     <h3>Update Booking Status</h3>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
                         ${statusOptions.map(status => `
-                            <label style="display: flex; align-items: center; cursor: pointer;">
+                            <label style="display: flex; align-items: center; cursor: ${status === 'pending' && isFinalStatus ? 'not-allowed' : 'pointer'};">
                                 <input type="radio" name="bookingStatus" value="${status}" 
                                     ${currentStatus === status ? 'checked' : ''} 
+                                    ${status === 'pending' && isFinalStatus ? 'disabled' : ''}
                                     style="margin-right: 5px;">
-                                <span class="status-badge status-${status.toLowerCase()}" style="margin: 0;">
+                                <span class="status-badge status-${status.toLowerCase()}" style="margin: 0; opacity: ${status === 'pending' && isFinalStatus ? 0.5 : 1};">
                                     ${status.charAt(0).toUpperCase() + status.slice(1)}
                                 </span>
                             </label>
                         `).join('')}
                     </div>
+                    ${isFinalStatus ? '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">This booking cannot be reverted to pending.</p>' : ''}
                 </div>
             ` + bookingDetails.innerHTML;
             
