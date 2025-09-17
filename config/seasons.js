@@ -76,7 +76,7 @@ const citySeasons = {
     },
     "Bali": {
         "country": "Indonesia",
-        "seasons": ["Rainy Season", "Dry Season"],
+        "seasons": ["Wet Season", "Dry Season"],
         "bestSeasons": ["Dry Season"]
     },
     "Phuket": {
@@ -106,7 +106,7 @@ const countrySeasons = {
     "Albania": ["Winter", "Spring", "Summer", "Fall"],
     "Algeria": ["Winter", "Spring", "Summer", "Fall"],
     "Andorra": ["Winter", "Spring", "Summer", "Fall"],
-    "Angola": ["Rainy Season", "Dry Season"],
+    "Angola": ["Wet Season", "Dry Season"],
     "Antigua and Barbuda": ["Wet Season", "Dry Season"],
     "Argentina": ["Summer", "Fall", "Winter", "Spring"],
     "Armenia": ["Winter", "Spring", "Summer", "Fall"],
@@ -122,9 +122,9 @@ const countrySeasons = {
     "Belize": ["Wet Season", "Dry Season"],
     "Benin": ["Wet Season", "Dry Season"],
     "Bhutan": ["Winter", "Spring", "Summer", "Fall"],
-    "Bolivia": ["Rainy Season", "Dry Season"],
+    "Bolivia": ["Wet Season", "Dry Season"],
     "Bosnia and Herzegovina": ["Winter", "Spring", "Summer", "Fall"],
-    "Botswana": ["Rainy Season", "Dry Season"],
+    "Botswana": ["Wet Season", "Dry Season"],
     "Brazil": ["Summer", "Fall", "Winter", "Spring"],
     "Brunei": ["Wet Season", "Dry Season"],
     "Bulgaria": ["Winter", "Spring", "Summer", "Fall"],
@@ -149,7 +149,7 @@ const countrySeasons = {
     "Germany": ["Winter", "Spring", "Summer", "Fall"],
     "Greece": ["Winter", "Spring", "Summer", "Fall"],
     "India": ["Winter", "Summer", "Monsoon", "Post-Monsoon"],
-    "Indonesia": ["Rainy Season", "Dry Season"],
+    "Indonesia": ["Wet Season", "Dry Season"],
     "Iran": ["Winter", "Spring", "Summer", "Fall"],
     "Iraq": ["Winter", "Summer"],
     "Ireland": ["Winter", "Spring", "Summer", "Fall"],
