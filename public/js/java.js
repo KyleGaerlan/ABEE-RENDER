@@ -2209,40 +2209,45 @@ function updateNavbarUI() {
         if (notificationWrapper) notificationWrapper.style.display = 'none';
     }
 }
-
-// Function to fetch booking status for notifications
 function fetchBookingStatus() {
     fetch('/api/user-notifications')
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                const bookingStatus = document.getElementById('bookingStatus');
-                if (bookingStatus) {
-                    if (data.notifications && data.notifications.length > 0) {
-                        bookingStatus.textContent = `You have ${data.notifications.length} active booking(s).`;
-                        
-                        // Add notification badge if there are new notifications
-                        if (data.newNotifications > 0) {
-                            const notificationIcon = document.getElementById('notificationIcon');
-                            if (notificationIcon) {
-                                // Check if badge already exists
-                                let badge = notificationIcon.querySelector('.notification-badge');
-                                if (!badge) {
-                                    badge = document.createElement('span');
-                                    badge.className = 'notification-badge';
-                                    notificationIcon.appendChild(badge);
-                                }
-                                badge.textContent = data.newNotifications;
-                            }
+            const bookingStatus = document.getElementById('bookingStatus');
+            if (!bookingStatus) return;
+
+            if (data.success && data.notifications) {
+                const pendingBookings = data.notifications.filter(booking => booking.status === 'pending');
+                
+                if (pendingBookings.length > 0) {
+                    bookingStatus.textContent = `You have ${pendingBookings.length} pending booking(s).`;
+                } else {
+                    bookingStatus.textContent = 'No current pending booking.';
+                }
+
+                // Handle notification badge for new notifications if needed
+                if (data.newNotifications > 0) {
+                    const notificationIcon = document.getElementById('notificationIcon');
+                    if (notificationIcon) {
+                        let badge = notificationIcon.querySelector('.notification-badge');
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'notification-badge';
+                            notificationIcon.appendChild(badge);
                         }
-                    } else {
-                        bookingStatus.textContent = 'You have no bookings at the moment.';
+                        badge.textContent = data.newNotifications;
                     }
                 }
+            } else {
+                bookingStatus.textContent = 'No current pending booking.';
             }
         })
         .catch(error => {
             console.error('Error checking notifications:', error);
+            const bookingStatus = document.getElementById('bookingStatus');
+            if (bookingStatus) {
+                bookingStatus.textContent = 'Could not retrieve booking status.';
+            }
         });
 }
 // Add this to your existing JavaScript or as a new script tag
