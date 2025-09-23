@@ -267,6 +267,9 @@
             display: flex;
             justify-content: flex-end;
         }
+        .modal-footer button {
+            margin-right: 30px;
+        }
 
         .receipt-image {
             max-width: 100%;
@@ -518,8 +521,7 @@
                 <button id="searchButton" class="search-button">Search</button>
             </div>
         </div>
-
-        <% if (bookings && bookings.length > 0) { %>
+ <% if (bookings && bookings.length > 0) { %>
             <div id="bookingsList">
                 <% bookings.forEach(booking => { %>
                     <div class="booking-card" data-status="<%= booking.status %>" data-id="<%= booking._id %>">
@@ -532,13 +534,14 @@
                                 <%= booking.status.charAt(0).toUpperCase() + booking.status.slice(1) %>
                             </div>
                         </div>
-                        <div class="booking-detail">
-                            <div class="detail-label">Destination</div>
-                            <div class="detail-value">
-                                <%= booking.tourDetails?.destination || booking.destination || 'Not specified' %>
-                                <%= (booking.tourDetails?.country || booking.country) ? ', ' + (booking.tourDetails?.country || booking.country) : '' %>
+                        <div class="booking-details">
+                            <div class="booking-detail">
+                                <div class="detail-label">Destination</div>
+                                <div class="detail-value">
+                                    <%= booking.tourDetails?.destination || booking.destination || 'Not specified' %>
+                                    <%= (booking.tourDetails?.country || booking.country) ? ', ' + (booking.tourDetails?.country || booking.country) : '' %>
+                                </div>
                             </div>
-                        </div>
                             <div class="booking-detail">
                                 <div class="detail-label">Travel Date</div>
                                 <div class="detail-value"><%= new Date(booking.startDate).toLocaleDateString() %></div>
@@ -563,6 +566,7 @@
             </div>
 
             <div class="pagination" id="pagination">
+
                 <!-- Pagination will be added dynamically with JavaScript -->
             </div>
         <% } else { %>
@@ -601,7 +605,7 @@
                 <p>Are you sure you want to cancel this booking? This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
-                <button class="btn-view-details" onclick="closeConfirmModal()">No</button>
+                <button class="btn-view-details" onclick="closeConfirmModal()" style="margin-left: 30px;">No</button>
                 <button class="btn-cancel" id="confirmCancelBtn">Yes</button>
             </div>
         </div>
@@ -1015,7 +1019,6 @@
             <p><strong>Phone:</strong> (044) 604 7273 or 09361055665</p>
             <p><strong>Email:</strong> abeetravelandtours@gmail.com</p>
             <div style="margin-top: 20px;">
-                <button class="btn-view-details" onclick="closeModal()">Back</button>
                 <button class="btn-cancel" onclick="confirmCancellation('${bookingId}')">Proceed with Cancellation</button>
             </div>
         </div>
@@ -1276,21 +1279,11 @@ function showPage(page) {
         }
     }
     
-    // Update navigation menu - replace "Home" with "Go Back"
-    const navUl = document.querySelector('nav ul');
-    if (navUl) {
-        const homeLink = navUl.querySelector('li a[href="/"]');
-        if (homeLink) {
-            homeLink.textContent = 'Go Back';
-            homeLink.href = 'javascript:history.back()';
-        }
-    }
     
     // Mobile menu toggle functionality
     const hamburgerMenu = document.querySelector('.hamburger-menu');
     const navMenu = document.querySelector('nav ul');
     const overlayBg = document.querySelector('.overlay-bg');
-    
     if (hamburgerMenu && navMenu && overlayBg) {
         hamburgerMenu.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -1308,6 +1301,22 @@ function showPage(page) {
             navMenu.classList.remove('active');
             this.classList.remove('active');
             document.body.style.overflow = '';
+        });
+
+        // Close menu when a link is clicked
+        const navLinks = navMenu.querySelectorAll('a, button');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768 && navMenu.classList.contains('active')) {
+                    // Check if the clicked link is not the profile dropdown toggle
+                    if (!link.closest('#userProfile')) {
+                        hamburgerMenu.classList.remove('active');
+                        navMenu.classList.remove('active');
+                        overlayBg.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                }
+            });
         });
     }
     
