@@ -6,6 +6,7 @@
     <title>Employee Dashboard</title>
     <link rel="stylesheet" href="/css/useradmin.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         .performance-table {
@@ -21,8 +22,6 @@
         .performance-table th {
             background-color: #000000;
         }
-        
-        /* Mobile menu toggle button */
         .menu-toggle {
             display: none;
             position: fixed;
@@ -94,9 +93,150 @@
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 998;
         }
+.performance-table th {
+            background-color: #000000;
+        }
+        
+        /* New styles for performance section */
+        .performance-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        #employee-search {
+            padding: 8px 12px;
+            padding-left: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .search-container::before {
+            content: '\f002'; /* Font Awesome search icon */
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+        }
+
+        .performance-filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .filter-group select,
+        .filter-group input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        #apply-performance-filter {
+            padding: 8px 16px;
+            background-color: #f26523;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #apply-performance-filter:hover {
+            background-color: #d85b20;
+        }
+        
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        .pagination-controls button {
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        
+        .pagination-controls button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        #page-info {
+            font-size: 14px;
+        }
+
+        .apply-btn {
+    padding: 8px 16px;
+    background-color: #f26523;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.apply-btn:hover {
+    background-color: #d85b20;
+}
+.chart-container {
+  width: 100%;
+  max-width: 100%;
+  height: 400px;
+}
+.performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.performance-table th, .performance-table td {
+  padding: 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+
+@media (max-width: 768px) {
+  .performance-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
 
         /* Responsive styles */
         @media (max-width: 768px) {
+
             .menu-toggle {
                 display: block;
             }
@@ -154,7 +294,27 @@
                 transform: translateX(0);
                 opacity: 1;
             }
-        }/* Add this to your existing <style> section */
+        }
+
+#performance-table th,
+#performance-table td {
+  padding: 10px;
+  text-align: left;
+}
+
+.performance-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto; /* keep horizontal scroll on small screens */
+  margin-top: 20px;
+}
+
+.performance-table {
+  width: 100%;
+  table-layout: fixed; /* makes it stretch evenly */
+  border-collapse: collapse;
+}
+
     </style>
 </head>
 <body>
@@ -192,153 +352,498 @@
         <header class="dashboard-header">
             <h1>Performance Dashboard</h1>
         </header>
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <h3>My Confirmed Bookings</h3>
-                <p id="total-confirmed-bookings" class="stat-value">0</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>My Completed Bookings</h3>
-                <p id="total-completed-bookings" class="stat-value">0</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>My Sales Generated</h3>
-                <p id="total-revenue" class="stat-value">₱0.00</p>
-            </div>
-        </div>
-        <div class="chart-container" style="margin-top: 20px; height: 400px;">
-            <canvas id="bookings-chart"></canvas>
-        </div>
-
+        
         <% if (admin.role === 'admin') { %>
+    <div style="margin-top: 10px; text-align: right;">
+        <button id="export-excel" class="apply-btn">Export to Excel</button>
+    </div>
+<% } %>
+
+        <div class="chart-filters" style="margin: 20px 0; display: flex; gap: 15px; flex-wrap: wrap;">
+    <div class="filter-group">
+        <label for="chart-metric">Metric:</label>
+        <select id="chart-metric">
+            <option value="confirmed">My Confirmed Bookings</option>
+            <option value="completed">My Completed Bookings</option>
+            <option value="sales">My Sales Generated</option>
+        </select>
+    </div>
+<div class="filter-group">
+  <label for="chart-period">Period:</label>
+  <select id="chart-period">
+    <option value="monthly">Monthly</option>
+    <option value="daily">Daily</option>
+    <option value="yearly">Yearly</option>
+  </select>
+</div>
+
+<!-- Daily Filters -->
+<div class="filter-group" id="chart-date-filters" style="display:none;">
+  <label for="chart-start">Start:</label>
+  <input type="date" id="chart-start">
+  <label for="chart-end">End:</label>
+  <input type="date" id="chart-end">
+  <button id="apply-chart-filter" class="apply-btn">Apply</button>
+</div>
+
+<!-- Monthly Filters -->
+<div class="filter-group" id="chart-monthly-filters" style="display:none;">
+  <label for="chart-year-month">Year:</label>
+  <input type="number" id="chart-year-month" min="2020" max="2100" value="2025">
+  <button id="apply-monthly-filter" class="apply-btn">Apply</button>
+</div>
+
+<!-- Yearly Filters -->
+<div class="filter-group" id="chart-yearly-filters" style="display:none;">
+  <label for="chart-year">Year:</label>
+  <input type="number" id="chart-year" min="2020" max="2100" value="2025">
+  <button id="apply-yearly-filter" class="apply-btn">Apply</button>
+</div>
+
+<div class="chart-container" style="margin-top: 20px; height: 400px; width: 100%;">
+  <canvas id="bookings-chart"></canvas>
+</div>
+
+
+         <% if (admin.role === 'admin') { %>
         <div class="dashboard-section" style="margin-top: 40px;">
             <h2>Overall Employee Performance</h2>
-            <div id="overall-performance-container">
-                <table class="performance-table" id="performance-table">
-                    <thead>
+            <div class="performance-filters">
+                <div class="filter-group">
+                    <label for="performance-period">Period:</label>
+                    <select id="performance-period">
+                        <option value="all">All Time</option>
+                        <option value="daily">Daily (Date Range)</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+                <div id="date-range-filter" class="filter-group" style="display: none;">
+                    <label for="start-date">Start Date:</label>
+                    <input type="date" id="start-date">
+                    <label for="end-date">End Date:</label>
+                    <input type="date" id="end-date">
+                </div>
+                <div id="monthly-filter" class="filter-group" style="display: none;">
+                    <label for="month-select">Month:</label>
+                    <select id="month-select">
+                        <!-- Options will be populated by script -->
+                    </select>
+                    <label for="year-select-month">Year:</label>
+                    <select id="year-select-month">
+                        <!-- Options will be populated by script -->
+                    </select>
+                </div>
+                <div id="yearly-filter" class="filter-group" style="display: none;">
+                    <label for="year-select-year">Year:</label>
+                    <select id="year-select-year">
+                        <!-- Options will be populated by script -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button id="apply-performance-filter">Apply Filter</button>
+                </div>
+            </div>
+            <div class="performance-controls">
+                <div class="search-container">
+                    <input type="text" id="employee-search" placeholder="Search by name...">
+                </div>
+            </div>
+                    <div class="performance-table-wrapper">
+                    <table id="performance-table" class="performance-table">
+                        <thead>
                         <tr>
-                            <th>Employee Name</th>
-                            <th>Confirmed Bookings</th>
-                            <th>Completed Bookings</th>
+                            <th>Employee</th>
+                            <th>Confirmed</th>
+                            <th>Completed</th>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Data will be populated by script -->
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    </div>
+
+                 <div id="no-data-message" style="display: none; text-align: center; padding: 20px;">
+                    No performance data available for the selected period.
+                </div>
+                <div class="pagination-container">
+                    <div id="pagination-info">Showing 0-0 of 0</div>
+                    <div class="pagination-controls">
+                        <button id="prev-page" disabled>Previous</button>
+                        <span id="page-info">Page 1 of 1</span>
+                        <button id="next-page" disabled>Next</button>
+                    </div>
+                </div>
             </div>
         </div>
         <% } %>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const isAdmin = '<%= admin.role %>' === 'admin';
-            
-            try {
-                const response = await fetch('/api/employee-performance');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch performance data');
-                }
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Personal performance stats
-                    const { totalConfirmedBookings, totalCompletedBookings, totalRevenue, bookingsByMonth, overallPerformance } = data;
-                    document.getElementById('total-confirmed-bookings').textContent = totalConfirmedBookings;
-                    document.getElementById('total-completed-bookings').textContent = totalCompletedBookings;
-                    document.getElementById('total-revenue').textContent = `₱${totalRevenue.toLocaleString()}`;
-                    
-                    // Personal performance chart
-                    const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                    const labels = monthOrder;
-                    const confirmedData = new Array(12).fill(0);
-                    const completedData = new Array(12).fill(0);
+<script>
+    let allPerformanceData = [];
+    let filteredPerformanceData = []; 
+    let currentPage = 1;
+    let bookingsChart = null;
+    
+    const rowsPerPage = 10;
 
-                    for (const month in bookingsByMonth) {
-                        const monthIndex = monthOrder.indexOf(month);
-                        if (monthIndex > -1) {
-                            confirmedData[monthIndex] = bookingsByMonth[month].confirmed;
-                            completedData[monthIndex] = bookingsByMonth[month].completed;
-                        }
-                    }
+    document.addEventListener('DOMContentLoaded', initDashboard);
 
-                    const ctx = document.getElementById('bookings-chart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [
-                                {
-                                    label: 'My Confirmed Bookings',
-                                    data: confirmedData,
-                                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                                    borderColor: 'rgba(54, 162, 235, 1)',
-                                    borderWidth: 1
-                                },
-                                {
-                                    label: 'My Completed Bookings',
-                                    data: completedData,
-                                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    borderWidth: 1
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        stepSize: 1
-                                    }
-                                }
-                            }
-                        }
+    async function initDashboard() {
+        const isAdmin = '<%= admin.role %>' === 'admin';
+
+        // Default chart setup
+        document.getElementById('chart-period').value = 'monthly';
+        const now = new Date();
+        if (document.getElementById('chart-year-month')) {
+            document.getElementById('chart-year-month').value = now.getFullYear();
+        }
+
+        // Show monthly filter by default
+        document.getElementById('chart-monthly-filters').style.display = 'block';
+        document.getElementById('chart-date-filters').style.display = 'none';
+        document.getElementById('chart-yearly-filters').style.display = 'none';
+
+        // Default query for admins
+        let query = '';
+        if (isAdmin) {
+            query = `?period=monthly&year=${now.getFullYear()}`;
+        }
+
+        try {
+            const response = await fetch('/api/employee-performance' + query);
+            if (!response.ok) throw new Error('Failed to fetch performance data');
+
+            const data = await response.json();
+            if (!data.success) return;
+
+            // --- Personal Performance (chart only now) ---
+            updatePersonalPerformance(data);
+
+            // --- Admin Performance Table ---
+            if (isAdmin && data.overallPerformance) {
+                allPerformanceData = data.overallPerformance;
+                filteredPerformanceData = [...allPerformanceData];
+                setupPerformanceFilters();
+                setupPagination();
+                displayCurrentPage();
+
+                const searchInput = document.getElementById('employee-search');
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => {
+                        currentPage = 1;
+                        displayCurrentPage();
                     });
-
-                    // Admin view: populate overall performance table
-                    if (isAdmin && overallPerformance) {
-                        const tableBody = document.querySelector('#performance-table tbody');
-                        tableBody.innerHTML = ''; // Clear existing rows
-                        if (overallPerformance.length > 0) {
-                            overallPerformance.forEach(emp => {
-                                const row = `
-                                    <tr>
-                                        <td>${emp.employeeName}</td>
-                                        <td>${emp.totalConfirmed}</td>
-                                        <td>${emp.totalCompleted}</td>
-                                    </tr>
-                                `;
-                                tableBody.insertAdjacentHTML('beforeend', row);
-                            });
-                        } else {
-                            const row = `<tr><td colspan="3">No performance data available.</td></tr>`;
-                            tableBody.insertAdjacentHTML('beforeend', row);
-                        }
-                    }
                 }
-            } catch (error) {
-                console.error('Error fetching dashboard data:', error);
+            }
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+        }
+    }
+
+    function updatePersonalPerformance(data) {
+        // No stat cards anymore, so only store + render chart
+        window.personalData = data;
+
+        // Draw chart with defaults (monthly confirmed for current year)
+        const now = new Date();
+        renderChart('confirmed', 'monthly', now.getFullYear());
+    }
+
+    function renderChart(metric, period, yearFilter = null, endDate = null) {
+        if (!window.personalData) return;
+
+        const ctx = document.getElementById('bookings-chart')?.getContext('2d');
+        if (!ctx) return;
+
+        if (bookingsChart) bookingsChart.destroy();
+
+        let labels = [];
+        let dataset = [];
+
+        // ---- MONTHLY ----
+        if (period === 'monthly') {
+            const months = [
+                'January','February','March','April','May','June',
+                'July','August','September','October','November','December'
+            ];
+            labels = months;
+
+            dataset = months.map(m => {
+                const entry = window.personalData.bookingsByMonth?.[m] || {};
+                return metric === 'confirmed' ? (entry.confirmed ?? 0)
+                     : metric === 'completed' ? (entry.completed ?? 0)
+                     : (entry.revenue ?? 0);
+            });
+        }
+
+        // ---- DAILY ----
+        else if (period === 'daily') {
+            const dailyData = window.personalData.bookingsByDay || {};
+            const allDates = Object.keys(dailyData).sort();
+
+            labels = allDates.filter(d => (!yearFilter || d.startsWith(yearFilter)));
+            dataset = labels.map(d => {
+                const entry = dailyData[d] || {};
+                return metric === 'confirmed' ? (entry.confirmed ?? 0)
+                     : metric === 'completed' ? (entry.completed ?? 0)
+                     : (entry.revenue ?? 0);
+            });
+        }
+
+        // ---- YEARLY ----
+        else if (period === 'yearly') {
+            const yearlyData = window.personalData.bookingsByYear || {};
+            const entry = yearlyData[yearFilter] || {};
+            labels = [yearFilter];
+            dataset = [
+                metric === 'confirmed' ? (entry.confirmed ?? 0)
+              : metric === 'completed' ? (entry.completed ?? 0)
+              : (entry.revenue ?? 0)
+            ];
+        }
+
+        bookingsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: metric === 'confirmed' ? 'My Confirmed Bookings'
+                         : metric === 'completed' ? 'My Completed Bookings'
+                         : 'My Sales Generated',
+                    data: dataset,
+                    backgroundColor: metric === 'sales'
+                        ? 'rgba(255, 206, 86, 0.6)'
+                        : 'rgba(54, 162, 235, 0.6)',
+                    borderColor: metric === 'sales'
+                        ? 'rgba(255, 206, 86, 1)'
+                        : 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // --- Chart filter event handlers ---
+    document.getElementById('chart-metric')?.addEventListener('change', () => {
+        const metric = document.getElementById('chart-metric').value;
+        const period = document.getElementById('chart-period').value;
+        const year = document.getElementById('chart-year-month')?.value || 
+                     document.getElementById('chart-year')?.value || null;
+        renderChart(metric, period, year);
+    });
+
+    document.getElementById('chart-period')?.addEventListener('change', e => {
+        const period = e.target.value;
+        const metric = document.getElementById('chart-metric').value;
+
+        // Reset filter visibility
+        document.getElementById('chart-monthly-filters').style.display = 'none';
+        document.getElementById('chart-date-filters').style.display = 'none';
+        document.getElementById('chart-yearly-filters').style.display = 'none';
+
+        if (period === 'daily') {
+            document.getElementById('chart-date-filters').style.display = 'block';
+        } else if (period === 'monthly') {
+            document.getElementById('chart-monthly-filters').style.display = 'block';
+        } else if (period === 'yearly') {
+            document.getElementById('chart-yearly-filters').style.display = 'block';
+        }
+
+        renderChart(metric, period);
+    });
+
+    // Apply filters
+    document.getElementById('apply-monthly-filter')?.addEventListener('click', () => {
+        const metric = document.getElementById('chart-metric').value;
+        const year = document.getElementById('chart-year-month').value;
+        if (!year) return alert("Please enter a year.");
+        renderChart(metric, 'monthly', year);
+    });
+
+    document.getElementById('apply-yearly-filter')?.addEventListener('click', () => {
+        const metric = document.getElementById('chart-metric').value;
+        const year = document.getElementById('chart-year').value;
+        if (!year) return alert("Please enter a year.");
+        renderChart(metric, 'yearly', year);
+    });
+
+    document.getElementById('apply-chart-filter')?.addEventListener('click', () => {
+        const metric = document.getElementById('chart-metric').value;
+        const start = document.getElementById('chart-start')?.value || null;
+        const end = document.getElementById('chart-end')?.value || null;
+        renderChart(metric, 'daily', start, end);
+    });
+
+    // --- Search + Pagination ---
+    function getFilteredData() {
+        const searchInput = document.getElementById('employee-search');
+        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        if (!searchTerm) return filteredPerformanceData;
+        return filteredPerformanceData.filter(emp =>
+            emp.employeeName?.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    function displayCurrentPage() {
+        const searchFilteredData = getFilteredData();
+        const tableBody = document.querySelector('#performance-table tbody');
+        const noDataMessage = document.getElementById('no-data-message');
+        const paginationContainer = document.querySelector('.pagination-container');
+
+        if (!tableBody) return;
+        tableBody.innerHTML = '';
+
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const paginatedData = searchFilteredData.slice(startIndex, endIndex);
+
+        if (paginatedData.length > 0) {
+            paginatedData.forEach(emp => {
+                const row = `
+                    <tr>
+                        <td>${emp.employeeName ?? '-'}</td>
+                        <td>${emp.totalConfirmed ?? 0}</td>
+                        <td>${emp.totalCompleted ?? 0}</td>
+                    </tr>`;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+            if (noDataMessage) noDataMessage.style.display = 'none';
+            if (paginationContainer) paginationContainer.style.display = 'flex';
+        } else {
+            if (noDataMessage) {
+                noDataMessage.textContent = filteredPerformanceData.length === 0
+                    ? "No performance data available for the selected period."
+                    : "No employees match your search.";
+                noDataMessage.style.display = 'block';
+            }
+            if (paginationContainer) paginationContainer.style.display = 'none';
+        }
+
+        updatePaginationInfo(searchFilteredData.length);
+    }
+
+    function setupPagination() {
+        document.getElementById('prev-page')?.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayCurrentPage();
             }
         });
 
-        function handleAdminLogout() {
-            fetch('/api/admin/logout', {
-                method: 'GET',
-                credentials: 'include'
-            })
-            .then(() => {
-                window.location.href = '/';
-            })
-            .catch(error => {
-                console.error('Logout error:', error);
-            });
+        document.getElementById('next-page')?.addEventListener('click', () => {
+            const totalPages = Math.ceil(getFilteredData().length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayCurrentPage();
+            }
+        });
+    }
+
+    function updatePaginationInfo(totalRows) {
+        const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+        document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+
+        const startRow = totalRows > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0;
+        const endRow = Math.min(currentPage * rowsPerPage, totalRows);
+        document.getElementById('pagination-info').textContent = 
+            `Showing ${startRow}-${endRow} of ${totalRows}`;
+    }
+
+    function populatePerformanceTable(performanceData) {
+        filteredPerformanceData = performanceData ?? [];
+        currentPage = 1;
+        displayCurrentPage();
+    }
+
+    // --- Filter Handling ---
+    function setupPerformanceFilters() {
+        const periodSelect = document.getElementById('performance-period');
+        const dateRangeFilter = document.getElementById('date-range-filter');
+        const monthlyFilter = document.getElementById('monthly-filter');
+        const yearlyFilter = document.getElementById('yearly-filter');
+        const applyFilterBtn = document.getElementById('apply-performance-filter');
+
+        if (!periodSelect) return;
+
+        // Populate dropdowns
+        const currentYear = new Date().getFullYear();
+        const monthSelect = document.getElementById('month-select');
+        const yearSelectMonth = document.getElementById('year-select-month');
+        const yearSelectYear = document.getElementById('year-select-year');
+
+        const months = [
+            "January","February","March","April","May","June",
+            "July","August","September","October","November","December"
+        ];
+        if (monthSelect) {
+            months.forEach((month, idx) => monthSelect.add(new Option(month, idx + 1)));
         }
-        
-    </script>
+        for (let year = currentYear; year >= 2020; year--) {
+            yearSelectMonth?.add(new Option(year, year));
+            yearSelectYear?.add(new Option(year, year));
+        }
+
+        // Show correct filter controls
+        periodSelect.addEventListener('change', () => {
+            [dateRangeFilter, monthlyFilter, yearlyFilter].forEach(el => { if (el) el.style.display = 'none'; });
+
+            const selected = periodSelect.value;
+            if (selected === 'daily') dateRangeFilter.style.display = 'flex';
+            if (selected === 'monthly') monthlyFilter.style.display = 'flex';
+            if (selected === 'yearly') yearlyFilter.style.display = 'flex';
+        });
+
+        // Apply filter fetch
+        applyFilterBtn?.addEventListener('click', async () => {
+            let query = '';
+            const period = periodSelect.value;
+
+            if (period === 'daily') {
+                const startDate = document.getElementById('start-date')?.value;
+                const endDate = document.getElementById('end-date')?.value;
+                if (!startDate || !endDate) return alert('Please select both start and end dates.');
+                query = `?period=daily&startDate=${startDate}&endDate=${endDate}`;
+            } else if (period === 'monthly') {
+                const month = monthSelect?.value;
+                const year = yearSelectMonth?.value;
+                if (!month || !year) return alert('Please select both month and year.');
+                query = `?period=monthly&month=${month}&year=${year}`;
+            } else if (period === 'yearly') {
+                const year = yearSelectYear?.value;
+                if (!year) return alert('Please select a year.');
+                query = `?period=yearly&year=${year}`;
+            }
+
+            try {
+                const response = await fetch(`/api/employee-performance${query}`);
+                const data = await response.json();
+                populatePerformanceTable(data.success ? data.overallPerformance : []);
+            } catch (err) {
+                console.error('Error fetching filtered performance data:', err);
+                populatePerformanceTable([]);
+            }
+        });
+    }
+
+    // --- Admin Logout ---
+    function handleAdminLogout() {
+        fetch('/api/admin/logout', { method: 'GET', credentials: 'include' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout error:', err));
+    }
+</script>
+
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const menuToggle = document.getElementById('menuToggle');
@@ -352,12 +857,37 @@
         });
 
         overlay.addEventListener('click', () => {
-            // Close sidebar when clicking outside of it
             menuToggle.classList.remove('active');
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
         });
     });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const exportBtn = document.getElementById('export-excel');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const table = document.getElementById('performance-table');
+            if (!table) return alert("No performance data available.");
+
+            // Convert table to worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.table_to_sheet(table);
+
+            // Append worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Performance");
+
+            // Generate filename with timestamp
+            const date = new Date();
+            const filename = `Employee_Performance_${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.xlsx`;
+
+            // Save Excel file
+            XLSX.writeFile(wb, filename);
+        });
+    }
+});
 </script>
 
 </body>
