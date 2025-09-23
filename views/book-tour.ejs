@@ -1697,11 +1697,8 @@ function updateNavbarUI() {
             notificationWrapper = document.createElement('li');
             notificationWrapper.id = 'notificationWrapper';
             notificationWrapper.innerHTML = `
-                <a href="javascript:void(0);" id="notificationIcon">
-                    <img src="/images/bell.png" class="notification-icon">
-                </a>
+               
                 <ul id="notificationDropdown" class="dropdown-menu" style="display: none;">
-                    <li><span id="bookingStatus">You have a new booking!</span></li>
                     <li><a href="/my-bookings">Check My Bookings</a></li>
                 </ul>
             `;
@@ -1763,7 +1760,6 @@ function updateUIForLoggedInUser() {
                 <img src="/images/bell.png" class="notification-icon">
             </a>
             <ul id="notificationDropdown" class="dropdown-menu" style="display: none;">
-                <li><span id="bookingStatus">You have a new booking!</span></li>
                 <li><a href="/my-bookings">Check My Bookings</a></li>
             </ul>
         `;
