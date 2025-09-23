@@ -1,5 +1,4 @@
 <style>
-    /* Add these styles to the existing <style> section in index.ejs */
 .tour-actions {
     display: flex;
     gap: 8px;
@@ -600,6 +599,7 @@ function goToSlide(slideIndex) {
     const carouselInner = document.getElementById('tourCarouselInner');
     const dots = document.querySelectorAll('.dot');
     
+    
     currentSlide = slideIndex;
     
     if (carouselInner) {
@@ -622,7 +622,6 @@ function prevSlide() {
 
 function startAutoSlide() {
     stopAutoSlide();
-    autoSlideInterval = setInterval(nextSlide, 5000);
 }
 
 function stopAutoSlide() {
