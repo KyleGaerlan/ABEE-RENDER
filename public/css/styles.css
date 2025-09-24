@@ -3950,6 +3950,7 @@ h3 {
     }
 }
 
+/* Small phones (like 320px width) */
 @media (max-width: 480px) {
     .hero-section {
         min-height: 70vh;
@@ -5254,7 +5255,7 @@ h3 {
 /* Additional Responsive Improvements */
 @media (max-width: 1024px) {
     .testimonials-track {
-        gap: 20px;
+        gap: 50px;
     }
     
     .modern-testimonial-card {
