@@ -356,9 +356,20 @@ apiRouter.put('/users/:userId', checkAdminAuth, async (req, res) => {
 
 
 app.use('/api', apiRouter);
+apiRouter.get('/admins', checkAdminAuth, checkRole(['admin']), async (req, res) => {
+    try {
+        const admins = await Admin.find().select('-password');
+        res.json({ success: true, admins });
+    } catch (error) {
+        console.error('Error fetching admins:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch admins' });
+    }
+});
+
 app.post('/admin-signup', async (req, res) => {
     try {
         const {
+
             firstName,
             lastName,
             username,
@@ -711,14 +722,21 @@ app.post('/api/admin/login', async (req, res) => {
                 message: 'Invalid credentials' 
             });
         }
+if (admin.isActive === false) {
+    return res.status(403).json({
+        success: false,
+        message: 'Your admin account has been deactivated. Please contact support.'
+    });
+}
 
-        if (!admin.isVerified || admin.status !== 'active') {
-            return res.status(401).json({ 
-                success: false, 
-                status: 'pending',
-                message: 'Your account is pending approval' 
-            });
-        }
+if (!admin.isVerified || admin.status !== 'active') {
+    return res.status(401).json({ 
+        success: false, 
+        status: 'pending',
+        message: 'Your account is pending approval' 
+    });
+}
+
 
         const isMatch = await bcrypt.compare(password, admin.password);
         console.log('Password match:', isMatch ? 'Yes' : 'No');
@@ -803,11 +821,10 @@ app.post('/api/admin/verify-credentials', async (req, res) => {
 app.get('/admin-dashboard', checkAdminAuth, (req, res) => {
     res.render('admin-dashboard', { admin: req.session.admin });
 });
-
 app.get('/admin-users', checkAdminAuth, checkRole(['admin']), async (req, res) => {
     try {
         const users = await User.find();
-        res.render('admin-users', { admin: req.session.admin, users });
+        res.render('admin-users', { admin: req.session.admin, users, admins: [] });
     } catch (err) {
         console.error('Error fetching users:', err);
         res.status(500).send('Error fetching users');
@@ -2025,7 +2042,7 @@ app.get("/my-bookings", async (req, res) => {
         res.status(500).send("Error fetching bookings.");
     }
 });
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin/login', async (req, res) => { 
     console.log('Admin login request received:', req.body);
     const { email, password, captchaVerified } = req.body;
 
@@ -2046,15 +2063,31 @@ app.post('/api/admin/login', async (req, res) => {
                 message: 'Invalid credentials' 
             });
         }
+if (admin.isActive === false) {
+    return res.status(403).json({
+        success: false,
+        message: 'Your admin account has been deactivated. Please contact support.'
+    });
+}
 
-        if (!admin.isVerified || admin.status !== 'active') {
-            return res.status(401).json({ 
+if (!admin.isVerified || admin.status !== 'active') {
+    return res.status(401).json({ 
+        success: false, 
+        status: 'pending',
+        message: 'Your account is pending approval' 
+    });
+}
+
+
+        if (admin.status === 'suspended') {
+            return res.status(403).json({ 
                 success: false, 
-                status: 'pending',
-                message: 'Your account is pending approval' 
+                status: 'suspended',
+                message: 'Your admin account has been suspended. Please contact support.' 
             });
         }
 
+        // ✅ Password check
         const isMatch = await bcrypt.compare(password, admin.password);
         console.log('Password match:', isMatch ? 'Yes' : 'No');
         
@@ -2065,6 +2098,7 @@ app.post('/api/admin/login', async (req, res) => {
             });
         }
 
+        // Save session
         req.session.admin = {
             id: admin._id,
             firstName: admin.firstName,
@@ -2073,13 +2107,14 @@ app.post('/api/admin/login', async (req, res) => {
             role: admin.role
         };
         
+        // Redirect based on role
         let redirectUrl;
         if (admin.role === 'admin') {
             redirectUrl = '/admin-dashboard';
         } else if (admin.role === 'employee') {
             redirectUrl = '/employee-dashboard';
         } else {
-            redirectUrl = '/'; // Fallback redirect
+            redirectUrl = '/'; // fallback
         }
 
         return res.json({
@@ -2094,6 +2129,7 @@ app.post('/api/admin/login', async (req, res) => {
                 role: admin.role
             }
         });
+
     } catch (error) {
         console.error('❌ Admin Login Error:', error);
         return res.status(500).json({ 
@@ -2102,6 +2138,8 @@ app.post('/api/admin/login', async (req, res) => {
         });
     }
 });
+
+
 app.post('/login', async (req, res) => {
     try {
         const { username, password, captchaVerified } = req.body;
@@ -4972,7 +5010,6 @@ app.patch('/api/admin/contacts/:contactId/archive', checkAdminAuth, async (req, 
         });
     }
 });
-// Add this to your apiRouter routes
 apiRouter.patch('/users/:userId/status', checkAdminAuth, async (req, res) => {
     try {
         const { userId } = req.params;
@@ -5018,7 +5055,51 @@ apiRouter.patch('/users/:userId/status', checkAdminAuth, async (req, res) => {
         });
     }
 });
-// Daily, Monthly, and Yearly Analytics Endpoints
+apiRouter.patch('/admins/:adminId/status', checkAdminAuth, async (req, res) => {
+    try {
+        const { adminId } = req.params;
+        const { isActive } = req.body;
+        
+        if (isActive === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'isActive status is required'
+            });
+        }
+        
+        if (!mongoose.Types.ObjectId.isValid(adminId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid admin ID format'
+            });
+        }
+        
+        const updatedAdmin = await Admin.findByIdAndUpdate(
+            adminId,
+            { isActive: Boolean(isActive) },
+            { new: true }
+        );
+        
+        if (!updatedAdmin) {
+            return res.status(404).json({
+                success: false,
+                message: 'Admin not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: `Admin ${isActive ? 'activated' : 'deactivated'} successfully`,
+            admin: updatedAdmin
+        });
+    } catch (error) {
+        console.error('❌ Error updating admin status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update admin status: ' + error.message
+        });
+    }
+});
 app.get('/api/analytics/daily', checkAdminAuth, async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
