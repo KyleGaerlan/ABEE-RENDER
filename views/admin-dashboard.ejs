@@ -172,19 +172,37 @@
         }
 
         .stat-card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 15px;
-            text-align: center;
-            border-left: 4px solid #f26523;
-        }
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 15px;
+    text-align: center;
+    border-left: 4px solid #f26523;
+    display: flex;
+    flex-direction: column;
+}
 
-        .stat-card h3 {
-            margin: 0;
-            font-size: 0.9rem;
-            color: #666;
-        }
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.stat-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+    text-align: left;
+}
+
+.period-selector {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 0.8rem;
+}
+
 
         .stat-value {
             font-size: 1.8rem;
@@ -593,20 +611,45 @@
         
         <div class="stats-summary">
             <div class="stat-card">
-                <h3>Total Users</h3>
+                <div class="stat-header">
+                    <h3>Total Registered Users</h3>
+                    <select id="usersPeriod" class="period-selector">
+                        <option value="all">All Time</option>
+                        <option value="year">This Year</option>
+                        <option value="month">This Month</option>
+                        <option value="day">Today</option>
+                    </select>
+                </div>
                 <div class="stat-value" id="totalUsers">--</div>
             </div>
             <div class="stat-card">
-                <h3>Total Bookings</h3>
+                 <div class="stat-header">
+                    <h3>Total Bookings</h3>
+                    <select id="bookingsPeriod" class="period-selector">
+                        <option value="all">All Time</option>
+                        <option value="year">This Year</option>
+                        <option value="month">This Month</option>
+                        <option value="day">Today</option>
+                    </select>
+                </div>
                 <div class="stat-value" id="totalBookings">--</div>
             </div>
             <div class="stat-card">
-                <h3>Sales</h3>
+                <div class="stat-header">
+                    <h3>Total Sales</h3>
+                    <select id="salesPeriod" class="period-selector">
+                        <option value="all">All Time</option>
+                        <option value="year">This Year</option>
+                        <option value="month">This Month</option>
+                        <option value="day">Today</option>
+                    </select>
+                </div>
                 <div class="stat-value" id="totalRevenue">₱--</div>
             </div>
         </div>
 
         <div class="analytics-section">
+
             <h2>Recent Activity</h2>
             <div class="dashboard-grid">
                 <div class="dashboard-card">
@@ -616,7 +659,7 @@
                     </div>
                 </div>                
 
-                <div class="dashboard-card">
+                 <div class="dashboard-card">
                     <h2>Bookings This Week</h2>
                     <div class="card-content">
                         <ul id="booking-list" class="detailed-list"><p>Loading...</p></ul>
@@ -624,14 +667,22 @@
                 </div>                
                 
                 <div class="dashboard-card">
-                    <h2>Top Destinations</h2>
+                    <div class="stat-header">
+                        <h2>Top Destinations</h2>
+                        <select id="destinationsPeriod" class="period-selector">
+                            <option value="all">All Time</option>
+                            <option value="year">This Year</option>
+                            <option value="month">This Month</option>
+                            <option value="day">Today</option>
+                        </select>
+                    </div>
                     <div class="card-content">
                         <ul id="destinations-list" class="destinations-list"><p>Loading...</p></ul>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <div class="analytics-section">
             <h2>Time-Based Analytics</h2>
             <div class="chart-tabs">
@@ -738,7 +789,55 @@
             document.getElementById('adminName').textContent = adminName;
             document.getElementById('adminRole').textContent = `Role: ${adminRole}`;
             fetchDashboardData();
+            fetchSummaryData();
+
+             document.getElementById('usersPeriod').addEventListener('change', () => fetchSummaryData());
+            document.getElementById('bookingsPeriod').addEventListener('change', () => fetchSummaryData());
+            document.getElementById('salesPeriod').addEventListener('change', () => fetchSummaryData());
+            document.getElementById('destinationsPeriod').addEventListener('change', () => fetchSummaryData());
         });
+
+        async function fetchSummaryData() {
+            try {
+                const usersPeriod = document.getElementById('usersPeriod').value;
+                const bookingsPeriod = document.getElementById('bookingsPeriod').value;
+                const salesPeriod = document.getElementById('salesPeriod').value;
+                const destinationsPeriod = document.getElementById('destinationsPeriod').value;
+
+                // Fetch data for each card based on its own selector
+                const usersResponse = await fetch(`/api/analytics/summary?period=${usersPeriod}`);
+                const usersData = await usersResponse.json();
+                if(usersData.success) document.getElementById('totalUsers').textContent = usersData.data.totalUsers.toLocaleString();
+
+                const bookingsResponse = await fetch(`/api/analytics/summary?period=${bookingsPeriod}`);
+                const bookingsData = await bookingsResponse.json();
+                if(bookingsData.success) document.getElementById('totalBookings').textContent = bookingsData.data.totalBookings.toLocaleString();
+
+                const salesResponse = await fetch(`/api/analytics/summary?period=${salesPeriod}`);
+                const salesData = await salesResponse.json();
+                if(salesData.success) document.getElementById('totalRevenue').textContent = '₱' + salesData.data.totalSales.toLocaleString();
+
+                const destinationsResponse = await fetch(`/api/analytics/summary?period=${destinationsPeriod}`);
+                const destinationsData = await destinationsResponse.json();
+                if(destinationsData.success) {
+                    const destinationsList = document.getElementById('destinations-list');
+                    if (destinationsData.data.topDestinations && destinationsData.data.topDestinations.length > 0) {
+                        destinationsList.innerHTML = destinationsData.data.topDestinations.map(item => 
+                            `<li>
+                                <span class="destination-name">${item._id || 'Unknown'}</span>
+                                <span class="destination-count">${item.count} bookings</span>
+                            </li>`
+                        ).join('');
+                    } else {
+                        destinationsList.innerHTML = '<p>No destination data available for this period.</p>';
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error fetching summary data:", error);
+                showNotification("Failed to load summary data.", 'error');
+            }
+        }
 
         async function fetchDashboardData() {
     try {
@@ -2523,7 +2622,7 @@ function updateSeasonalTrendsChart(seasonalTrends) {
         seasonData[season][destination] += item.count;
     });
 
-    const seasons = ['Winter', 'Spring', 'Summer', 'Fall', 'Wet Season', 'Dry Season',];
+    const seasons = ['Winter', 'Spring', 'Summer', 'Fall', 'Wet Season', 'Dry Season'];
     const destinations = [...new Set(seasonalTrends.map(item => item.destination || 'Unknown'))];
 
     const datasets = destinations.map((destination, index) => {
