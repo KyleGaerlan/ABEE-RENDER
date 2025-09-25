@@ -152,13 +152,11 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(messageElement);
         setTimeout(() => messageElement.remove(), 3000); 
     } 
-    
-    // Handle Notification Dropdown Toggle 
     elements.notificationIcon?.addEventListener("click", (event) => { 
         event.stopPropagation();
         if (elements.notificationDropdown) { 
-            elements.notificationDropdown.style.display = 
-                elements.notificationDropdown.style.display === "block" ? "none" : "block"; 
+            const isVisible = elements.notificationDropdown.style.display === "block";
+            elements.notificationDropdown.style.display = isVisible ? "none" : "block"; 
         }
     });
     
@@ -170,8 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 elements.profileDropdown.style.display === "block" ? "none" : "block"; 
         } 
     }); 
-    
-    // Close dropdowns when clicking outside 
     window.addEventListener("click", (event) => { 
         if (elements.notificationDropdown && 
             elements.notificationIcon && 
@@ -180,14 +176,13 @@ document.addEventListener("DOMContentLoaded", () => {
             elements.notificationDropdown.style.display = "none"; 
         } 
         
-        if (elements.profileDropdown && 
+       if (elements.profileDropdown && 
             elements.profileIconWrapper && 
             !elements.profileIconWrapper.contains(event.target) && 
             !elements.profileDropdown.contains(event.target)) { 
             elements.profileDropdown.style.display = "none"; 
         } 
     });
-    
     // Open login modal 
     elements.loginBtn?.addEventListener("click", () => openModal(elements.loginModal)); 
     
@@ -1422,16 +1417,13 @@ function resetAdminPassword() {
         showMessage(error.message || "Failed to reset password", true);
     })
     .finally(() => {
-        // Restore button state
         button.disabled = false;
         button.textContent = originalText;
     });
 }
 
-// Variables for admin verification
 let adminVerificationTimer;
 
-// Function to start the verification timer
 function startAdminVerificationTimer() {
     let timeLeft = 60;
     const timerElement = document.getElementById('adminCodeTimer');
@@ -1451,7 +1443,6 @@ function startAdminVerificationTimer() {
     }, 1000);
 }
 
-// Add this function to check admin authentication status
 function checkAdminAuth() {
     const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
     const adminToken = localStorage.getItem("adminToken");
@@ -1463,20 +1454,17 @@ function checkAdminAuth() {
     return true;
 }
 
-// Add admin logout function
 function handleAdminLogout() {
     fetch('/api/admin/logout', {
         method: 'POST',
         credentials: 'include'
     })
     .then(() => {
-        // Clear admin session data
         localStorage.removeItem('isAdminLoggedIn');
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminRole');
         localStorage.removeItem('adminName');
         
-        // Redirect to home page
         window.location.href = '/';
     })
     .catch(error => {
@@ -1485,15 +1473,11 @@ function handleAdminLogout() {
     });
 }
 
-// Add show password functionality for user login
 document.addEventListener('DOMContentLoaded', function() {
 
-    
-    // Setup password toggle for signup form
     setupPasswordToggle('signup-password');
     setupPasswordToggle('signup-confirm-password');
     
-    // Setup password toggle for forgot password form
     setupPasswordToggle('newPassword');
     setupPasswordToggle('confirmPassword');
 });
@@ -1501,30 +1485,23 @@ function setupPasswordToggle(passwordFieldId) {
     const passwordField = document.getElementById(passwordFieldId);
     if (!passwordField) return;
     
-    // Create container if it doesn't exist
     let container = passwordField.parentElement;
     if (!container.classList.contains('password-container')) {
-        // Create a new container
         container = document.createElement('div');
         container.className = 'password-container';
         
-        // Insert the container before the password field
         passwordField.parentNode.insertBefore(container, passwordField);
         
-        // Move the password field into the container
         container.appendChild(passwordField);
     }
-    
-    // Check if toggle button already exists
+
     let toggleBtn = container.querySelector('.toggle-password');
     if (!toggleBtn) {
-        // Create toggle button
         toggleBtn = document.createElement('button');
         toggleBtn.type = 'button';
         toggleBtn.className = 'toggle-password';
         toggleBtn.innerHTML = '<img src="/images/eye.png" alt="Show Password">';
         
-        // Add click event
         toggleBtn.addEventListener('click', function() {
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
@@ -1537,16 +1514,13 @@ function setupPasswordToggle(passwordFieldId) {
             }
         });
         
-        // Append to container
         container.appendChild(toggleBtn);
     }
     
-    // Add CSS for password container
     addPasswordToggleStyles();
 }
 
 function addPasswordToggleStyles() {
-    // Check if styles are already added
     if (document.getElementById('password-toggle-styles')) return;
     
     const style = document.createElement('style');
@@ -1614,27 +1588,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const visaDisclaimerModalClose = document.getElementById('visaDisclaimerModalClose');
     
     if (visaDisclaimerBtn && visaDisclaimerModal && visaDisclaimerModalClose) {
-        // Open modal when Learn More is clicked
         visaDisclaimerBtn.addEventListener('click', function() {
             visaDisclaimerModal.style.display = 'block';
-            document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+            document.body.style.overflow = 'hidden';
         });
-        
-        // Close modal when X is clicked
+
         visaDisclaimerModalClose.addEventListener('click', function() {
             visaDisclaimerModal.style.display = 'none';
-            document.body.style.overflow = ''; // Restore scrolling
+            document.body.style.overflow = '';
         });
         
-        // Close modal when clicking outside the content
         visaDisclaimerModal.addEventListener('click', function(event) {
             if (event.target === visaDisclaimerModal) {
                 visaDisclaimerModal.style.display = 'none';
-                document.body.style.overflow = ''; // Restore scrolling
+                document.body.style.overflow = '';
             }
         });
-        
-        // Prevent clicks inside the modal content from closing the modal
         const modalContent = visaDisclaimerModal.querySelector('.disclaimer-modal-content');
         if (modalContent) {
             modalContent.addEventListener('click', function(event) {
@@ -1644,7 +1613,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Travel Insurance Modal functionality
 document.addEventListener('DOMContentLoaded', function() {
     const insuranceModalBtn = document.getElementById('insuranceModalBtn');
     const insuranceModal = document.getElementById('insuranceModal');
@@ -1653,27 +1621,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const quoteSuccess = document.getElementById('quoteSuccess');
     
     if (insuranceModalBtn && insuranceModal && insuranceModalClose) {
-        // Open modal when Get Protected is clicked
         insuranceModalBtn.addEventListener('click', function() {
             insuranceModal.style.display = 'block';
-            document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+            document.body.style.overflow = 'hidden';
         });
         
-        // Close modal when X is clicked
         insuranceModalClose.addEventListener('click', function() {
             insuranceModal.style.display = 'none';
-            document.body.style.overflow = ''; // Restore scrolling
+            document.body.style.overflow = '';
         });
         
-        // Close modal when clicking outside the content
         insuranceModal.addEventListener('click', function(event) {
             if (event.target === insuranceModal) {
                 insuranceModal.style.display = 'none';
-                document.body.style.overflow = ''; // Restore scrolling
+                document.body.style.overflow = '';
             }
         });
         
-        // Prevent clicks inside the modal content from closing the modal
         const modalContent = insuranceModal.querySelector('.insurance-modal-content');
         if (modalContent) {
             modalContent.addEventListener('click', function(event) {
@@ -1681,33 +1645,24 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Handle form submission
         if (insuranceQuoteForm) {
             insuranceQuoteForm.addEventListener('submit', function(event) {
                 event.preventDefault();
                 
-                // Here you would typically send the form data to your server
-                // For now, we'll just show the success message
-                
-                // Hide the form and show success message
                 insuranceQuoteForm.style.display = 'none';
                 quoteSuccess.style.display = 'block';
                 
-                // Scroll to the success message
                 quoteSuccess.scrollIntoView({ behavior: 'smooth' });
                 
-                // Optional: Reset form for future use
                 insuranceQuoteForm.reset();
                 
-                // Optional: Hide success and show form again after some time
                 setTimeout(function() {
                     quoteSuccess.style.display = 'none';
                     insuranceQuoteForm.style.display = 'block';
-                }, 10000); // 10 seconds
+                }, 10000);
             });
         }
         
-        // Set minimum date for departure and return date inputs
         const today = new Date().toISOString().split('T')[0];
         const departureDateInput = document.getElementById('departureDate');
         const returnDateInput = document.getElementById('returnDate');
@@ -1719,7 +1674,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     returnDateInput.setAttribute('min', this.value);
                     returnDateInput.setAttribute('min', this.value);
                     
-                    // If return date is before departure date, update it
                     if (returnDateInput.value && returnDateInput.value < this.value) {
                         returnDateInput.value = this.value;
                     }
@@ -1729,27 +1683,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Terms and Conditions functionality - Complete Fix
 document.addEventListener('DOMContentLoaded', function() {
-    // Get the modals
     const termsModal = document.getElementById('termsModal');
     const privacyModal = document.getElementById('privacyModal');
-    
-    // Get the links that open the modals
     const termsLink = document.getElementById('termsLink');
     const privacyLink = document.getElementById('privacyLink');
-    
-    // Get the close buttons
     const termsModalClose = document.getElementById('termsModalClose');
     const privacyModalClose = document.getElementById('privacyModalClose');
-    
-    // Get the accept/decline buttons
     const acceptTermsBtn = document.getElementById('acceptTermsBtn');
     const declineTermsBtn = document.getElementById('declineTermsBtn');
     const acceptPrivacyBtn = document.getElementById('acceptPrivacyBtn');
     const declinePrivacyBtn = document.getElementById('declinePrivacyBtn');
     
-    // Function to show modal
     function showModal(modal) {
         if (modal) {
             modal.style.display = 'block';
@@ -1915,11 +1860,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     });
     
-    // Close menu when clicking a link
-    const navLinks = document.querySelectorAll('nav ul li a');
+     const navLinks = document.querySelectorAll('nav ul li a');
     navLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            // Only close if we're in mobile view
+        link.addEventListener('click', function(e) {
+            // Stop propagation for notification icon to prevent menu closing
+            if (this.id === 'notificationIcon') {
+                e.stopPropagation();
+                return;
+            }
             if (window.innerWidth <= 768) {
                 hamburgerMenu.classList.remove('active');
                 navMenu.classList.remove('active');
@@ -1929,37 +1877,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle dropdown menus in mobile view
     const dropdownTriggers = document.querySelectorAll('#notificationIcon, #profileIconWrapper');
     dropdownTriggers.forEach(trigger => {
         trigger.addEventListener('click', function(e) {
             e.stopPropagation();
-            
-            // Get the associated dropdown
             const dropdown = this.nextElementSibling;
             
-            // Toggle the dropdown
-            if (dropdown.style.display === 'block') {
+            if (dropdown.style.display === 'block' || dropdown.classList.contains('show-mobile')) {
                 dropdown.style.display = 'none';
+                dropdown.classList.remove('show-mobile');
             } else {
-                // Close all other dropdowns first
                 document.querySelectorAll('.dropdown-menu').forEach(menu => {
                     menu.style.display = 'none';
+                    menu.classList.remove('show-mobile');
                 });
-                
-                dropdown.style.display = 'block';
+                if (window.innerWidth <= 768) {
+                    dropdown.classList.add('show-mobile');
+                } else {
+                    dropdown.style.display = 'block';
+                }
             }
         });
     });
     
-    // Close dropdowns when clicking outside
     document.addEventListener('click', function() {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
             menu.style.display = 'none';
         });
     });
     
-    // Adjust menu on window resize
     window.addEventListener('resize', function() {
         if (window.innerWidth > 768) {
             hamburgerMenu.classList.remove('active');
@@ -1970,38 +1916,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if we have stored auth data in sessionStorage
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
-        // Update UI for logged-in user
         document.getElementById('loginBtnWrapper').style.display = 'none';
         document.getElementById('userProfile').style.display = 'block';
         
-        // If we have user data, use it
         try {
             const userData = JSON.parse(sessionStorage.getItem('userData'));
             if (userData) {
                 console.log('Restored user session from sessionStorage:', userData);
-                // You can use userData here if needed
             }
         } catch (e) {
             console.error('Error parsing stored user data:', e);
         }
     }
     
-    // Also check with the server to confirm authentication status
     fetch('/check-auth')
         .then(response => response.json())
         .then(data => {
             if (data.isLoggedIn) {
-                // Update UI for logged-in user
                 document.getElementById('loginBtnWrapper').style.display = 'none';
                 document.getElementById('userProfile').style.display = 'block';
                 
-                // Store in sessionStorage for future page loads
                 sessionStorage.setItem('isLoggedIn', 'true');
             } else {
-                // If server says not logged in but sessionStorage says logged in,
-                // there might be a session issue - clear sessionStorage
                 if (sessionStorage.getItem('isLoggedIn') === 'true') {
                     console.log('Session mismatch - clearing stored session data');
                     sessionStorage.removeItem('isLoggedIn');
@@ -2064,23 +2001,17 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(nextText, 5000);
 });
 document.addEventListener('DOMContentLoaded', function() {
-    // Get the new buttons
     const signupBtn = document.getElementById('signupBtn');
     const adminLoginBtn = document.getElementById('adminLoginBtn');
     const signupBtnWrapper = document.getElementById('signupBtnWrapper');
     const adminLoginBtnWrapper = document.getElementById('adminLoginBtnWrapper');
     const loginBtnWrapper = document.getElementById('loginBtnWrapper');
-    
-    // Get the modals
     const signupModal = document.getElementById('signupModal');
     const adminLoginModal = document.getElementById('adminLoginModal');
     
-    // Check if user is logged in
     function checkUserLoggedIn() {
-        // This is a placeholder - replace with your actual authentication check
         const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
         
-        // Show/hide buttons based on login status
         if (isLoggedIn) {
             loginBtnWrapper.style.display = 'none';
             signupBtnWrapper.style.display = 'none';
@@ -2096,7 +2027,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Add event listeners for the new buttons
     if (signupBtn) {
         signupBtn.addEventListener('click', function() {
             signupModal.style.display = 'block';
@@ -2109,10 +2039,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Check login status when page loads
     checkUserLoggedIn();
     
-    // Listen for login/logout events
     document.addEventListener('userLoggedIn', function() {
         localStorage.setItem('userLoggedIn', 'true');
         checkUserLoggedIn();
@@ -2123,31 +2051,23 @@ document.addEventListener('DOMContentLoaded', function() {
         checkUserLoggedIn();
     });
     
-    // Check if logout button exists and add event listener
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            // Your logout logic here
             localStorage.setItem('userLoggedIn', 'false');
             
-            // Dispatch logout event
             document.dispatchEvent(new Event('userLoggedOut'));
             
-            // Redirect to home or reload page
             window.location.href = '/';
         });
     }
 });
-// Add this to your existing DOMContentLoaded event listener in java.js
 document.addEventListener('DOMContentLoaded', function() {
-    // Check for booking success flag
     const bookingSuccess = sessionStorage.getItem("bookingSuccess");
     if (bookingSuccess === "true") {
-        // Clear the flag to prevent showing the message on subsequent page loads
         sessionStorage.removeItem("bookingSuccess");
         
-        // Show a success message
         const messageElement = document.createElement("div");
         messageElement.classList.add("success-popup");
         messageElement.textContent = "Your booking was successful!";
@@ -2155,24 +2075,19 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => messageElement.remove(), 5000);
     }
     
-    // Check if user is logged in from sessionStorage or localStorage
     const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true" || 
                        localStorage.getItem("isLoggedIn") === "true";
     
     if (isLoggedIn) {
-        // Update UI for logged-in user
         updateNavbarUI();
     }
 });
 
-// Add or update the updateNavbarUI function
 function updateNavbarUI() {
-    // Check if user is logged in from sessionStorage or localStorage
     const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true" || 
                        localStorage.getItem("isLoggedIn") === "true";
     
     if (isLoggedIn) {
-        // Hide login, signup and admin login buttons
         const loginBtnWrapper = document.getElementById('loginBtnWrapper');
         const signupBtnWrapper = document.getElementById('signupBtnWrapper');
         const adminLoginBtnWrapper = document.getElementById('adminLoginBtnWrapper');
@@ -2181,18 +2096,14 @@ function updateNavbarUI() {
         if (signupBtnWrapper) signupBtnWrapper.style.display = 'none';
         if (adminLoginBtnWrapper) adminLoginBtnWrapper.style.display = 'none';
         
-        // Show user profile
         const userProfile = document.getElementById('userProfile');
         if (userProfile) userProfile.style.display = 'block';
         
-        // Show notification bell
         const notificationWrapper = document.getElementById('notificationWrapper');
         if (notificationWrapper) notificationWrapper.style.display = 'block';
         
-        // Fetch booking status for notification
         fetchBookingStatus();
     } else {
-        // Show login, signup and admin login buttons
         const loginBtnWrapper = document.getElementById('loginBtnWrapper');
         const signupBtnWrapper = document.getElementById('signupBtnWrapper');
         const adminLoginBtnWrapper = document.getElementById('adminLoginBtnWrapper');
@@ -2201,7 +2112,6 @@ function updateNavbarUI() {
         if (signupBtnWrapper) signupBtnWrapper.style.display = 'block';
         if (adminLoginBtnWrapper) adminLoginBtnWrapper.style.display = 'block';
         
-        // Hide user profile and notification bell
         const userProfile = document.getElementById('userProfile');
         const notificationWrapper = document.getElementById('notificationWrapper');
         
@@ -2224,8 +2134,6 @@ function fetchBookingStatus() {
                 } else {
                     bookingStatus.textContent = 'No current pending booking.';
                 }
-
-                // Handle notification badge for new notifications if needed
                 if (data.newNotifications > 0) {
                     const notificationIcon = document.getElementById('notificationIcon');
                     if (notificationIcon) {
@@ -2250,7 +2158,6 @@ function fetchBookingStatus() {
             }
         });
 }
-// Add this to your existing JavaScript or as a new script tag
 document.addEventListener('DOMContentLoaded', function() {
     const signupPassword = document.getElementById('signup-password');
     if (signupPassword) {
@@ -2259,7 +2166,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const message = document.getElementById('signup-passwordMessage');
             const validation = validatePassword(password);
             
-            // Set color based on validation result
             if (validation.isValid) {
                 message.style.color = 'green !important';
                 message.setAttribute('data-valid', 'true');
@@ -2280,16 +2186,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const message = document.getElementById('signup-passwordMessage');
             const validation = validatePassword(password);
             
-            // Remove any existing classes and background colors
             message.className = 'error-message';
             message.style.backgroundColor = 'transparent';
             
             if (validation.isValid) {
-                // Force green color with !important and add class
                 message.style.setProperty('color', 'green', 'important');
                 message.classList.add('strong-password');
             } else {
-                // Force red color with !important
                 message.style.setProperty('color', 'red', 'important');
                 message.classList.remove('strong-password');
             }
@@ -2301,8 +2204,6 @@ document.addEventListener('DOMContentLoaded', function() {
 const originalValidatePassword = validatePassword;
 validatePassword = function(password) {
     const result = originalValidatePassword(password);
-    
-    // If valid, use a more specific message that we can target
     if (result.isValid) {
         result.message = "✅ Strong password!";
     }
@@ -2317,16 +2218,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const message = document.getElementById('admin-passwordMessage');
             const validation = validatePassword(password);
             
-            // Remove any existing classes and background colors
             message.className = 'error-message';
             message.style.backgroundColor = 'transparent';
             
             if (validation.isValid) {
-                // Force green color with !important and add class
                 message.style.setProperty('color', 'green', 'important');
                 message.classList.add('strong-password');
             } else {
-                // Force red color with !important
                 message.style.setProperty('color', 'red', 'important');
                 message.classList.remove('strong-password');
             }
@@ -2335,20 +2233,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-  // Add this to your existing JavaScript to make the admin signup form more compact
   document.addEventListener('DOMContentLoaded', function() {
-    // Get the request account button
     const requestAccountBtn = document.getElementById('requestAccountBtn');
     
     if (requestAccountBtn) {
         requestAccountBtn.addEventListener('click', function() {
-            // Close the admin login modal
             const adminLoginModal = document.getElementById('adminLoginModal');
             if (adminLoginModal) {
                 adminLoginModal.style.display = 'none';
             }
             
-            // Open the admin signup modal
             const adminSignupModal = document.getElementById('adminSignupModal');
             if (adminSignupModal) {
                 adminSignupModal.style.display = 'block';
@@ -2356,25 +2250,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Get the switch to admin login link
     const switchToAdminLoginLink = document.getElementById('switchToAdminLoginLink');
     
     if (switchToAdminLoginLink) {
         switchToAdminLoginLink.addEventListener('click', function() {
-            // Close the admin signup modal
             const adminSignupModal = document.getElementById('adminSignupModal');
             if (adminSignupModal) {
                 adminSignupModal.style.display = 'none';
             }
             
-            // Open the admin login modal
             const adminLoginModal = document.getElementById('adminLoginModal');
             if (adminLoginModal) {
                 adminLoginModal.style.display = 'block';
             }
         });
     }
-});// Add this to ensure admin password validation works correctly
+});
 document.addEventListener('DOMContentLoaded', function() {
     const adminPassword = document.getElementById('admin-password');
     if (adminPassword) {
@@ -2383,16 +2274,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const message = document.getElementById('admin-passwordMessage');
             const validation = validatePassword(password);
             
-            // Remove any existing classes and background colors
             message.className = 'error-message';
             message.style.backgroundColor = 'transparent';
             
             if (validation.isValid) {
-                // Force green color with !important and add class
                 message.style.setProperty('color', 'green', 'important');
                 message.classList.add('strong-password');
             } else {
-                // Force red color with !important
                 message.style.setProperty('color', 'red', 'important');
                 message.classList.remove('strong-password');
             }
@@ -2401,7 +2289,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add validation for confirm password
     const adminConfirmPassword = document.getElementById('admin-confirm-password');
     if (adminConfirmPassword) {
         adminConfirmPassword.addEventListener('input', function() {
@@ -2426,16 +2313,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const message = document.getElementById('signup-passwordMessage');
             const validation = validatePassword(password);
             
-            // Remove any existing classes and background colors
             message.className = 'error-message';
             message.style.backgroundColor = 'transparent';
             
             if (validation.isValid) {
-                // Force green color with !important and add class
                 message.style.setProperty('color', 'green', 'important');
                 message.classList.add('strong-password');
             } else {
-                // Force red color with !important
                 message.style.setProperty('color', 'red', 'important');
                 message.classList.remove('strong-password');
             }
@@ -2444,7 +2328,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add validation for confirm password
     const signupConfirmPassword = document.getElementById('signup-confirm-password');
     if (signupConfirmPassword) {
         signupConfirmPassword.addEventListener('input', function() {
@@ -2462,48 +2345,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });document.addEventListener('DOMContentLoaded', function() {
-    // Get the modals
     const termsModal = document.getElementById('termsModal');
     const privacyModal = document.getElementById('privacyModal');
-    
-    // Get the links that open the modals for user signup
     const termsLink = document.getElementById('termsLink');
     const privacyLink = document.getElementById('privacyLink');
-    
-    // Get the links that open the modals for admin signup
     const adminTermsLink = document.getElementById('adminTermsLink');
     const adminPrivacyLink = document.getElementById('adminPrivacyLink');
-    
-    // Get the close buttons
     const termsModalClose = document.getElementById('termsModalClose');
     const privacyModalClose = document.getElementById('privacyModalClose');
-    
-    // Get the accept/decline buttons
     const acceptTermsBtn = document.getElementById('acceptTermsBtn');
     const declineTermsBtn = document.getElementById('declineTermsBtn');
     const acceptPrivacyBtn = document.getElementById('acceptPrivacyBtn');
     const declinePrivacyBtn = document.getElementById('declinePrivacyBtn');
     
-    // Function to show modal
     function showModal(modal) {
         if (modal) {
             modal.style.display = 'block';
-            document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+            document.body.style.overflow = 'hidden';
         }
     }
     
-    // Function to hide modal
     function hideModal(modal) {
         if (modal) {
             modal.style.display = 'none';
-            document.body.style.overflow = ''; // Restore scrolling
+            document.body.style.overflow = '';
         }
     }
     
-    // Track which form opened the modal
     let currentForm = null;
     
-    // Open terms modal when link is clicked (user signup)
     if (termsLink) {
         termsLink.addEventListener('click', function(e) {
             e.preventDefault();
@@ -2512,7 +2382,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Open privacy modal when link is clicked (user signup)
     if (privacyLink) {
         privacyLink.addEventListener('click', function(e) {
             e.preventDefault();
@@ -2521,7 +2390,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Open terms modal when link is clicked (admin signup)
     if (adminTermsLink) {
         adminTermsLink.addEventListener('click', function(e) {
             e.preventDefault();
@@ -2530,7 +2398,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Open privacy modal when link is clicked (admin signup)
     if (adminPrivacyLink) {
         adminPrivacyLink.addEventListener('click', function(e) {
             e.preventDefault();
@@ -2539,7 +2406,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Close modals when close button is clicked
     if (termsModalClose) {
         termsModalClose.addEventListener('click', function() {
             hideModal(termsModal);
