@@ -71,6 +71,11 @@
                 right: 20px;
                 top: 20px;
             }
+            .hero-content .container{
+                width: 100%;
+                margin-right: 40px;
+                padding: 12px;
+            }
             
             nav ul {
                 position: fixed;
@@ -1605,12 +1610,12 @@
     <nav>
     <ul>
         <li id="notificationWrapper" style="display: none;">
-            <a href="javascript:void(0);" id="notificationIcon">
+            <a href="javascript:void(0);" id="notificationIcon" class="notification-icon-link">
                 <img src="/images/bell.png" class="notification-icon">
             </a>
-            <ul id="notificationDropdown" class="dropdown-menu" style="display: none;">
+           <ul id="notificationDropdown" class="dropdown-menu" style="display: none;">
                 <li><span id="bookingStatus">You have no bookings at the moment.</span></li>
-                <li><a href="/my-bookings">Check My Bookings</a></li>
+                <li><a href="/my-bookings" id="checkBookingsLink">Check My Bookings</a></li>
             </ul>
         </li>
         
