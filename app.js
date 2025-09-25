@@ -820,16 +820,50 @@ app.get('/employee-dashboard', checkAdminAuth, checkRole(['admin','employee']), 
 app.get('/admin-bookings', checkAdminAuth, checkRole(['admin', 'employee']), (req, res) => {
     res.render('admin-bookings', { admin: req.session.admin });
 });
-
 app.get('/api/employee-performance', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
     try {
         const adminId = req.session.admin.id;
         const isAdmin = req.session.admin.role === 'admin';
 
+        const { period, startDate, endDate, month, year } = req.query;
+
+        let dateFilter = {};
+        if (period === 'daily' && startDate && endDate) {
+            dateFilter = {
+                createdAt: {
+                    $gte: new Date(startDate),
+                    $lte: new Date(endDate)
+                }
+            };
+        } else if (period === 'monthly' && month && year) {
+            const monthStart = new Date(year, month - 1, 1);
+            const monthEnd = new Date(year, month, 0, 23, 59, 59);
+            dateFilter = {
+                createdAt: {
+                    $gte: monthStart,
+                    $lte: monthEnd
+                }
+            };
+        } else if (period === 'yearly' && year) {
+            const yearStart = new Date(year, 0, 1);
+            const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+            dateFilter = {
+                createdAt: {
+                    $gte: yearStart,
+                    $lte: yearEnd
+                }
+            };
+        }
+
         if (isAdmin) {
-            // Admin view: get performance for all employees
+        const matchStage = {
+            status: { $in: ['confirmed', 'completed'] },
+            ...dateFilter
+        };
+
+
             const performance = await Booking.aggregate([
-                { $match: { status: { $in: ['confirmed', 'completed'] } } },
+                { $match: matchStage },
                 {
                     $facet: {
                         confirmed: [
@@ -862,7 +896,7 @@ app.get('/api/employee-performance', checkAdminAuth, checkRole(['admin', 'employ
                 },
                 {
                     $lookup: {
-                        from: 'admins', // The collection name for your Admin model
+                        from: 'admins', // Adjust if your collection name differs
                         localField: '_id',
                         foreignField: '_id',
                         as: 'employeeDetails'
@@ -881,20 +915,21 @@ app.get('/api/employee-performance', checkAdminAuth, checkRole(['admin', 'employ
                 { $sort: { totalCompleted: -1, totalConfirmed: -1 } }
             ]);
 
-            // For the chart, we can show totals for the admin's own activity or overall activity
             const adminPerformance = await getEmployeePerformance(adminId);
             adminPerformance.overallPerformance = performance;
             res.json({ success: true, ...adminPerformance });
         } else {
-            // Employee view: get their own performance
-            const employeePerformance = await getEmployeePerformance(adminId);
-            res.json({ success: true, ...employeePerformance });
-        }
+    // Employee view with revenue + all groupings
+    const employeePerformance = await getEmployeePerformance(adminId, { period, startDate, endDate, month, year });
+    res.json({ success: true, ...employeePerformance });
+}
+
     } catch (error) {
         console.error('Error fetching employee performance:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
+
 app.post('/api/bookings/:id/complete', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
@@ -913,36 +948,67 @@ app.post('/api/bookings/:id/complete', checkAdminAuth, checkRole(['admin', 'empl
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
+async function getEmployeePerformance(employeeId, { period, startDate, endDate, month, year } = {}) {
+    const query = { $or: [{ confirmedBy: employeeId }, { completedBy: employeeId }] };
 
-// Helper function to get individual employee performance
-async function getEmployeePerformance(employeeId) {
-    const confirmedBookings = await Booking.find({ confirmedBy: employeeId, status: 'confirmed' });
-    const completedBookings = await Booking.find({ completedBy: employeeId, status: 'completed' });
+    // Apply date filters
+    if (period === 'daily' && startDate && endDate) {
+        query.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    } else if (period === 'monthly' && month && year) {
+        const monthStart = new Date(year, month - 1, 1);
+        const monthEnd = new Date(year, month, 0, 23, 59, 59);
+        query.createdAt = { $gte: monthStart, $lte: monthEnd };
+    } else if (period === 'yearly' && year) {
+        const yearStart = new Date(year, 0, 1);
+        const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+        query.createdAt = { $gte: yearStart, $lte: yearEnd };
+    }
+
+    const bookings = await Booking.find(query);
+
+    const confirmedBookings = bookings.filter(b => b.confirmedBy?.toString() === employeeId.toString() && b.status === 'confirmed');
+    const completedBookings = bookings.filter(b => b.completedBy?.toString() === employeeId.toString() && b.status === 'completed');
 
     const totalConfirmedBookings = confirmedBookings.length;
     const totalCompletedBookings = completedBookings.length;
 
-    // Use a Set to avoid double counting revenue for bookings confirmed and completed by the same employee
+    // Calculate revenue
     const uniqueBookings = new Map();
-    [...confirmedBookings, ...completedBookings].forEach(booking => {
-        uniqueBookings.set(booking._id.toString(), booking);
-    });
+    bookings.forEach(b => uniqueBookings.set(b._id.toString(), b));
+    const totalRevenue = Array.from(uniqueBookings.values()).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
-    const totalRevenue = Array.from(uniqueBookings.values()).reduce((sum, booking) => sum + booking.totalAmount, 0);
+    // --- Breakdown ---
+    const bookingsByMonth = {};
+    const bookingsByDay = {};
+    const bookingsByYear = {};
 
-    const bookingsByMonth = Array.from(uniqueBookings.values()).reduce((acc, booking) => {
-        const month = new Date(booking.createdAt).toLocaleString('default', { month: 'long' });
-        if (!acc[month]) {
-            acc[month] = { confirmed: 0, completed: 0 };
-        }
-        if (booking.status === 'confirmed') acc[month].confirmed++;
-        if (booking.status === 'completed') acc[month].completed++;
-        return acc;
-    }, {});
+    for (const booking of uniqueBookings.values()) {
+        const date = new Date(booking.createdAt);
 
-    return { totalConfirmedBookings, totalCompletedBookings, totalRevenue, bookingsByMonth };
+        // Month breakdown
+        const monthLabel = date.toLocaleString('default', { month: 'long' });
+        if (!bookingsByMonth[monthLabel]) bookingsByMonth[monthLabel] = { confirmed: 0, completed: 0, revenue: 0 };
+        if (booking.status === 'confirmed') bookingsByMonth[monthLabel].confirmed++;
+        if (booking.status === 'completed') bookingsByMonth[monthLabel].completed++;
+        bookingsByMonth[monthLabel].revenue += booking.totalAmount || 0;
+
+        // Daily breakdown
+        const dayLabel = date.toISOString().split('T')[0];
+        if (!bookingsByDay[dayLabel]) bookingsByDay[dayLabel] = { confirmed: 0, completed: 0, revenue: 0 };
+        if (booking.status === 'confirmed') bookingsByDay[dayLabel].confirmed++;
+        if (booking.status === 'completed') bookingsByDay[dayLabel].completed++;
+        bookingsByDay[dayLabel].revenue += booking.totalAmount || 0;
+
+        // Yearly breakdown
+        const yearLabel = date.getFullYear();
+        if (!bookingsByYear[yearLabel]) bookingsByYear[yearLabel] = { confirmed: 0, completed: 0, revenue: 0 };
+        if (booking.status === 'confirmed') bookingsByYear[yearLabel].confirmed++;
+        if (booking.status === 'completed') bookingsByYear[yearLabel].completed++;
+        bookingsByYear[yearLabel].revenue += booking.totalAmount || 0;
+    }
+
+    return { totalConfirmedBookings, totalCompletedBookings, totalRevenue, bookingsByMonth, bookingsByDay, bookingsByYear };
 }
-
 
 app.get('/api/admin/employee-performance', checkAdminAuth, checkRole(['admin']), async (req, res) => {
     try {
@@ -1910,6 +1976,7 @@ app.post('/admin-bookings/update-status', async (req, res) => {
 
         res.json({ success: true, message: "Booking status updated.", booking });
     } catch (error) {
+
         console.error("❌ Error updating booking status:", error);
         res.status(500).json({ error: "Failed to update booking status." });
     }
@@ -4153,7 +4220,7 @@ const countrySeasons = {
     "Albania": ["Winter", "Spring", "Summer", "Fall"],
     "Algeria": ["Winter", "Spring", "Summer", "Fall"],
     "Andorra": ["Winter", "Spring", "Summer", "Fall"],
-    "Angola": ["Rainy Season", "Dry Season"],
+    "Angola": ["Wet Season", "Dry Season"],
     "Antigua and Barbuda": ["Wet Season", "Dry Season"],
     "Argentina": ["Summer", "Fall", "Winter", "Spring"],
     "Armenia": ["Winter", "Spring", "Summer", "Fall"],
@@ -4169,9 +4236,9 @@ const countrySeasons = {
     "Belize": ["Wet Season", "Dry Season"],
     "Benin": ["Wet Season", "Dry Season"],
     "Bhutan": ["Winter", "Spring", "Summer", "Fall"],
-    "Bolivia": ["Rainy Season", "Dry Season"],
+    "Bolivia": ["Wet Season", "Dry Season"],
     "Bosnia and Herzegovina": ["Winter", "Spring", "Summer", "Fall"],
-    "Botswana": ["Rainy Season", "Dry Season"],
+    "Botswana": ["Wet Season", "Dry Season"],
     "Brazil": ["Summer", "Fall", "Winter", "Spring"],
     "Brunei": ["Wet Season", "Dry Season"],
     "Bulgaria": ["Winter", "Spring", "Summer", "Fall"],
@@ -4196,7 +4263,7 @@ const countrySeasons = {
     "Germany": ["Winter", "Spring", "Summer", "Fall"],
     "Greece": ["Winter", "Spring", "Summer", "Fall"],
     "India": ["Winter", "Summer", "Monsoon", "Post-Monsoon"],
-    "Indonesia": ["Rainy Season", "Dry Season"],
+    "Indonesia": ["Wet Season", "Dry Season"],
     "Iran": ["Winter", "Spring", "Summer", "Fall"],
     "Iraq": ["Winter", "Summer"],
     "Ireland": ["Winter", "Spring", "Summer", "Fall"],
@@ -5283,10 +5350,70 @@ app.post('/verify-unified-credentials', async (req, res) => {
         });
     }
 });
+apiRouter.get('/analytics/summary', checkAdminAuth, async (req, res) => {
+    try {
+        const { period = 'all' } = req.query;
+        let startDate;
+        const now = new Date();
 
+        // Determine startDate based on period
+        switch (period) {
+            case 'year':
+                startDate = new Date(now.getFullYear(), 0, 1);
+                break;
+            case 'month':
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+            case 'day':
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                break;
+            case 'all':
+            default:
+                startDate = null; // For all-time, no filter
+                break;
+        }
+
+        const dateFilter = startDate ? { createdAt: { $gte: startDate } } : {};
+
+        // Count total users
+        const totalUsers = await User.countDocuments(dateFilter);
+        // Count total bookings
+        const totalBookings = await Booking.countDocuments(dateFilter);
+
+        // Calculate total sales
+        const salesAggregation = await Booking.aggregate([
+            { $match: { ...dateFilter, status: { $in: ['confirmed', 'completed'] } } },
+            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]);
+        const totalSales = salesAggregation.length > 0 ? salesAggregation[0].total : 0;
+
+        // Top 5 destinations
+        const topDestinations = await Booking.aggregate([
+            { $match: dateFilter },
+            { $group: { _id: '$destination', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 }
+        ]);
+
+        // Send response
+        res.json({
+            success: true,
+            data: {
+                totalUsers,
+                totalBookings,
+                totalSales,
+                topDestinations
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching summary analytics:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch summary data' });
+    }
+});
 app.use((req, res) => {
     res.status(404).render('404', { url: req.url });
 });
+
 app.get("/",(req, res) => {
     res.send("Hello from the server")
 });
