@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Users</title>
-    <link rel="stylesheet" href="/css/useradmin.css">
+    <link rel="stylesheet" href="/css/useradmin.css" />
     <style>
         .user-table-container {
             background: white;
@@ -404,16 +404,63 @@
                 transform: translateX(0);
                 opacity: 1;
             }
-        }.activate-btn {
-    background-color: #28a745;
-    color: white;
-}
-
-.deactivate-btn {
-    background-color: #dc3545;
-    color: white;
-}
-
+        }
+        .activate-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .deactivate-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #f26523;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .toggle-label {
+            margin: 0 10px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -424,25 +471,25 @@
             <span></span>
         </div>
     </button>
-    
+
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    
+
     <div class="sidebar" id="sidebar">
         <div class="logo">
-            <img src="/images/Image-logo.png" alt="Company Logo">
+            <img src="/images/Image-logo.png" alt="Company Logo" />
         </div>
         <div class="admin-info" style="display: none;">
             <p>Welcome, <span id="adminName">Admin</span></p>
             <p class="admin-role" id="adminRole">Role: Admin</p>
         </div>
         <nav class="sidebar-nav">
-             <a href="/admin-dashboard">Dashboard</a>
+            <a href="/admin-dashboard">Dashboard</a>
             <% if (admin.role !== 'employee') { %>
                 <a href="/admin-users">Users</a>
                 <a href="/admin-approvals">Account Approvals</a>
             <% } %>
             <a href="/employee-dashboard">Employee</a>
-            
+
             <a href="/admin-bookings">Bookings</a>
             <a href="/admin-tours">Tours</a>
             <a href="/admin-messages">Messages</a>
@@ -454,44 +501,54 @@
         <header class="dashboard-header">
             <h1>User Management</h1>
             <div class="search-container">
-                <input type="text" id="userSearch" placeholder="Search users...">
+                <input type="text" id="userSearch" placeholder="Search users..." />
             </div>
         </header>
+
+        <div class="toggle-container">
+            <span class="toggle-label">Users</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="userTypeToggle" />
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Admins</span>
+        </div>
 
         <div class="user-table-container">
             <table>
                 <thead>
-                    <tr>
+                    <tr id="tableHeader">
                         <th>Username</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>First Name</th>
                         <th>Last Name</th>
-                        <th>Birthdate</th>
-                        <th>Sex</th>
+                        <th class="user-only">Birthdate</th>
+                        <th class="user-only">Sex</th>
+                        <th class="admin-only" style="display: none;">Role</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody">
                     <% if (users && users.length > 0) { %>
                         <% users.forEach(user => { %>
-                            <tr>
+                            <tr data-user-type="user">
                                 <td><%= user.username %></td>
                                 <td><%= user.email %></td>
                                 <td><%= user.phoneNumber %></td>
                                 <td><%= user.firstName || 'N/A' %></td>
                                 <td><%= user.lastName || 'N/A' %></td>
-                                <td><%= user.birthdate ? new Date(user.birthdate).toLocaleDateString() : 'N/A' %></td>
-                                <td><%= user.sex || 'N/A' %></td>
+                                <td class="user-only"><%= user.birthdate ? new Date(user.birthdate).toLocaleDateString() : 'N/A' %></td>
+                                <td class="user-only"><%= user.sex || 'N/A' %></td>
+                                <td class="admin-only" style="display: none;"></td>
                                 <td class="user-actions">
-                                    <button class="action-btn <%= user.isActive ? 'deactivate-btn' : 'activate-btn' %>" 
-                                            data-id="<%= user._id %>" 
+                                    <button class="action-btn <%= user.isActive ? 'deactivate-btn' : 'activate-btn' %>"
+                                            data-id="<%= user._id %>"
                                             data-active="<%= user.isActive %>"
                                             data-username="<%= user.username %>">
                                         <%= user.isActive ? 'Deactivate' : 'Activate' %>
                                     </button>
                                 </td>
-                                
                             </tr>
                         <% }); %>
                     <% } else { %>
@@ -501,7 +558,7 @@
                     <% } %>
                 </tbody>
             </table>
-            
+
             <div class="pagination" id="pagination">
                 <!-- Pagination will be generated by JavaScript -->
             </div>
@@ -514,30 +571,30 @@
             <span class="close-modal">&times;</span>
             <h2>Edit User</h2>
             <form id="editUserForm">
-                <input type="hidden" id="editUserId">
+                <input type="hidden" id="editUserId" />
                 <div class="form-group">
                     <label for="editUsername">Username</label>
-                    <input type="text" id="editUsername" disabled>
+                    <input type="text" id="editUsername" disabled />
                 </div>
                 <div class="form-group">
                     <label for="editEmail">Email</label>
-                    <input type="email" id="editEmail" disabled>
+                    <input type="email" id="editEmail" disabled />
                 </div>
                 <div class="form-group">
                     <label for="editPhone">Phone</label>
-                    <input type="text" id="editPhone">
+                    <input type="text" id="editPhone" />
                 </div>
                 <div class="form-group">
                     <label for="editFirstName">First Name</label>
-                    <input type="text" id="editFirstName">
+                    <input type="text" id="editFirstName" />
                 </div>
                 <div class="form-group">
                     <label for="editLastName">Last Name</label>
-                    <input type="text" id="editLastName">
+                    <input type="text" id="editLastName" />
                 </div>
                 <div class="form-group">
                     <label for="editBirthdate">Birthdate</label>
-                    <input type="date" id="editBirthdate">
+                    <input type="date" id="editBirthdate" />
                 </div>
                 <div class="form-group">
                     <label for="editSex">Sex</label>
@@ -568,19 +625,17 @@
         </div>
     </div>
 
-    <div id="notification" class="error-message" style="display: none;"></div>
+    <div id="notification" class="error-message" style="display: none"></div>
     <script>
         let userToDelete = null;
-    
-        // Debug function to log API requests
+        let currentView = 'users'; // 'users' or 'admins'
+
         function logApiRequest(method, url, data = null) {
             console.log(`API ${method} Request to: ${url}`);
             if (data) {
                 console.log('Request data:', data);
             }
         }
-    
-        // First, add this function to check authentication
         async function checkAdminAuth() {
             try {
                 const response = await fetch('/api/admin/check-auth', {
@@ -590,7 +645,7 @@
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 const data = await response.json();
                 return data.isAuthenticated;
             } catch (error) {
@@ -598,10 +653,8 @@
                 return false;
             }
         }
-    
-        // Initialize admin info
+
         document.addEventListener('DOMContentLoaded', async function() {
-            // Check authentication first
             const isAuthenticated = await checkAdminAuth();
             if (!isAuthenticated) {
                 showNotification('Your session has expired. Please log in again.', 'error');
@@ -610,15 +663,12 @@
                 }, 2000);
                 return;
             }
-    
-            // Set admin info
             const adminName = localStorage.getItem('adminName') || 'Admin';
             const adminRole = localStorage.getItem('adminRole') || 'admin';
-            
+
             document.getElementById('adminName').textContent = adminName;
             document.getElementById('adminRole').textContent = `Role: ${adminRole}`;
-            
-            // Setup search functionality
+
             const searchInput = document.getElementById('userSearch');
             if (searchInput) {
                 searchInput.addEventListener('input', filterUsers);
@@ -626,11 +676,9 @@
             } else {
                 console.error('Search input element not found');
             }
-            
-            // Setup pagination
+
             setupPagination();
-    
-            // Add periodic session check
+
             setInterval(async () => {
                 const isStillAuthenticated = await checkAdminAuth();
                 if (!isStillAuthenticated) {
@@ -639,30 +687,27 @@
                         window.location.href = '/admin';
                     }, 2000);
                 }
-            }, 5 * 60 * 1000); // Check every 5 minutes
-            
-            // Mobile menu toggle functionality
+            }, 5 * 60 * 1000);
+
             const menuToggle = document.getElementById('menuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
+
             menuToggle.addEventListener('click', function() {
                 this.classList.toggle('active');
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                
-                // Prevent scrolling when sidebar is open
+
                 document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
             });
-            
+
             sidebarOverlay.addEventListener('click', function() {
                 menuToggle.classList.remove('active');
                 sidebar.classList.remove('active');
                 this.classList.remove('active');
                 document.body.style.overflow = '';
             });
-            
-            // Close sidebar when clicking on a link (for mobile)
+
             const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', function() {
@@ -675,60 +720,82 @@
                 });
             });
         });
-    
+
+        document.getElementById('userTypeToggle').addEventListener('change', function() {
+            if (this.checked) {
+                currentView = 'admins';
+                document.getElementById('userSearch').placeholder = "Search admins...";
+                fetchAdminsAndRenderTable();
+            } else {
+                currentView = 'users';
+                document.getElementById('userSearch').placeholder = "Search users...";
+                // Re-render initial user data or fetch again if needed
+                renderUsersTable(<%- JSON.stringify(users) %>);
+            }
+            toggleTableHeaders(currentView);
+        });
+
+        function toggleTableHeaders(view) {
+            const userOnlyHeaders = document.querySelectorAll('.user-only');
+            const adminOnlyHeaders = document.querySelectorAll('.admin-only');
+
+            if (view === 'admins') {
+                userOnlyHeaders.forEach(el => el.style.display = 'none');
+                adminOnlyHeaders.forEach(el => el.style.display = '');
+                document.querySelector('#tableHeader').children[5].colSpan = 1;
+                document.querySelector('#tableHeader').children[6].colSpan = 1;
+
+            } else {
+                userOnlyHeaders.forEach(el => el.style.display = '');
+                adminOnlyHeaders.forEach(el => el.style.display = 'none');
+            }
+        }
+
         function filterUsers() {
             console.log('Filtering users...');
             const searchTerm = document.getElementById('userSearch').value.toLowerCase();
             console.log('Search term:', searchTerm);
-            
+
             const rows = document.querySelectorAll('#userTableBody tr');
             console.log('Found', rows.length, 'rows');
-            
+
             let visibleCount = 0;
-            
+
             rows.forEach(row => {
                 if (!row.cells || row.cells.length < 7) {
                     console.log('Invalid row structure:', row);
                     return;
                 }
-                
+
                 const username = row.cells[0].textContent.toLowerCase();
                 const email = row.cells[1].textContent.toLowerCase();
                 const firstName = row.cells[3].textContent.toLowerCase();
                 const lastName = row.cells[4].textContent.toLowerCase();
-                
+
                 const matchesSearch = username.includes(searchTerm) || 
                                      email.includes(searchTerm) || 
                                      firstName.includes(searchTerm) || 
                                      lastName.includes(searchTerm);
-                
                 row.style.display = matchesSearch ? '' : 'none';
-                
+
                 if (matchesSearch) visibleCount++;
             });
-            
             console.log('Visible rows after filtering:', visibleCount);
-            
-            // Update pagination after filtering
             setupPagination();
         }
-    
+
         function setupPagination() {
             const rowsPerPage = 10;
             const rows = Array.from(document.querySelectorAll('#userTableBody tr')).filter(row => 
                 row.style.display !== 'none'
             );
-            
             console.log('Setting up pagination for', rows.length, 'visible rows');
-            
+
             const pageCount = Math.ceil(rows.length / rowsPerPage);
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
-            
-            // Don't show pagination if there's only one page or no data
+
             if (pageCount <= 1) return;
-            
-            // Previous button
             const prevBtn = document.createElement('button');
             prevBtn.textContent = '«';
             prevBtn.addEventListener('click', () => {
@@ -739,8 +806,7 @@
                 }
             });
             pagination.appendChild(prevBtn);
-            
-            // Page buttons
+
             for (let i = 1; i <= pageCount; i++) {
                 const pageBtn = document.createElement('button');
                 pageBtn.textContent = i;
@@ -751,12 +817,10 @@
                     pageBtn.classList.add('active');
                     showPage(i, rowsPerPage, rows);
                 });
-                
                 if (i === 1) pageBtn.classList.add('active');
                 pagination.appendChild(pageBtn);
             }
-            
-            // Next button
+
             const nextBtn = document.createElement('button');
             nextBtn.textContent = '»';
             nextBtn.addEventListener('click', () => {
@@ -767,35 +831,79 @@
                 }
             });
             pagination.appendChild(nextBtn);
-            
-            // Show first page
+
             showPage(1, rowsPerPage, rows);
         }
-    
+
         function showPage(pageNum, rowsPerPage, rows) {
             const startIndex = (pageNum - 1) * rowsPerPage;
             const endIndex = startIndex + rowsPerPage;
-            
+
             rows.forEach((row, index) => {
                 row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
             });
         }
-    // Add event listener for activate/deactivate buttons
+        document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('activate-btn') || e.target.classList.contains('deactivate-btn')) {
+        const userId = e.target.getAttribute('data-id');
+        const isActive = e.target.getAttribute('data-active') === 'true';
+        const type = e.target.getAttribute('data-type'); // "user" or "admin"
+        toggleUserStatus(userId, !isActive, e.target, type);
+    }
+});
+
+async function toggleUserStatus(userId, newStatus, buttonElement, type = 'user') {
+    try {
+        const endpoint = type === 'admin'
+            ? `/api/admins/${userId}/status`
+            : `/api/users/${userId}/status`;
+
+        const response = await fetch(endpoint, {
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ isActive: newStatus }),
+            credentials: 'include'
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Failed to update status');
+
+        buttonElement.textContent = newStatus ? 'Deactivate' : 'Activate';
+        buttonElement.setAttribute('data-active', newStatus);
+
+        if (newStatus) {
+            buttonElement.classList.remove('activate-btn');
+            buttonElement.classList.add('deactivate-btn');
+        } else {
+            buttonElement.classList.remove('deactivate-btn');
+            buttonElement.classList.add('activate-btn');
+        }
+
+        showNotification(`${type === 'admin' ? 'Admin' : 'User'} ${newStatus ? 'activated' : 'deactivated'} successfully`, 'success');
+    } catch (error) {
+        console.error('Error toggling status:', error);
+        showNotification(error.message || 'Failed to update status. Please try again.', 'error');
+    }
+}
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('activate-btn') || e.target.classList.contains('deactivate-btn')) {
         const userId = e.target.getAttribute('data-id');
         const isActive = e.target.getAttribute('data-active') === 'true';
-        const username = e.target.getAttribute('data-username');
-        
-        console.log(`Toggling status for user ${username} (${userId}): currently ${isActive ? 'active' : 'inactive'}`);
-        
-        toggleUserStatus(userId, !isActive, e.target);
+        const type = e.target.getAttribute('data-type') || 'user'; // default to user
+        toggleUserStatus(userId, !isActive, e.target, type);
     }
 });
 
-async function toggleUserStatus(userId, newStatus, buttonElement) {
+async function toggleUserStatus(userId, newStatus, buttonElement, type = 'user') {
     try {
-        const response = await fetch(`/api/users/${userId}/status`, {
+        const endpoint = type === 'admin'
+            ? `/api/admins/${userId}/status`
+            : `/api/users/${userId}/status`;
+
+        const response = await fetch(endpoint, {
             method: 'PATCH',
             headers: {
                 'Accept': 'application/json',
@@ -804,22 +912,14 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
             body: JSON.stringify({ isActive: newStatus }),
             credentials: 'include'
         });
-        
-        if (!response.ok) {
-            throw new Error(`Server returned status ${response.status}`);
-        }
-        
+
         const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.message || 'Failed to update user status');
-        }
-        
-        // Update the button text and data attribute
+        if (!response.ok || !data.success) throw new Error(data.message || 'Failed to update status');
+
+        // ✅ Update button text & attributes
         buttonElement.textContent = newStatus ? 'Deactivate' : 'Activate';
         buttonElement.setAttribute('data-active', newStatus);
-        
-        // Update button style
+
         if (newStatus) {
             buttonElement.classList.remove('activate-btn');
             buttonElement.classList.add('deactivate-btn');
@@ -827,121 +927,62 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
             buttonElement.classList.remove('deactivate-btn');
             buttonElement.classList.add('activate-btn');
         }
-        
-        showNotification(`User ${newStatus ? 'activated' : 'deactivated'} successfully`, 'success');
+
+        showNotification(`${type === 'admin' ? 'Admin' : 'User'} ${newStatus ? 'activated' : 'deactivated'} successfully`, 'success');
     } catch (error) {
-        console.error('Error toggling user status:', error);
-        showNotification(error.message || 'Failed to update user status. Please try again.', 'error');
+        console.error('Error toggling status:', error);
+        showNotification(error.message || 'Failed to update status. Please try again.', 'error');
     }
 }
 
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('edit-btn')) {
-        const userId = e.target.getAttribute('data-id');
-        const isActive = e.target.getAttribute('data-active') === 'true';
-        toggleUserStatus(userId, !isActive, e.target);
-    }
-});
 
-async function toggleUserStatus(userId, newStatus, buttonElement) {
-    try {
-        const response = await fetch(`/api/users/${userId}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ isActive: newStatus }),
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Server returned status ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.message || 'Failed to update user status');
-        }
-        
-        // Update the button text and data attribute
-        buttonElement.textContent = newStatus ? 'Deactivate' : 'Activate';
-        buttonElement.setAttribute('data-active', newStatus);
-        
-        // Update button style
-        if (newStatus) {
-            buttonElement.classList.remove('activate-btn');
-            buttonElement.classList.add('deactivate-btn');
-        } else {
-            buttonElement.classList.remove('deactivate-btn');
-            buttonElement.classList.add('activate-btn');
-        }
-        
-        showNotification(`User ${newStatus ? 'activated' : 'deactivated'} successfully`, 'success');
-    } catch (error) {
-        console.error('Error toggling user status:', error);
-        showNotification(error.message || 'Failed to update user status. Please try again.', 'error');
-    }
-}
-
-    
         function openEditModal(userId) {
-            // In a real implementation, you would fetch user data from the server
-            // For now, we'll just populate with data from the table
             const row = document.querySelector(`button[data-id="${userId}"]`).closest('tr');
-            
+
             document.getElementById('editUserId').value = userId;
             document.getElementById('editUsername').value = row.cells[0].textContent;
             document.getElementById('editEmail').value = row.cells[1].textContent;
             document.getElementById('editPhone').value = row.cells[2].textContent;
             document.getElementById('editFirstName').value = row.cells[3].textContent === 'N/A' ? '' : row.cells[3].textContent;
             document.getElementById('editLastName').value = row.cells[4].textContent === 'N/A' ? '' : row.cells[4].textContent;
-            
+
             const birthdate = row.cells[5].textContent;
             if (birthdate !== 'N/A') {
-                // Convert date to YYYY-MM-DD format for input
                 const date = new Date(birthdate);
                 const formattedDate = date.toISOString().split('T')[0];
                 document.getElementById('editBirthdate').value = formattedDate;
             } else {
                 document.getElementById('editBirthdate').value = '';
             }
-            
+
             document.getElementById('editSex').value = row.cells[6].textContent === 'N/A' ? '' : row.cells[6].textContent;
-            
-            // Show the modal
+
             const modal = document.getElementById('editUserModal');
             modal.style.display = 'block';
         }
-    
-        // Close modal when clicking the X
+
         document.querySelector('.close-modal').addEventListener('click', function() {
             document.getElementById('editUserModal').style.display = 'none';
         });
-    
-        // Close modal when clicking cancel
+
         document.getElementById('cancelEdit').addEventListener('click', function() {
             document.getElementById('editUserModal').style.display = 'none';
         });
-    
-        // Close modal when clicking outside of it
+
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('editUserModal');
             if (event.target === modal) {
                 modal.style.display = 'none';
             }
-            
             const deleteModal = document.getElementById('deleteConfirmModal');
             if (event.target === deleteModal) {
                 deleteModal.style.display = 'none';
             }
         });
-    
-        // Handle form submission
+
         document.getElementById('editUserForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const userId = document.getElementById('editUserId').value;
             const userData = {
                 phoneNumber: document.getElementById('editPhone').value,
@@ -950,15 +991,12 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 birthdate: document.getElementById('editBirthdate').value,
                 sex: document.getElementById('editSex').value
             };
-            
-            // Send update request to server
             updateUser(userId, userData);
         });
-    
+
         async function updateUser(userId, userData) {
             logApiRequest('PUT', `/api/users/${userId}`, userData);
-            
-            // First check if admin is authenticated
+
             const isAuthenticated = await checkAdminAuth();
             if (!isAuthenticated) {
                 showNotification('Your session has expired. Please log in again.', 'error');
@@ -967,7 +1005,7 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 }, 2000);
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/api/users/${userId}`, {
                     method: 'PUT',
@@ -978,10 +1016,9 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                     body: JSON.stringify(userData),
                     credentials: 'include'
                 });
-                
+
                 console.log(`Update response status: ${response.status}`);
-                
-                // Handle non-JSON responses
+
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     if (response.status === 401) {
@@ -992,31 +1029,26 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                         throw new Error(`Server returned status ${response.status}. Check console for details.`);
                     }
                 }
-                
+
                 const data = await response.json();
                 console.log('Update response data:', data);
-                
+
                 if (!data.success) {
                     throw new Error(data.message || 'Failed to update user');
                 }
-                
-                // Update the table row with new data
                 const row = document.querySelector(`button[data-id="${userId}"]`).closest('tr');
                 row.cells[2].textContent = userData.phoneNumber;
                 row.cells[3].textContent = userData.firstName || 'N/A';
                 row.cells[4].textContent = userData.lastName || 'N/A';
                 row.cells[5].textContent = userData.birthdate ? new Date(userData.birthdate).toLocaleDateString() : 'N/A';
                 row.cells[6].textContent = userData.sex || 'N/A';
-                
-                // Close the modal
+
                 document.getElementById('editUserModal').style.display = 'none';
-                
-                // Show success message
+
                 showNotification('User updated successfully', 'success');
             } catch (error) {
                 console.error('Error updating user:', error);
                 showNotification(error.message || 'Failed to update user. Please try again.', 'error');
-                
                 if (error.message.includes('session has expired')) {
                     setTimeout(() => {
                         window.location.href = '/admin';
@@ -1024,8 +1056,7 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 }
             }
         }
-    
-        // Delete user functionality
+
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('delete-btn')) {
                 const userId = e.target.getAttribute('data-id');
@@ -1034,8 +1065,7 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 document.getElementById('deleteConfirmModal').style.display = 'block';
             }
         });
-    
-        // Handle delete confirmation
+
         document.getElementById('confirmDelete').addEventListener('click', function() {
             if (userToDelete) {
                 console.log('Confirming deletion for user ID:', userToDelete);
@@ -1044,18 +1074,15 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 userToDelete = null;
             }
         });
-    
-        // Handle delete cancellation
+
         document.getElementById('cancelDelete').addEventListener('click', function() {
             console.log('Deletion cancelled');
             document.getElementById('deleteConfirmModal').style.display = 'none';
             userToDelete = null;
         });
-    
+
         async function deleteUser(userId) {
             logApiRequest('DELETE', `/api/users/${userId}`);
-            
-            // First check if admin is authenticated
             const isAuthenticated = await checkAdminAuth();
             if (!isAuthenticated) {
                 showNotification('Your session has expired. Please log in again.', 'error');
@@ -1064,7 +1091,6 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 }, 2000);
                 return;
             }
-            
             try {
                 const response = await fetch(`/api/users/${userId}`, {
                     method: 'DELETE',
@@ -1074,10 +1100,7 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                     },
                     credentials: 'include'
                 });
-                
                 console.log(`Delete response status: ${response.status}`);
-                
-                // Handle non-JSON responses
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     if (response.status === 401) {
@@ -1088,27 +1111,18 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                         throw new Error(`Server returned status ${response.status}. Check console for details.`);
                     }
                 }
-                
                 const data = await response.json();
                 console.log('Delete response data:', data);
-                
                 if (!data.success) {
                     throw new Error(data.message || 'Failed to delete user');
                 }
-                
-                // Remove the row from the table
                 const row = document.querySelector(`button[data-id="${userId}"]`).closest('tr');
                 row.remove();
-                
-                // Show success message
                 showNotification('User deleted successfully', 'success');
-                
-                // Update pagination
                 setupPagination();
             } catch (error) {
                 console.error('Error deleting user:', error);
                 showNotification(error.message || 'Failed to delete user. Please try again.', 'error');
-                
                 if (error.message.includes('session has expired')) {
                     setTimeout(() => {
                         window.location.href = '/admin';
@@ -1116,18 +1130,18 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 }
             }
         }
-    
+
         function showNotification(message, type) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.className = type === 'success' ? 'success-message' : 'error-message';
             notification.style.display = 'block';
-            
+
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 3000);
         }
-    
+
         function handleAdminLogout() {
             fetch('/api/admin/logout', {
                 method: 'GET',
@@ -1145,6 +1159,111 @@ async function toggleUserStatus(userId, newStatus, buttonElement) {
                 showNotification('Logout failed. Please try again.', 'error');
             });
         }
+
+        // New functions for user type toggle
+        async function fetchAdminsAndRenderTable() {
+            try {
+                const response = await fetch('/api/admins', {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch admins');
+                }
+                const data = await response.json();
+                if (data.success) {
+                    renderAdminsTable(data.admins);
+                } else {
+                    showNotification(data.message || 'Could not load admins.', 'error');
+                }
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        function renderUsersTable(users) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';
+            if (users && users.length > 0) {
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.dataset.userType = 'user';
+                    row.innerHTML = `
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td>${user.phoneNumber}</td>
+                        <td>${user.firstName || 'N/A'}</td>
+                        <td>${user.lastName || 'N/A'}</td>
+                        <td class="user-only">${user.birthdate ? new Date(user.birthdate).toLocaleDateString() : 'N/A'}</td>
+                        <td class="user-only">${user.sex || 'N/A'}</td>
+                        <td class="admin-only" style="display: none;"></td>
+                        <td class="user-actions">
+                            <button class="action-btn ${user.isActive ? 'deactivate-btn' : 'activate-btn'}"
+                                    data-id="${user._id}"
+                                    data-active="${user.isActive}"
+                                    data-username="${user.username}">
+                                ${user.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="8" class="no-users">No users found.</td></tr>';
+            }
+            setupPagination();
+            toggleTableHeaders('users');
+        }
+function renderAdminsTable(admins) {
+    const tableBody = document.getElementById('userTableBody');
+    tableBody.innerHTML = '';
+
+    if (admins && admins.length > 0) {
+        admins.forEach(admin => {
+            const row = document.createElement('tr');
+            row.dataset.userType = 'admin';
+            row.innerHTML = `
+                <td>${admin.username}</td>
+                <td>${admin.email}</td>
+                <td>${admin.phoneNumber}</td>
+                <td>${admin.firstName || 'N/A'}</td>
+                <td>${admin.lastName || 'N/A'}</td>
+                <td class="user-only" style="display: none;"></td>
+                <td class="user-only" style="display: none;"></td>
+                <td class="admin-only">${admin.role}</td>
+                <td class="user-actions">
+                    <button class="action-btn ${admin.isActive ? 'deactivate-btn' : 'activate-btn'}"
+                            data-id="${admin._id}"
+                            data-active="${admin.isActive}"
+                            data-type="admin"
+                            data-username="${admin.username}">
+                        ${admin.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } else {
+        tableBody.innerHTML = '<tr><td colspan="8" class="no-users">No admins found.</td></tr>';
+    }
+
+    setupPagination();
+    toggleTableHeaders('admins');
+}
+
+
+        document.getElementById('userTypeToggle').addEventListener('change', function() {
+            if (this.checked) {
+                currentView = 'admins';
+                document.getElementById('userSearch').placeholder = "Search admins...";
+                fetchAdminsAndRenderTable();
+            } else {
+                currentView = 'users';
+                document.getElementById('userSearch').placeholder = "Search users...";
+                // Re-render initial user data or fetch again if needed
+                renderUsersTable(<%- JSON.stringify(users) %>);
+            }
+            toggleTableHeaders(currentView);
+        });
     </script>
-    </body>
-    </html>
+</body>
+</html>
