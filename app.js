@@ -2190,7 +2190,7 @@ function isAuthenticated(req, res, next) {
 }
 app.post('/update-profile', isAuthenticated, async (req, res) => {
     try {
-        const { firstName, middleInitial, lastName, suffix, phoneNumber, birthdate, sex, nationality } = req.body; // Add nationality
+        const { firstName, middleInitial, lastName, suffix, phoneNumber, birthdate, sex, nationality } = req.body;
         const updatedUser = await User.findByIdAndUpdate(req.session.user.id, {
             firstName, 
             middleInitial,
@@ -2199,7 +2199,7 @@ app.post('/update-profile', isAuthenticated, async (req, res) => {
             phoneNumber, 
             birthdate: birthdate ? new Date(birthdate) : null, 
             sex,
-            nationality  // Add this line
+            nationality
         }, { new: true });
 
         if (!updatedUser) {
@@ -2217,7 +2217,7 @@ app.post('/update-profile', isAuthenticated, async (req, res) => {
             suffix: updatedUser.suffix,
             birthdate: updatedUser.birthdate,
             sex: updatedUser.sex,
-            nationality: updatedUser.nationality  // Add this line
+            nationality: updatedUser.nationality
         };
 
         return res.json({ success: true, message: 'Profile updated successfully!' });
@@ -3158,7 +3158,7 @@ app.get('/api/user-profile', (req, res) => {
                 suffix: user.suffix,
                 birthdate: user.birthdate,
                 sex: user.sex,
-                nationality: user.nationality  // Add this line
+                nationality: user.nationality
             });
         })
         .catch(err => {
@@ -3167,7 +3167,7 @@ app.get('/api/user-profile', (req, res) => {
         });
 });
 
-cron.schedule('*/5 * * * *', async () => { // Run every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
     try {
         const now = new Date();
         
