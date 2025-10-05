@@ -279,9 +279,6 @@
         </div>
 
         <div class="settings-options">
-            <button id="changePasswordBtn" class="settings-button" onclick="location.href='/change-password'">
-                Change Password
-            </button>
             <button id="deleteAccountBtn" class="settings-button danger">
                 Delete Account
             </button>
@@ -415,15 +412,7 @@
         }
     }
     
-    // Update navigation menu - replace "Home" with "Go Back"
-    const navUl = document.querySelector('nav ul');
-    if (navUl) {
-        const homeLink = navUl.querySelector('li a[href="/"]');
-        if (homeLink) {
-            homeLink.textContent = 'Go Back';
-            homeLink.href = 'javascript:history.back()';
-        }
-    }
+   
     
     // Mobile menu toggle functionality
     const hamburgerMenu = document.querySelector('.hamburger-menu');
