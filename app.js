@@ -4333,6 +4333,48 @@ cron.schedule('*/1 * * * *', async () => {  // Run every minute
     }
 });
 
+router.get('/api/analytics/seasons', async (req, res) => {
+  const seasonStats = await Booking.aggregate([
+    { $group: { _id: "$season", count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]);
+  res.json(seasonStats);
+});
+
+app.get('/api/analytics/seasons', async (req, res) => {
+  try {
+    const seasonStats = await Booking.aggregate([
+      { $group: { _id: "$season", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    res.json({ success: true, data: seasonStats });
+  } catch (error) {
+    console.error("Error fetching season analytics:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch seasonal analytics" });
+  }
+});
+// 🌍 Climate & Season Analytics
+app.get("/api/analytics/climate", async (req, res) => {
+  try {
+    const climateStats = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$season",
+          avgTemperature: { $avg: "$avgTemperature" },
+          avgRainfall: { $avg: "$rainfall" },
+          bookings: { $sum: 1 }
+        }
+      },
+      { $sort: { bookings: -1 } }
+    ]);
+
+    res.json({ success: true, data: climateStats });
+  } catch (error) {
+    console.error("❌ Climate analytics error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 app.get('/api/analytics/popular-destinations', checkAdminAuth, async (req, res) => {
     try {
         const popularDestinations = await Booking.aggregate([
@@ -5566,6 +5608,68 @@ app.post('/verify-unified-credentials', async (req, res) => {
         });
     }
 });
+app.get("/api/analytics/top-destinations", async (req, res) => {
+  try {
+    const { type = "all" } = req.query;
+    const now = new Date();
+
+    // Build filter
+    let matchStage = {};
+    if (type === "daily") {
+      matchStage = {
+        startDate: {
+          $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+          $lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        }
+      };
+    } else if (type === "monthly") {
+      matchStage = {
+        startDate: {
+          $gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          $lt: new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        }
+      };
+    } else if (type === "yearly") {
+      matchStage = {
+        startDate: {
+          $gte: new Date(now.getFullYear(), 0, 1),
+          $lt: new Date(now.getFullYear() + 1, 0, 1)
+        }
+      };
+    } // else "all" = no date filter
+
+    const results = await Booking.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: { season: "$season", destination: "$destination" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      {
+        $group: {
+          _id: "$_id.season",
+          destinations: { $push: { destination: "$_id.destination", count: "$count" } }
+        }
+      },
+      {
+        $project: {
+          season: "$_id",
+          topDestinations: { $slice: ["$destinations", 5] },
+          _id: 0
+        }
+      },
+      { $sort: { season: 1 } }
+    ]);
+
+    res.json({ success: true, type, data: results });
+  } catch (err) {
+    console.error("❌ Top Destinations Analytics Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 apiRouter.get('/analytics/summary', checkAdminAuth, async (req, res) => {
     try {
         const { period = 'all' } = req.query;
