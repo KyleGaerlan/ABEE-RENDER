@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/css/useradmin.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
     <style>
         .dashboard-grid {
             display: grid;
@@ -602,9 +603,7 @@
                         <i class="fas fa-file-excel"></i> Export to Excel
                     </button>
                 </div>
-                <button id="refreshData" onclick="fetchDashboardData()">
-                    <i class="fas fa-sync-alt"></i> Refresh Data
-                </button>
+                
                 <div class="last-updated">Last updated: <span id="lastUpdated">Never</span></div>
             </div>
         </header>
@@ -751,6 +750,8 @@
                     <h3>Seasonal Booking Trends by Destination</h3>
                     <canvas id="seasonalTrendsChart"></canvas>
                 </div>
+                
+                
                 <div class="chart-container full-width" style="width: 100%; height: 90%;">
                     <h3 id="predictedBookingsTitle">Predicted Bookings for Next Year</h3>
                     <canvas id="predictedBookingsChart"></canvas>
@@ -782,20 +783,36 @@
         let userTrendsChart = null;
         let paymentMethodsChart = null;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const adminName = localStorage.getItem('adminName') || 'Admin';
-            const adminRole = localStorage.getItem('adminRole') || 'admin';
-            
-            document.getElementById('adminName').textContent = adminName;
-            document.getElementById('adminRole').textContent = `Role: ${adminRole}`;
-            fetchDashboardData();
-            fetchSummaryData();
+        document.addEventListener('DOMContentLoaded', async function() {
+    const adminName = localStorage.getItem('adminName') || 'Admin';
+    const adminRole = localStorage.getItem('adminRole') || 'admin';
 
-             document.getElementById('usersPeriod').addEventListener('change', () => fetchSummaryData());
-            document.getElementById('bookingsPeriod').addEventListener('change', () => fetchSummaryData());
-            document.getElementById('salesPeriod').addEventListener('change', () => fetchSummaryData());
-            document.getElementById('destinationsPeriod').addEventListener('change', () => fetchSummaryData());
-        });
+    document.getElementById('adminName').textContent = adminName;
+    document.getElementById('adminRole').textContent = `Role: ${adminRole}`;
+
+    // ✅ Force all dropdowns to "All Time" before fetching data
+    ['usersPeriod', 'bookingsPeriod', 'salesPeriod', 'destinationsPeriod'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) select.value = 'all';
+    });
+
+    // ✅ Wait briefly so the DOM updates before calling fetch
+    await new Promise(r => setTimeout(r, 150));
+
+    // ✅ Now fetch everything using "All Time"
+    await fetchDashboardData();
+    await fetchSummaryData();
+
+    // ✅ Add listeners for dropdown changes
+    ['usersPeriod', 'bookingsPeriod', 'salesPeriod', 'destinationsPeriod'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            select.addEventListener('change', fetchSummaryData);
+        }
+    });
+});
+
+
 
         async function fetchSummaryData() {
             try {
@@ -1460,241 +1477,6 @@ sidebarLinks.forEach(link => {
         }
     });
 });
-// CSV Export Function
-function exportToCSV() {
-    try {
-        // Prepare data arrays
-        const csvData = [];
-        
-        // Add header row
-        csvData.push(['A.BEE Travel and Tours - Admin Dashboard Report']);
-        csvData.push(['Generated on:', new Date().toLocaleString()]);
-        csvData.push([]);
-        
-        // Summary Statistics
-        csvData.push(['Summary Statistics']);
-        csvData.push(['Total Users', document.getElementById('totalUsers').textContent]);
-        csvData.push(['Total Bookings', document.getElementById('totalBookings').textContent]);
-        csvData.push(['Total Sales', document.getElementById('totalRevenue').textContent]);
-        csvData.push([]);
-        
-        // Recent User Registrations
-        csvData.push(['Recent User Registrations']);
-        const recentUsers = document.getElementById('recent-users-list');
-        if (recentUsers) {
-            const userItems = recentUsers.querySelectorAll('li');
-            userItems.forEach(item => {
-                const username = item.querySelector('strong')?.textContent || 'Unknown';
-                const registrationInfo = item.querySelector('div:nth-child(2)')?.textContent || '';
-                csvData.push([username, registrationInfo.trim()]);
-            });
-        }
-        csvData.push([]);
-        
-        // Recent Bookings
-        csvData.push(['Recent Bookings']);
-        const recentBookings = document.getElementById('recent-bookings-list');
-        if (recentBookings) {
-            const bookingItems = recentBookings.querySelectorAll('li');
-            bookingItems.forEach(item => {
-                const bookingInfo = item.querySelector('div:nth-child(1)')?.textContent || 'Unknown';
-                const bookingDate = item.querySelector('div:nth-child(2)')?.textContent || '';
-                csvData.push([bookingInfo.trim(), bookingDate.trim()]);
-            });
-        }
-        csvData.push([]);
-        
-        // Users This Week
-        csvData.push(['Users This Week']);
-        const userList = document.getElementById('user-list');
-        if (userList) {
-            const userItems = userList.querySelectorAll('li');
-            userItems.forEach(item => {
-                csvData.push([item.textContent.trim()]);
-            });
-        }
-        csvData.push([]);
-        
-        // Bookings This Week
-        csvData.push(['Bookings This Week']);
-        const bookingList = document.getElementById('booking-list');
-        if (bookingList) {
-            const bookingItems = bookingList.querySelectorAll('li');
-            bookingItems.forEach(item => {
-                csvData.push([item.textContent.trim()]);
-            });
-        }
-        csvData.push([]);
-        
-        // Top Destinations
-        csvData.push(['Top Destinations']);
-        const destinationsList = document.getElementById('destinations-list');
-        if (destinationsList) {
-            const destinationItems = destinationsList.querySelectorAll('li');
-            destinationItems.forEach(item => {
-                const destination = item.querySelector('.destination-name')?.textContent || 'Unknown';
-                const count = item.querySelector('.destination-count')?.textContent || '0';
-                csvData.push([destination, count]);
-            });
-        }
-        
-        // Convert to CSV string
-        let csvContent = csvData.map(row => row.join(',')).join('\n');
-        
-        // Create a blob and download link
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `dashboard_report_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification('Dashboard data exported to CSV successfully', 'success');
-    } catch (error) {
-        console.error('Error exporting to CSV:', error);
-        showNotification('Failed to export data to CSV', 'error');
-    }
-}
-
-// Excel Export Function (using SheetJS)
-function exportToExcel() {
-    try {
-        // Load the SheetJS library if not already loaded
-        if (typeof XLSX === 'undefined') {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-            script.onload = performExcelExport;
-            document.head.appendChild(script);
-        } else {
-            performExcelExport();
-        }
-    } catch (error) {
-        console.error('Error exporting to Excel:', error);
-        showNotification('Failed to export data to Excel', 'error');
-    }
-}
-
-function performExcelExport() {
-    try {
-        // Create workbook and worksheet
-        const wb = XLSX.utils.book_new();
-        
-        // Summary Statistics
-        const summaryData = [
-            ['A.BEE Travel and Tours - Admin Dashboard Report'],
-            ['Generated on:', new Date().toLocaleString()],
-            [],
-            ['Summary Statistics'],
-            ['Total Users', document.getElementById('totalUsers').textContent],
-            ['Total Bookings', document.getElementById('totalBookings').textContent],
-            ['Total Sales', document.getElementById('totalRevenue').textContent]
-        ];
-        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-        
-        // Recent Users
-        const recentUsersData = [['Username', 'Registration Date']];
-        const recentUsers = document.getElementById('recent-users-list');
-        if (recentUsers) {
-            const userItems = recentUsers.querySelectorAll('li');
-            userItems.forEach(item => {
-                const username = item.querySelector('strong')?.textContent || 'Unknown';
-                const registrationInfo = item.querySelector('div:nth-child(2)')?.textContent || '';
-                recentUsersData.push([username, registrationInfo.trim()]);
-            });
-        }
-        const recentUsersWs = XLSX.utils.aoa_to_sheet(recentUsersData);
-        XLSX.utils.book_append_sheet(wb, recentUsersWs, 'Recent Users');
-        
-        // Recent Bookings
-        const recentBookingsData = [['Booking Info', 'Booking Date']];
-        const recentBookings = document.getElementById('recent-bookings-list');
-        if (recentBookings) {
-            const bookingItems = recentBookings.querySelectorAll('li');
-            bookingItems.forEach(item => {
-                const bookingInfo = item.querySelector('div:nth-child(1)')?.textContent || 'Unknown';
-                const bookingDate = item.querySelector('div:nth-child(2)')?.textContent || '';
-                recentBookingsData.push([bookingInfo.trim(), bookingDate.trim()]);
-            });
-        }
-        const recentBookingsWs = XLSX.utils.aoa_to_sheet(recentBookingsData);
-        XLSX.utils.book_append_sheet(wb, recentBookingsWs, 'Recent Bookings');
-        
-        // Weekly Data
-        const weeklyData = [
-            ['Users This Week'],
-            []
-        ];
-        const userList = document.getElementById('user-list');
-        if (userList) {
-            const userItems = userList.querySelectorAll('li');
-            userItems.forEach(item => {
-                weeklyData.push([item.textContent.trim()]);
-            });
-        }
-        
-        weeklyData.push([]);
-        weeklyData.push(['Bookings This Week']);
-        weeklyData.push([]);
-        
-        const bookingList = document.getElementById('booking-list');
-        if (bookingList) {
-            const bookingItems = bookingList.querySelectorAll('li');
-            bookingItems.forEach(item => {
-                weeklyData.push([item.textContent.trim()]);
-            });
-        }
-        
-        const weeklyWs = XLSX.utils.aoa_to_sheet(weeklyData);
-        XLSX.utils.book_append_sheet(wb, weeklyWs, 'Weekly Data');
-        
-        // Top Destinations
-        const destinationsData = [['Destination', 'Booking Count']];
-        const destinationsList = document.getElementById('destinations-list');
-        if (destinationsList) {
-            const destinationItems = destinationsList.querySelectorAll('li');
-            destinationItems.forEach(item => {
-                const destination = item.querySelector('.destination-name')?.textContent || 'Unknown';
-                const count = item.querySelector('.destination-count')?.textContent || '0';
-                destinationsData.push([destination, count]);
-            });
-        }
-        const destinationsWs = XLSX.utils.aoa_to_sheet(destinationsData);
-        XLSX.utils.book_append_sheet(wb, destinationsWs, 'Top Destinations');
-        
-        // Generate Excel file and trigger download
-        XLSX.writeFile(wb, `dashboard_report_${new Date().toISOString().split('T')[0]}.xlsx`);
-        
-        showNotification('Dashboard data exported to Excel successfully', 'success');
-    } catch (error) {
-        console.error('Error in Excel export:', error);
-        showNotification('Failed to export data to Excel', 'error');
-    }
-}
-
-// Print Dashboard Function
-function printDashboard() {
-    try {
-        // Update print date
-        document.getElementById('printDate').textContent = new Date().toLocaleString();
-        
-        // Trigger print dialog
-        window.print();
-    } catch (error) {
-        console.error('Error printing dashboard:', error);
-        showNotification('Failed to print dashboard', 'error');
-    }
-}
-
-// Add event listeners for export and print buttons
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('exportCSV').addEventListener('click', exportToCSV);
-    document.getElementById('exportExcel').addEventListener('click', exportToExcel);
-    document.getElementById('printDashboard').addEventListener('click', printDashboard);
-});
 
 // Enhanced notification function with success type
 function showNotification(message, type) {
@@ -2037,7 +1819,7 @@ function updateRevenueChart(labels, revenueData) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Revenue',
+                label: 'Sales',
                 data: revenueData,
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
@@ -2523,7 +2305,7 @@ function updateRevenueChart(labels, revenueData) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Revenue',
+                label: 'Sales',
                 data: revenueData,
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
@@ -2731,5 +2513,397 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
     </script>
+    <script>
+// ===== SEASON ANALYTICS CHART =====
+async function loadSeasonAnalytics() {
+  try {
+    const res = await fetch('/api/analytics/seasons');
+    const json = await res.json();
+    if (!json.success) return;
+
+    const labels = json.data.map(d => d._id);
+    const values = json.data.map(d => d.count);
+
+    const ctx = document.getElementById('seasonChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Bookings',
+          data: values,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Bookings per Season' },
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error loading season analytics:", err);
+  }
+}
+
+// ===== CLIMATE ANALYTICS CHART =====
+async function loadClimateAnalytics() {
+  try {
+    const res = await fetch('/api/analytics/climate');
+    const json = await res.json();
+    if (!json.success) return;
+
+    const labels = json.data.map(d => d._id);
+    const temps = json.data.map(d => d.avgTemperature ? d.avgTemperature.toFixed(1) : 0);
+    const rain = json.data.map(d => d.avgRainfall ? d.avgRainfall.toFixed(1) : 0);
+
+    const ctx = document.getElementById('climateChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Avg Temperature (°C)',
+            data: temps,
+            borderWidth: 1
+          },
+          {
+            label: 'Avg Rainfall (mm)',
+            data: rain,
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Average Climate by Season' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error loading climate analytics:", err);
+  }
+}
+
+// 🚀 Initialize both charts on load
+document.addEventListener("DOMContentLoaded", () => {
+  loadSeasonAnalytics();
+  loadClimateAnalytics();
+});
+</script>
+<!-- SheetJS CDN (client-side Excel creation) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+  // Hide other export buttons (we keep only Export to Excel visible)
+  (function cleanExportButtons() {
+    const printBtn = document.getElementById('printDashboard');
+    const csvBtn = document.getElementById('exportCSV');
+    if (printBtn) printBtn.style.display = 'none';
+    if (csvBtn) csvBtn.style.display = 'none';
+  })();
+
+  // Main export handler
+  document.getElementById('exportExcel').addEventListener('click', exportToExcel);
+
+  async function exportToExcel() {
+    try {
+      showNotification('Preparing Excel export...', 'success');
+
+      // 1) Gather data in parallel
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[:.]/g, '-');
+      const filename = `Admin_Dashboard_Report_${timestamp}.xlsx`;
+
+      // summary + dashboard endpoints (adapted to endpoints used in your script)
+      const [dashboardRes, popularRes, summaryRes] = await Promise.all([
+        fetch('/admin-dashboard/data', { credentials: 'include' }),
+        fetch('/api/analytics/popular-destinations', { credentials: 'include' }),
+        fetch('/api/analytics/summary?period=all', { credentials: 'include' })
+      ]);
+
+      if (!dashboardRes.ok) throw new Error('Failed to fetch dashboard data.');
+      if (!popularRes.ok) throw new Error('Failed to fetch popular destinations.');
+      if (!summaryRes.ok) console.warn('Summary endpoint returned non-ok.');
+
+      const dashboardData = await dashboardRes.json();
+      const popularData = await popularRes.json();
+      const summaryData = summaryRes.ok ? await summaryRes.json() : null;
+
+      // 2) Time-based analytics (daily/monthly/yearly)
+      // For daily: use current 30-day window (or existing UI selection)
+      const endDateISO = new Date().toISOString().split('T')[0];
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const startDateISO = thirtyDaysAgo.toISOString().split('T')[0];
+
+      const [dailyRes, monthlyRes, yearlyRes] = await Promise.all([
+        fetch(`/api/analytics/daily?startDate=${startDateISO}&endDate=${endDateISO}`, { credentials: 'include' }),
+        fetch(`/api/analytics/monthly?year=${(new Date()).getFullYear()}`, { credentials: 'include' }),
+        fetch(`/api/analytics/yearly`, { credentials: 'include' })
+      ]);
+
+      const dailyData = dailyRes.ok ? await dailyRes.json() : { dailyUsers: [], dailyBookings: [] };
+      const monthlyData = monthlyRes.ok ? await monthlyRes.json() : { monthlyUsers: [], monthlyBookings: [] };
+      const yearlyData = yearlyRes.ok ? await yearlyRes.json() : { yearlyUsers: [], yearlyBookings: [] };
+
+      // 3) Build worksheets (using arrays of arrays for consistent formatting)
+      const wb = XLSX.utils.book_new();
+
+      // Helper: style headers by capitalizing and using first row as header.
+      // Summary sheet
+      const summaryRows = [
+        ['A.BEE Travel and Tours - Admin Dashboard Report'],
+        ['Generated on:', (new Date()).toLocaleString()],
+        ['Report Filename:', filename],
+        [],
+        ['Summary'],
+      ];
+
+      // Totals from summaryData (safe fallback to dashboard)
+      const totalUsers = (summaryData && summaryData.data && summaryData.data.totalUsers) || (dashboardData && dashboardData.totalUsers) || '--';
+      const totalBookings = (summaryData && summaryData.data && summaryData.data.totalBookings) || (dashboardData && dashboardData.totalBookings) || '--';
+      const totalSales = (summaryData && summaryData.data && summaryData.data.totalSales) || (dashboardData && dashboardData.totalRevenue) || 0;
+
+      summaryRows.push(['Total Registered Users', totalUsers]);
+      summaryRows.push(['Total Bookings', totalBookings]);
+      summaryRows.push(['Total Sales (₱)', typeof totalSales === 'number' ? totalSales : String(totalSales)]);
+      summaryRows.push([]);
+      summaryRows.push(['Report Filters']);
+      summaryRows.push(['Users period', document.getElementById('usersPeriod') ? document.getElementById('usersPeriod').value : 'all']);
+      summaryRows.push(['Bookings period', document.getElementById('bookingsPeriod') ? document.getElementById('bookingsPeriod').value : 'all']);
+      summaryRows.push(['Sales period', document.getElementById('salesPeriod') ? document.getElementById('salesPeriod').value : 'all']);
+      summaryRows.push([]);
+
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+
+      // Apply number format to Total Sales cell (simple approach: find the cell and set z)
+      // We expect Total Sales to be at row index where value exists; search for 'Total Sales (₱)'
+      for (let R = 0; R <= 40; ++R) {
+        const cellAddr = XLSX.utils.encode_cell({ r: R, c: 0 });
+        const cell = wsSummary[cellAddr];
+        if (cell && typeof cell.v === 'string' && cell.v.includes('Total Sales')) {
+          // value is in column B (c=1) at same row
+          const valCellAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
+          const valCell = wsSummary[valCellAddr];
+          if (valCell) {
+            valCell.z = '₱#,##0.00';
+            // If value is string, convert to number if possible
+            if (typeof valCell.v === 'string') {
+              const parsed = Number(valCell.v.toString().replace(/[^0-9.-]+/g,""));
+              if (!isNaN(parsed)) {
+                valCell.v = parsed;
+              }
+            }
+          }
+          break;
+        }
+      }
+
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+      // Recent Users sheet (from dashboardData.usersThisWeek)
+      const usersRows = [
+        ['Date', 'Time', 'New Users', 'Description']
+      ];
+      if (dashboardData && Array.isArray(dashboardData.usersThisWeek) && dashboardData.usersThisWeek.length) {
+        dashboardData.usersThisWeek.forEach(item => {
+          const dateObj = item.date ? new Date(item.date) : null;
+          usersRows.push([
+            dateObj ? dateObj.toLocaleDateString() : '',
+            dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            item.count || 0,
+            item.note || ''
+          ]);
+        });
+      } else {
+        usersRows.push(['No data', '', '', '']);
+      }
+      const wsUsers = XLSX.utils.aoa_to_sheet(usersRows);
+      XLSX.utils.book_append_sheet(wb, wsUsers, 'Recent Users');
+
+      // Recent Bookings sheet
+      const bookingsRows = [
+        ['Date', 'Time', 'New Bookings', 'Description']
+      ];
+      if (dashboardData && Array.isArray(dashboardData.bookingsThisWeek) && dashboardData.bookingsThisWeek.length) {
+        dashboardData.bookingsThisWeek.forEach(item => {
+          const dateObj = item.date ? new Date(item.date) : null;
+          bookingsRows.push([
+            dateObj ? dateObj.toLocaleDateString() : '',
+            dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            item.count || 0,
+            item.note || ''
+          ]);
+        });
+      } else {
+        bookingsRows.push(['No data', '', '', '']);
+      }
+      const wsBookings = XLSX.utils.aoa_to_sheet(bookingsRows);
+      XLSX.utils.book_append_sheet(wb, wsBookings, 'Recent Bookings');
+
+      // Top Destinations sheet
+      const destRows = [
+        ['Destination', 'Bookings Count', 'Revenue (₱)']
+      ];
+      const destArray = (popularData && popularData.popularDestinations) || (popularData && popularData.data) || [];
+      if (Array.isArray(destArray) && destArray.length) {
+        destArray.forEach(d => {
+          destRows.push([
+            d._id || d.destination || 'Unknown',
+            d.count || 0,
+            d.revenue || 0
+          ]);
+        });
+      } else {
+        // fallback to dashboardData.popularDestinations
+        const fallback = dashboardData && dashboardData.popularDestinations;
+        if (Array.isArray(fallback) && fallback.length) {
+          fallback.forEach(d => destRows.push([d._id || d.destination || 'Unknown', d.count || 0, d.revenue || 0]));
+        } else {
+          destRows.push(['No data', '', '']);
+        }
+      }
+      const wsDest = XLSX.utils.aoa_to_sheet(destRows);
+      // format revenue column (column C -> c=2)
+      const rangeDest = XLSX.utils.decode_range(wsDest['!ref']);
+      for (let R = rangeDest.s.r + 1; R <= rangeDest.e.r; ++R) {
+        const cell = wsDest[XLSX.utils.encode_cell({ r: R, c: 2 })];
+        if (cell) cell.z = '₱#,##0.00';
+      }
+      XLSX.utils.book_append_sheet(wb, wsDest, 'Top Destinations');
+
+      // Daily Analytics sheet
+      const dailyRows = [['Date', 'Users', 'Bookings', 'Revenue (₱)']];
+      if (dailyData && Array.isArray(dailyData.dailyUsers)) {
+        // Build a map date -> users/bookings/revenue to ensure all dates present
+        const dateMap = new Map();
+        // init from dailyUsers keys
+        dailyData.dailyUsers.forEach(u => dateMap.set(u._id, { users: u.count, bookings: 0, revenue: 0 }));
+        (dailyData.dailyBookings || []).forEach(b => {
+          if (!dateMap.has(b._id)) dateMap.set(b._id, { users: 0, bookings: 0, revenue: 0 });
+          const cur = dateMap.get(b._id);
+          cur.bookings = b.count || 0;
+          cur.revenue = b.revenue || 0;
+          dateMap.set(b._id, cur);
+        });
+        // Convert map to sorted keys
+        Array.from(dateMap.keys()).sort().forEach(dateKey => {
+          const cur = dateMap.get(dateKey);
+          dailyRows.push([
+            dateKey,
+            cur.users || 0,
+            cur.bookings || 0,
+            cur.revenue || 0
+          ]);
+        });
+      } else {
+        dailyRows.push(['No data', 0, 0, 0]);
+      }
+      const wsDaily = XLSX.utils.aoa_to_sheet(dailyRows);
+      // format revenue column
+      const rangeDaily = XLSX.utils.decode_range(wsDaily['!ref']);
+      for (let R = rangeDaily.s.r + 1; R <= rangeDaily.e.r; ++R) {
+        const cell = wsDaily[XLSX.utils.encode_cell({ r: R, c: 3 })];
+        if (cell) cell.z = '₱#,##0.00';
+      }
+      XLSX.utils.book_append_sheet(wb, wsDaily, 'Daily Analytics');
+
+      // Monthly Analytics sheet
+      const monthlyRows = [['Month', 'Users', 'Bookings', 'Revenue (₱)']];
+      if (monthlyData && Array.isArray(monthlyData.monthlyUsers)) {
+        // Build month index 1..12
+        const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, users: 0, bookings: 0, revenue: 0 }));
+        monthlyData.monthlyUsers.forEach(u => {
+          const idx = u._id && u._id.month ? u._id.month - 1 : null;
+          if (idx !== null && months[idx]) months[idx].users = u.count || 0;
+        });
+        (monthlyData.monthlyBookings || []).forEach(b => {
+          const idx = b._id && b._id.month ? b._id.month - 1 : null;
+          if (idx !== null && months[idx]) {
+            months[idx].bookings = b.count || 0;
+            months[idx].revenue = b.revenue || 0;
+          }
+        });
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        months.forEach(m => monthlyRows.push([monthNames[m.month - 1], m.users, m.bookings, m.revenue]));
+      } else {
+        monthlyRows.push(['No data', 0, 0, 0]);
+      }
+      const wsMonthly = XLSX.utils.aoa_to_sheet(monthlyRows);
+      const rangeMon = XLSX.utils.decode_range(wsMonthly['!ref']);
+      for (let R = rangeMon.s.r + 1; R <= rangeMon.e.r; ++R) {
+        const cell = wsMonthly[XLSX.utils.encode_cell({ r: R, c: 3 })];
+        if (cell) cell.z = '₱#,##0.00';
+      }
+      XLSX.utils.book_append_sheet(wb, wsMonthly, 'Monthly Analytics');
+
+      // Yearly Analytics sheet
+      const yearlyRows = [['Year', 'Users', 'Bookings', 'Revenue (₱)']];
+      if (yearlyData && Array.isArray(yearlyData.yearlyUsers)) {
+        // Build map year -> values
+        const yearsMap = {};
+        (yearlyData.yearlyUsers || []).forEach(u => {
+          const y = u._id && u._id.year ? u._id.year : 'Unknown';
+          yearsMap[y] = yearsMap[y] || { users: 0, bookings: 0, revenue: 0 };
+          yearsMap[y].users = u.count || 0;
+        });
+        (yearlyData.yearlyBookings || []).forEach(b => {
+          const y = b._id && b._id.year ? b._id.year : 'Unknown';
+          yearsMap[y] = yearsMap[y] || { users: 0, bookings: 0, revenue: 0 };
+          yearsMap[y].bookings = b.count || 0;
+          yearsMap[y].revenue = b.revenue || 0;
+        });
+        const yearKeys = Object.keys(yearsMap).sort();
+        if (yearKeys.length) {
+          yearKeys.forEach(y => yearlyRows.push([y, yearsMap[y].users, yearsMap[y].bookings, yearsMap[y].revenue]));
+        } else {
+          yearlyRows.push(['No data', 0, 0, 0]);
+        }
+      } else {
+        yearlyRows.push(['No data', 0, 0, 0]);
+      }
+      const wsYearly = XLSX.utils.aoa_to_sheet(yearlyRows);
+      const rangeYear = XLSX.utils.decode_range(wsYearly['!ref']);
+      for (let R = rangeYear.s.r + 1; R <= rangeYear.e.r; ++R) {
+        const cell = wsYearly[XLSX.utils.encode_cell({ r: R, c: 3 })];
+        if (cell) cell.z = '₱#,##0.00';
+      }
+      XLSX.utils.book_append_sheet(wb, wsYearly, 'Yearly Analytics');
+
+      // 4) Finalize & download
+      XLSX.writeFile(wb, filename);
+
+      showNotification('Excel exported — check your downloads folder.', 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showNotification('Failed to export Excel. See console for details.', 'error');
+    }
+  } // end exportToExcel
+
+  /* Reuse your showNotification function if defined, otherwise define a fallback */
+  if (typeof showNotification !== 'function') {
+    function showNotification(message, type) {
+      const existing = document.querySelectorAll('.notification');
+      existing.forEach(e => e.remove());
+      const n = document.createElement('div');
+      n.className = `notification ${type === 'error' ? 'error' : 'success'}`;
+      n.textContent = message;
+      document.body.appendChild(n);
+      setTimeout(() => n.remove(), 3500);
+    }
+  }
+</script>
+
 </body>
 </html>
