@@ -1,9 +1,6 @@
-// public/js/unified-login.js
 document.addEventListener('DOMContentLoaded', function() {
-    // Store credentials temporarily
     window.tempLoginCredentials = {};
     
-    // Get login elements
     const loginForm = document.getElementById('loginForm');
     const loginStepOne = document.getElementById('loginStepOne');
     const loginStepTwo = document.getElementById('loginStepTwo');
@@ -66,15 +63,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 showMessage('Please fill in all fields.', true);
                 return;
             }
-            
-            // Disable the button and show loading state
             const submitBtn = loginForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
             submitBtn.textContent = 'Verifying...';
             
             try {
-                // First try to verify as regular user
+                // First try to verify if the user is a client/customer user
                 let response = await fetch('/verify-credentials', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -94,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
-                            email: emailOrUsername, 
+                            username: emailOrUsername, 
                             password: password 
                         }),
                         credentials: 'same-origin'
@@ -105,12 +100,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (data.success) {
-                    // Store credentials temporarily
                     window.tempLoginCredentials = { 
                         emailOrUsername, 
                         password, 
                         isAdmin,
-                        email: data.email || emailOrUsername
+                        username: data.username || emailOrUsername
                     };
                     
                     // Show CAPTCHA step
@@ -190,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to complete login after CAPTCHA verification
     async function completeLogin(emailOrUsername, password, isAdmin) {
         try {
-            // Show loading state
             const continueBtn = document.getElementById('captchaContinueBtn');
             const originalText = continueBtn.textContent;
             continueBtn.disabled = true;
@@ -204,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        email: emailOrUsername, 
+                        username: emailOrUsername, 
                         password: password, 
                         captchaVerified: true
                     }),
@@ -231,7 +224,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Redirect to admin dashboard
                     window.location.href = '/admin-dashboard';
                 } else {
-                    // Set login state in localStorage for regular users
                     localStorage.setItem('isLoggedIn', 'true');
                     
                     // Close the modal
@@ -276,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // Reset login form
     function resetLoginForm() {
         if (loginForm) loginForm.reset();
@@ -300,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Update navbar UI on page load
     updateNavbarUI();
 });
 
