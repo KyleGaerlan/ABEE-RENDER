@@ -492,53 +492,39 @@ app.post('/api/admin/send-verification', async (req, res) => {
 });
 app.post('/api/admin/verify-code', async (req, res) => {
     const { email, code } = req.body;
-    
+
     if (!email || !code) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Email and verification code are required." 
-        });
+        return res.status(400).json({ success: false, message: "Email and code are required." });
     }
 
     try {
+        // Find OTP specifically bound to this email
         const otpRecord = await OTP.findOne({ email }).lean();
 
         if (!otpRecord) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "No verification code found for this email." 
-            });
+            return res.status(400).json({ success: false, message: "No verification code found for this email." });
         }
 
+        // Check OTP validity
         if (otpRecord.otp !== code) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Incorrect verification code." 
-            });
+            return res.status(400).json({ success: false, message: "Incorrect verification code." });
         }
 
         if (Date.now() > otpRecord.expiresAt) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Verification code has expired. Request a new one." 
-            });
+            return res.status(400).json({ success: false, message: "Verification code expired." });
         }
 
+        // ✅ OTP is valid → clear it immediately to prevent reuse
         await OTP.deleteOne({ email });
 
-        return res.json({ 
-            success: true, 
-            message: "Email verified successfully!" 
-        });
-
-    } catch (error) {
-        console.error("❌ Admin Code Verification Error:", error);
-        return res.status(500).json({ 
-            success: false, 
-            message: "Internal Server Error" 
-        });
+        return res.json({ success: true, message: "Verification successful!" });
+    } catch (err) {
+        console.error("❌ Admin Verify Code Error:", err);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
+
+
 app.post('/api/admin/signup', async (req, res) => {
     try {
         const {
@@ -1673,11 +1659,29 @@ app.get('/user-bookings', (req, res) => {
 });
 app.post('/signup', async (req, res) => {
     try {
-        const { username, email, phoneNumber, password } = req.body;
+        const { username, email, phoneNumber, password, verificationCode } = req.body;
         if (!username || !email || !phoneNumber || !password) {
             return res.status(400).json({ success: false, message: 'All fields are required' });
         }
 
+        if (!verificationCode) {
+            return res.status(400).json({ success: false, message: 'Please verify your email by entering the code sent.' });
+        }
+
+        const otpRecord = await OTP.findOne({ email }).lean();
+        if (!otpRecord) {
+            return res.status(400).json({ success: false, message: 'No verification code found for this email. Please request a new one.' });
+        }
+        if (otpRecord.otp !== verificationCode) {
+            return res.status(400).json({ success: false, message: 'Incorrect verification code.' });
+        }
+        if (Date.now() > otpRecord.expiresAt) {
+            return res.status(400).json({ success: false, message: 'Verification code expired. Please request a new one.' });
+        }
+        // optional: delete used OTP
+        await OTP.deleteOne({ email });
+
+        // --- then continue your existing signup checks ---
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
             return res.status(400).json({ success: false, message: 'Username or Email already taken' });
@@ -1685,7 +1689,7 @@ app.post('/signup', async (req, res) => {
 
         const newUser = new User({ username, email, phoneNumber, password });
         await newUser.save();
-        
+
         req.session.user = {
             id: newUser._id,
             username: newUser.username,
@@ -1694,11 +1698,11 @@ app.post('/signup', async (req, res) => {
             firstName: newUser.firstName,
             lastName: newUser.lastName
         };
-        
-        return res.status(201).json({ 
-            success: true, 
+
+        return res.status(201).json({
+            success: true,
             message: 'User created successfully',
-            autoLogin: true 
+            autoLogin: true
         });
 
     } catch (error) {
@@ -3835,7 +3839,7 @@ app.post('/send-login-otp', async (req, res) => {
         }
 
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
         
         await OTP.findOneAndUpdate(
             { email }, 
