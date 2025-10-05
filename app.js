@@ -208,6 +208,61 @@ async function sendRejectionEmail(email) {
         `
     });
 }
+async function sendBookingStatusEmail(email, booking, status) {
+    try {
+        let subject = '';
+        let message = '';
+
+        switch (status) {
+            case 'confirmed':
+                subject = 'Your Booking Has Been Confirmed!';
+                message = `
+                    <h2>Booking Confirmed</h2>
+                    <p>Hi ${booking.fullName || 'Customer'},</p>
+                    <p>Your booking for <strong>${booking.destination || booking.tourDetails?.destination}</strong> has been confirmed.</p>
+                    <p>Booking ID: <strong>${booking.bookingId || booking._id}</strong></p>
+                    <p>Thank you for choosing us!</p>
+                `;
+                break;
+            case 'cancelled':
+                subject = 'Your Booking Has Been Cancelled';
+                message = `
+                    <h2>Booking Cancelled</h2>
+                    <p>Hi ${booking.fullName || 'Customer'},</p>
+                    <p>We regret to inform you that your booking for <strong>${booking.destination}</strong> was cancelled.</p>
+                    <p>If you believe this was an error, please contact our team.</p>
+                `;
+                break;
+            case 'completed':
+                subject = 'Your Trip Has Been Completed!';
+                message = `
+                    <h2>Trip Completed</h2>
+                    <p>Hi ${booking.fullName || 'Customer'},</p>
+                    <p>Your trip to <strong>${booking.destination}</strong> has been marked as completed. We hope you enjoyed it!</p>
+                `;
+                break;
+            default:
+                subject = 'Booking Status Updated';
+                message = `<p>Your booking status has been updated to <strong>${status}</strong>.</p>`;
+        }
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject,
+            html: `
+                <div style="font-family: Arial; padding: 20px; border: 1px solid #eee;">
+                    ${message}
+                    <br><p style="font-size: 0.9em;">— The Travel Team</p>
+                </div>
+            `
+        });
+    } catch (error) {
+        console.error('❌ Failed to send booking email:', error);
+    }
+}
+
+
 async function notifyAdminsAboutNewRequest(newAdmin) {
     try {
         const admins = await Admin.find({ 
@@ -932,25 +987,104 @@ app.get('/api/employee-performance', checkAdminAuth, checkRole(['admin', 'employ
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
-
-app.post('/api/bookings/:id/complete', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
+// ✅ Update booking status (used by admin-bookings.ejs)
+app.patch('/api/admin/bookings/:id/status', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
     try {
-        const booking = await Booking.findById(req.params.id);
+        const { status } = req.body;
+        const bookingId = req.params.id;
+
+        if (!['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status' });
+        }
+
+        const booking = await Booking.findById(bookingId);
         if (!booking) {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
+
+        // Update status
+        booking.status = status;
+        if (status === 'confirmed') booking.confirmedBy = req.session.admin.id;
+        if (status === 'completed') booking.completedBy = req.session.admin.id;
+        booking.updatedAt = new Date();
+        await booking.save();
+
+        // ✅ Send notification email
+        await sendBookingStatusEmail(booking.email, booking, status);
+
+        res.json({
+            success: true,
+            message: `Booking updated to ${status} and email sent.`,
+            booking
+        });
+
+        console.log(`📩 Email sent for booking ${bookingId} (${status})`);
+    } catch (error) {
+        console.error('❌ Error updating booking status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while updating booking status'
+        });
+    }
+});
+
+app.post('/api/bookings/:id/confirm', checkAdminAuth, async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+        booking.status = 'confirmed';
+        booking.confirmedBy = req.session.admin.id;
+        booking.confirmedAt = new Date();
+        await booking.save();
+
+        await sendBookingStatusEmail(booking.email, booking, 'confirmed');
+
+        res.json({ success: true, message: 'Booking confirmed and email sent', booking });
+    } catch (error) {
+        console.error('Error confirming booking:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// CANCEL booking
+app.post('/api/bookings/:id/cancel', checkAdminAuth, async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+        booking.status = 'cancelled';
+        await booking.save();
+
+        await sendBookingStatusEmail(booking.email, booking, 'cancelled');
+
+        res.json({ success: true, message: 'Booking cancelled and email sent', booking });
+    } catch (error) {
+        console.error('Error cancelling booking:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// COMPLETE booking (already exists but add email)
+app.post('/api/bookings/:id/complete', checkAdminAuth, async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
         booking.status = 'completed';
         booking.completedBy = req.session.admin.id;
         booking.completedAt = new Date();
         await booking.save();
 
-        res.json({ success: true, message: 'Booking marked as completed', booking });
+        await sendBookingStatusEmail(booking.email, booking, 'completed');
+
+        res.json({ success: true, message: 'Booking marked as completed and email sent', booking });
     } catch (error) {
         console.error('Error completing booking:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
+
 async function getEmployeePerformance(employeeId, { period, startDate, endDate, month, year } = {}) {
     const query = { $or: [{ confirmedBy: employeeId }, { completedBy: employeeId }] };
 
@@ -5503,4 +5637,3 @@ app.get("/",(req, res) => {
 app.listen(PORT,"0.0.0.0", () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
-
