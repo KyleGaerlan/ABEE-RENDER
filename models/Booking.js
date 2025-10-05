@@ -1,6 +1,8 @@
-const { citySeasons, countrySeasons } = require('../config/seasons');
 const mongoose = require("mongoose");
 const DailyBookingCount = require("./DailyBookingCount");
+const detectSeason = require("../utils/seasonDetector");
+const getClimateData = require("../utils/climateFetcher");
+
 
 const statusChangeSchema = new mongoose.Schema({
     status: { type: String, required: true },
@@ -18,6 +20,8 @@ const bookingSchema = new mongoose.Schema({
     destination: { type: String, required: true },
     country: { type: String },
     season: { type: String },
+    avgTemperature: { type: Number },
+    rainfall: { type: Number },
     budget: { type: String, required: true },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
@@ -49,11 +53,11 @@ const bookingSchema = new mongoose.Schema({
     expiresAt: { type: Date }
 });
 
-// Pre-save middleware
+// 🔄 Pre-save middleware
 bookingSchema.pre("save", async function (next) {
     const isNew = this.isNew;
 
-    // Generate booking ID on create
+    // Generate Booking ID
     if (isNew && !this.bookingId) {
         const date = new Date();
         const year = date.getFullYear().toString().slice(-2);
@@ -70,43 +74,28 @@ bookingSchema.pre("save", async function (next) {
         this.expiresAt = expiryDate;
     }
 
-    // Season logic
-    const month = this.startDate.getMonth() + 1;
-    const destination = this.destination;
-    const country = this.country;
-    let seasons;
+    // 🌍 Smart Global Season Detection
+    if (this.startDate) {
+        const seasonDetected = detectSeason({
+            country: this.country,
+            city: this.destination,
+            date: this.startDate
+        });
 
-    if (citySeasons[destination]) {
-        seasons = citySeasons[destination].seasons;
-    } else if (country && countrySeasons[country]) {
-        seasons = countrySeasons[country];
-    } else {
-        seasons = ['Winter', 'Spring', 'Summer', 'Fall'];
+        this.season = seasonDetected;
+        if (this.tourDetails) {
+            this.tourDetails.season = seasonDetected;
+        }
     }
+    // 🌦️ Fetch and store climate data for analytics
+if (this.startDate && this.destination) {
+  const climate = await getClimateData(this.destination, this.country, this.startDate);
+  if (climate) {
+    this.avgTemperature = climate.avgTemperature;
+    this.rainfall = climate.rainfall;
+  }
+}
 
-    let season = 'Unknown';
-    if (seasons.includes('Winter') && (month === 12 || month === 1 || month === 2)) {
-        season = 'Winter';
-    } else if (seasons.includes('Spring') && (month >= 3 && month <= 5)) {
-        season = 'Spring';
-    } else if (seasons.includes('Summer') && (month >= 6 && month <= 8)) {
-        season = 'Summer';
-    } else if (seasons.includes('Fall') && (month >= 9 && month <= 11)) {
-        season = 'Fall';
-    } else if (seasons.includes('Wet Season') && (month >= 5 && month <= 10)) {
-        season = 'Wet Season';
-    } else if (seasons.includes('Dry Season') && (month === 11 || month === 12 || month <= 4)) {
-        season = 'Dry Season';
-    } else if (seasons.includes('Monsoon') && (month >= 6 && month <= 9)) {
-        season = 'Monsoon';
-    } else if (seasons.includes('Post-Monsoon') && (month >= 10 && month <= 12)) {
-        season = 'Post-Monsoon';
-    }
-
-    this.season = season;
-    if (this.tourDetails) {
-        this.tourDetails.season = season;
-    }
 
     // Auto-set timestamps on status change
     if (!isNew && this.isModified('status')) {
@@ -127,7 +116,7 @@ bookingSchema.pre("save", async function (next) {
     next();
 });
 
-// Post-save: track daily bookings
+// 📅 Post-save: Track daily booking stats
 bookingSchema.post("save", async function () {
     try {
         const today = new Date();
@@ -142,9 +131,9 @@ bookingSchema.post("save", async function () {
             await DailyBookingCount.create({ date: today, count: 1 });
         }
 
-        console.log("Booking saved and daily count updated");
+        console.log(`✅ Booking ${this.bookingId} saved (${this.season})`);
     } catch (error) {
-        console.error("Error updating daily booking count:", error);
+        console.error("❌ Error updating daily booking count:", error);
     }
 });
 
