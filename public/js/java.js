@@ -449,11 +449,16 @@ elements.logoutBtn?.addEventListener("click", async (e) => {
                 }); 
             }) 
             .then(data => { 
-                if (data.success) { 
-                    showMessage("Verification code sent successfully!", false); 
-                    openModal(elements.verificationPopup); 
-                    document.getElementById('verification-section').style.display = 'block'; 
-                } else { 
+                if (data.success) {
+                        sessionStorage.setItem('signupOtpEmail', email);
+
+                        showMessage("Verification code sent successfully!", false);
+                        openModal(elements.verificationPopup);
+                        document.getElementById('verification-section').style.display = 'block';
+
+                        const codeInput = document.getElementById('verification-code');
+                        if (codeInput) codeInput.focus();
+                    } else { 
                     showMessage(`Error: ${data.message || 'Could not send verification code'}`, true); 
                 } 
             }) 
@@ -497,19 +502,29 @@ if (elements.signupForm) {
             return;
         }
         
-        // Check if verification section is visible but code wasn't entered
         const verificationSection = document.getElementById('verification-section');
         const verificationSectionVisible = verificationSection && verificationSection.style.display !== 'none';
         const codeMessage = document.getElementById('codeMessage');
-        
-        if (verificationSectionVisible && !verificationCode) {
-            if (codeMessage) {
-                codeMessage.textContent = 'Please enter the verification code sent to your email.';
-                codeMessage.style.display = 'block';
-            } else {
-                showMessage('Please enter the verification code sent to your email.', true);
+        const storedSignupEmail = sessionStorage.getItem('signupOtpEmail');
+        if (verificationSectionVisible) {
+            if (!verificationCode) {
+                if (codeMessage) {
+                    codeMessage.textContent = 'Please enter the verification code sent to your email.';
+                    codeMessage.style.display = 'block';
+                } else {
+                    showMessage('Please enter the verification code sent to your email.', true);
+                }
+                return;
             }
-            return;
+
+            if (!storedSignupEmail || storedSignupEmail !== email) {
+                showMessage('The email was changed after the code was sent. Please request a new verification code for this email.', true);
+                const verificationSectionEl = document.getElementById('verification-section');
+                if (verificationSectionEl) {
+                    verificationSectionEl.style.display = 'none';
+                }
+                return;
+            }
         }
         
         // Show loading state
@@ -597,10 +612,6 @@ if (elements.signupForm) {
         });
     });
 }
-
-    
-    // ADMIN LOGIN MODAL FUNCTIONALITY 
-    // Open admin login modal from user login modal 
     if (elements.switchToAdminBtn) { 
         elements.switchToAdminBtn.addEventListener('click', function() { 
             console.log("Switch to Admin button clicked"); 
@@ -1419,6 +1430,28 @@ function resetAdminPassword() {
     .finally(() => {
         button.disabled = false;
         button.textContent = originalText;
+    });
+}
+// Clear stored signup OTP if user changes email after sending code
+const signupEmailInput = document.getElementById('signup-email');
+if (signupEmailInput) {
+    signupEmailInput.addEventListener('input', function () {
+        const current = this.value.trim();
+        const sentTo = sessionStorage.getItem('signupOtpEmail');
+
+        if (sentTo && sentTo !== current) {
+            // clear stored OTP state
+            sessionStorage.removeItem('signupOtpEmail');
+
+            // hide verification section and clear code
+            const verificationSection = document.getElementById('verification-section');
+            if (verificationSection) verificationSection.style.display = 'none';
+
+            const verificationInput = document.getElementById('verification-code');
+            if (verificationInput) verificationInput.value = '';
+
+            showMessage('You changed your email. Please request a new verification code.', true);
+        }
     });
 }
 
@@ -3200,7 +3233,6 @@ class ModernTestimonials {
     }
 }
 
-// Initialize the modern testimonials when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     new ModernTestimonials();
 });
