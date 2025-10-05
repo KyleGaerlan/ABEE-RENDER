@@ -503,7 +503,7 @@
         <div class="bookings-container">
             <div class="search-filter-container">
                 <div class="search-container">
-                    <input type="text" id="searchBooking" placeholder="Search by name, email, or destination..." onkeyup="filterBookings()">
+                    <input type="text" id="searchBooking" placeholder="Search by booking id, name, email, or destination..." onkeyup="filterBookings()">
                 </div>
                 <div class="filter-container">
                     <select id="statusFilter" onchange="filterBookings()">
@@ -805,9 +805,9 @@
             currentPage = page;
             displayBookings(allBookings);
         }
-        // Replace the existing filterBookings function with this updated version:
+// Replace your existing filterBookings function with this enhanced version
 function filterBookings() {
-    const searchTerm = document.getElementById('searchBooking').value.toLowerCase();
+    const searchTerm = document.getElementById('searchBooking').value.toLowerCase().trim();
     const statusFilter = document.getElementById('statusFilter').value;
     const dateFilter = document.getElementById('dateFilter').value;
     const archiveFilter = document.getElementById('archiveFilter').value;
@@ -816,32 +816,45 @@ function filterBookings() {
     
     let filteredBookings = [...allBookings];
 
-    // Apply archive filter
+    // 🗂️ Apply archive filter
     if (archiveFilter === 'active') {
         filteredBookings = filteredBookings.filter(booking => !booking.archived);
     } else if (archiveFilter === 'archived') {
         filteredBookings = filteredBookings.filter(booking => booking.archived);
     }
 
-    // Apply search filter
+    // 🔍 Apply search filter — now includes bookingId search
     if (searchTerm) {
-        filteredBookings = filteredBookings.filter(booking => 
-            (booking._id && booking._id.toLowerCase().includes(searchTerm)) ||
-            (booking.fullName && booking.fullName.toLowerCase().includes(searchTerm)) ||
-            (booking.email && booking.email.toLowerCase().includes(searchTerm)) ||
-            (booking.destination && booking.destination.toLowerCase().includes(searchTerm)) ||
-            (booking.tourDetails?.destination && booking.tourDetails.destination.toLowerCase().includes(searchTerm))
-        );
+        filteredBookings = filteredBookings.filter(booking => {
+            const idMatch = booking._id?.toLowerCase().includes(searchTerm);
+            const bookingIdMatch = booking.bookingId?.toLowerCase().includes(searchTerm); // ✅ Added this line
+            const nameMatch = booking.fullName?.toLowerCase().includes(searchTerm);
+            const emailMatch = booking.email?.toLowerCase().includes(searchTerm);
+            const destinationMatch = booking.destination?.toLowerCase().includes(searchTerm);
+            const tourDestinationMatch = booking.tourDetails?.destination?.toLowerCase().includes(searchTerm);
+            const countryMatch = booking.country?.toLowerCase().includes(searchTerm) ||
+                                 booking.tourDetails?.country?.toLowerCase().includes(searchTerm);
+
+            return (
+                idMatch ||
+                bookingIdMatch || // ✅ Enables Booking ID search
+                nameMatch ||
+                emailMatch ||
+                destinationMatch ||
+                tourDestinationMatch ||
+                countryMatch
+            );
+        });
     }
 
-    // Apply status filter
+    // 📊 Apply status filter
     if (statusFilter !== 'all') {
         filteredBookings = filteredBookings.filter(booking => 
-            booking.status.toLowerCase() === statusFilter
+            booking.status?.toLowerCase() === statusFilter.toLowerCase()
         );
     }
 
-    // Apply date filter
+    // 📅 Apply date filter
     if (dateFilter !== 'all') {
         const now = new Date();
         now.setHours(0, 0, 0, 0); // Start of today
@@ -857,9 +870,8 @@ function filterBookings() {
 
         filteredBookings = filteredBookings.filter(booking => {
             const bookingDate = new Date(booking.createdAt);
-            bookingDate.setHours(0, 0, 0, 0); // Reset time part for accurate date comparison
-            
-            switch(dateFilter) {
+            bookingDate.setHours(0, 0, 0, 0); // Normalize time
+            switch (dateFilter) {
                 case 'today':
                     return bookingDate >= now && bookingDate < tomorrow;
                 case 'week':
@@ -872,10 +884,11 @@ function filterBookings() {
         });
     }
 
-    // Reset to first page and display filtered results
+    // 📄 Reset pagination and display filtered results
     currentPage = 1;
     displayBookings(filteredBookings);
 }
+
 
 function viewBookingDetails(bookingId) {
     const booking = allBookings.find(b => b._id === bookingId);
