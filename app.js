@@ -703,7 +703,7 @@ app.get('/admin', (req, res) => {
 });
 app.post('/api/admin/login', async (req, res) => {
     console.log('Admin login request received:', req.body);
-    const { email, password, captchaVerified } = req.body;
+    const { username, password, captchaVerified } = req.body;
 
     if (!captchaVerified) {
         return res.status(400).json({ 
@@ -713,7 +713,7 @@ app.post('/api/admin/login', async (req, res) => {
     }
 
     try {
-        const admin = await Admin.findOne({ email });
+        const admin = await Admin.findOne({ username });
         console.log('Admin found:', admin ? 'Yes' : 'No');
 
         if (!admin) {
@@ -752,7 +752,7 @@ if (!admin.isVerified || admin.status !== 'active') {
             id: admin._id,
             firstName: admin.firstName,
             lastName: admin.lastName,
-            email: admin.email,
+            username: admin.email,
             role: admin.role
         };
         
@@ -762,7 +762,7 @@ if (!admin.isVerified || admin.status !== 'active') {
         } else if (admin.role === 'employee') {
             redirectUrl = '/employee-dashboard';
         } else {
-            redirectUrl = '/'; // Fallback redirect
+            redirectUrl = '/';
         }
 
         return res.json({
@@ -773,7 +773,7 @@ if (!admin.isVerified || admin.status !== 'active') {
                 id: admin._id,
                 firstName: admin.firstName,
                 lastName: admin.lastName,
-                email: admin.email,
+                username: admin.username,
                 role: admin.role
             }
         });
@@ -787,8 +787,8 @@ if (!admin.isVerified || admin.status !== 'active') {
 });
 app.post('/api/admin/verify-credentials', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const admin = await Admin.findOne({ email });
+        const { username, password } = req.body;
+        const admin = await Admin.findOne({ username });
 
         if (!admin) {
             return res.status(400).json({ success: false, message: 'Invalid credentials' });
@@ -1096,7 +1096,7 @@ app.get('/api/admin/employee-performance', checkAdminAuth, checkRole(['admin']),
 });
 app.post('/api/admin/login-redirect', async (req, res) => {
     console.log('Admin login redirect request received:', req.body);
-    const { email, password, role } = req.body;
+    const { username, password, role } = req.body;
 
     try {
         const admin = await Admin.findOne({ email });
@@ -1110,7 +1110,7 @@ app.post('/api/admin/login-redirect', async (req, res) => {
             return res.redirect('/admin?error=invalid-role');
         }
         
-        if (!admin.isVerified || admin.status !== 'active') { // Updated logic
+        if (!admin.isVerified || admin.status !== 'active') {
             return res.redirect('/admin?error=pending-approval');
         }
         
@@ -2044,7 +2044,7 @@ app.get("/my-bookings", async (req, res) => {
 });
 app.post('/api/admin/login', async (req, res) => { 
     console.log('Admin login request received:', req.body);
-    const { email, password, captchaVerified } = req.body;
+    const { username, password, captchaVerified } = req.body;
 
     if (!captchaVerified) {
         return res.status(400).json({ 
@@ -2054,7 +2054,7 @@ app.post('/api/admin/login', async (req, res) => {
     }
 
     try {
-        const admin = await Admin.findOne({ email });
+        const admin = await Admin.findOne({ username });
         console.log('Admin found:', admin ? 'Yes' : 'No');
 
         if (!admin) {
@@ -2087,7 +2087,6 @@ if (!admin.isVerified || admin.status !== 'active') {
             });
         }
 
-        // ✅ Password check
         const isMatch = await bcrypt.compare(password, admin.password);
         console.log('Password match:', isMatch ? 'Yes' : 'No');
         
@@ -2098,23 +2097,21 @@ if (!admin.isVerified || admin.status !== 'active') {
             });
         }
 
-        // Save session
         req.session.admin = {
             id: admin._id,
             firstName: admin.firstName,
             lastName: admin.lastName,
-            email: admin.email,
+            username: admin.email,
             role: admin.role
         };
         
-        // Redirect based on role
         let redirectUrl;
         if (admin.role === 'admin') {
             redirectUrl = '/admin-dashboard';
         } else if (admin.role === 'employee') {
             redirectUrl = '/employee-dashboard';
         } else {
-            redirectUrl = '/'; // fallback
+            redirectUrl = '/';
         }
 
         return res.json({
@@ -2125,7 +2122,7 @@ if (!admin.isVerified || admin.status !== 'active') {
                 id: admin._id,
                 firstName: admin.firstName,
                 lastName: admin.lastName,
-                email: admin.email,
+                username: admin.username,
                 role: admin.role
             }
         });
@@ -2190,7 +2187,7 @@ function isAuthenticated(req, res, next) {
 }
 app.post('/update-profile', isAuthenticated, async (req, res) => {
     try {
-        const { firstName, middleInitial, lastName, suffix, phoneNumber, birthdate, sex, nationality } = req.body;
+        const { firstName, middleInitial, lastName, suffix, phoneNumber, birthdate, sex, nationality } = req.body; // Add nationality
         const updatedUser = await User.findByIdAndUpdate(req.session.user.id, {
             firstName, 
             middleInitial,
@@ -2199,7 +2196,7 @@ app.post('/update-profile', isAuthenticated, async (req, res) => {
             phoneNumber, 
             birthdate: birthdate ? new Date(birthdate) : null, 
             sex,
-            nationality
+            nationality  // Add this line
         }, { new: true });
 
         if (!updatedUser) {
@@ -2217,7 +2214,7 @@ app.post('/update-profile', isAuthenticated, async (req, res) => {
             suffix: updatedUser.suffix,
             birthdate: updatedUser.birthdate,
             sex: updatedUser.sex,
-            nationality: updatedUser.nationality
+            nationality: updatedUser.nationality  // Add this line
         };
 
         return res.json({ success: true, message: 'Profile updated successfully!' });
@@ -3158,7 +3155,7 @@ app.get('/api/user-profile', (req, res) => {
                 suffix: user.suffix,
                 birthdate: user.birthdate,
                 sex: user.sex,
-                nationality: user.nationality
+                nationality: user.nationality  // Add this line
             });
         })
         .catch(err => {
@@ -3167,7 +3164,7 @@ app.get('/api/user-profile', (req, res) => {
         });
 });
 
-cron.schedule('*/5 * * * *', async () => {
+cron.schedule('*/5 * * * *', async () => { // Run every 5 minutes
     try {
         const now = new Date();
         
