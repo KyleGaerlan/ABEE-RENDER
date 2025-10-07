@@ -48,13 +48,9 @@ function checkAuthStatus() {
         authCheckInProgress = false;
     });
 }
-
 document.addEventListener("DOMContentLoaded", () => {
-
-    checkAuthStatus();
-    
-    document.querySelectorAll(".modal").forEach((modal) => 
-        (modal.style.display = "none"));
+    // Ensure modals are hidden initially
+    document.querySelectorAll(".modal").forEach(modal => (modal.style.display = "none"));
     
     const elements = { 
         loginModal: document.getElementById("loginModal"), 
@@ -65,71 +61,56 @@ document.addEventListener("DOMContentLoaded", () => {
         userProfile: document.getElementById("userProfile"),
         profileDropdown: document.getElementById("profileDropdown"),
         profileIconWrapper: document.getElementById("profileIconWrapper"),
-        loginForm: document.getElementById("loginForm"),
         logoutBtn: document.getElementById("logoutBtn"), 
-        forgotPasswordModal: document.getElementById("forgotPasswordModal"),
-        forgotPasswordForm: document.getElementById("forgotPasswordForm"),
-        forgotEmail: document.getElementById("forgotEmail"),
-        emailSection: document.getElementById("emailSection"), 
-        otpSection: document.getElementById("otpSection"),
-        otpCode: document.getElementById("otpCode"),
-        resetPasswordSection: document.getElementById("resetPasswordSection"), 
-        successSection: document.getElementById("successSection"), 
-        newPassword: document.getElementById("newPassword"), 
-        confirmPassword: document.getElementById("confirmPassword"), 
-        passwordMessage: document.getElementById("passwordMessage"),
-        confirmPasswordMessage: document.getElementById("confirmPasswordMessage"),
-        switchToAdminBtn: document.getElementById("switchToAdminBtn"), 
         notificationIcon: document.getElementById("notificationIcon"),
         notificationDropdown: document.getElementById("notificationDropdown"), 
         bookingStatus: document.getElementById("bookingStatus"),
-        signupModal: document.getElementById("signupModal"), 
-        signupModalClose: document.getElementById("signupModalClose"), 
-        signupForm: document.getElementById("signup-form"), 
-        verificationPopup: document.getElementById("verification-popup"),
-        signupSuccessPopup: document.getElementById("signup-success-popup"),
-        adminLoginModal: document.getElementById("adminLoginModal"), 
-        adminLoginModalClose: document.getElementById("adminLoginModalClose"),
-        adminForgotPasswordModal: document.getElementById("adminForgotPasswordModal"), 
-        adminForgotPasswordModalClose: document.getElementById("adminForgotPasswordModalClose"),
-        adminSignupSuccessModal: document.getElementById("adminSignupSuccessModal"), 
-        adminSignupSuccessModalClose: document.getElementById("adminSignupSuccessModalClose"),
-        adminSignupSuccessBtn: document.getElementById("adminSignupSuccessBtn"), 
-        adminLoginForm: document.getElementById("adminLoginForm"), 
-        adminSignupForm: document.getElementById("adminSignupForm"),
-        adminForgotPasswordLink: document.getElementById("adminForgotPasswordLink"),
-        adminVerificationModal: document.getElementById("adminVerificationModal"),
-        adminVerificationModalClose: document.getElementById("adminVerificationModalClose"),
-        verifyAdminCodeBtn: document.getElementById("verifyAdminCodeBtn"),
-        resendAdminCodeBtn: document.getElementById("resendAdminCodeBtn"),
-        adminVerificationCode: document.getElementById("adminVerificationCode"),
-        accountPendingModal: document.getElementById("accountPendingModal"),
-        accountPendingModalClose: document.getElementById("accountPendingModalClose"),
-        accountPendingBtn: document.getElementById("accountPendingBtn"),
     }; 
-    function updateUI() { 
-        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"; 
-        if (elements.loginBtnWrapper) 
-            elements.loginBtnWrapper.style.display = isLoggedIn ? "none" : "block"; 
-        if (elements.userProfile) 
+
+    // ✅ UI Update Function
+    function updateUI() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+        if (elements.loginBtnWrapper)
+            elements.loginBtnWrapper.style.display = isLoggedIn ? "none" : "block";
+
+        if (elements.userProfile)
             elements.userProfile.style.display = isLoggedIn ? "block" : "none";
-        
-        // Add this code to show/hide notification bell
+
+        // ✅ Notification Bell
         const notificationWrapper = document.getElementById("notificationWrapper");
         if (notificationWrapper) {
             notificationWrapper.style.display = isLoggedIn ? "block" : "none";
         }
-        
-        // Add this line to update the navbar UI
-        if (window.updateNavbarUI) {
-            window.updateNavbarUI();
+
+        // ✅ Contact Us link visibility + fade animation
+        const contactNav = document.getElementById("contactNav");
+        if (contactNav) {
+            if (isLoggedIn) {
+                contactNav.classList.remove("hidden");
+                contactNav.style.display = "block";
+                setTimeout(() => (contactNav.style.opacity = "1"), 50);
+            } else {
+                contactNav.style.opacity = "0";
+                setTimeout(() => (contactNav.style.display = "none"), 300);
+                contactNav.classList.add("hidden");
+            }
         }
-            
-        // Only fetch booking status if logged in and the element exists
+
+        if (window.updateNavbarUI) window.updateNavbarUI();
+
         if (isLoggedIn && elements.bookingStatus) {
             fetchBookingStatus();
         }
     }
+
+    // ✅ Wait until everything is loaded before running checkAuth
+    window.addEventListener("load", () => {
+        checkAuthStatus();
+        updateUI();
+    });
+
+
     
     // Modal utility functions
     function openModal(modal) { 
@@ -161,13 +142,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     // Handle Profile Dropdown Toggle 
-    elements.profileIconWrapper?.addEventListener("click", (event) => { 
-        event.stopPropagation(); 
-        if (elements.profileDropdown) { 
-            elements.profileDropdown.style.display = 
-                elements.profileDropdown.style.display === "block" ? "none" : "block"; 
-        } 
-    }); 
+   elements.profileIconWrapper?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  elements.profileDropdown.style.display =
+    elements.profileDropdown.style.display === "block" ? "none" : "block";
+});
+
     window.addEventListener("click", (event) => { 
         if (elements.notificationDropdown && 
             elements.notificationIcon && 
@@ -541,75 +521,79 @@ if (elements.signupForm) {
             verificationCode: verificationCode || null
         };
         
-        fetch('/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.message || `Server error: ${response.status}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                closeModal(elements.signupModal);
-                
-                // Handle auto-login
-                if (data.autoLogin) {
-                    // Set login state in localStorage and sessionStorage
-                    localStorage.setItem("isLoggedIn", "true");
-                    sessionStorage.setItem("isLoggedIn", "true");
-                    lastAuthState = true;
-                    
-                    // Update UI for logged-in user
-                    updateUI();
-                    
-                    // Show success message
-                    showMessage("Account created successfully! You are now logged in.", false);
-                    
-                    // Redirect to home page or dashboard
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1500);
-                } else {
-                    // Show the original success popup if auto-login is not enabled
-                    openModal(elements.signupSuccessPopup);
-                    
-                    let countdown = 5;
-                    const countdownElement = document.getElementById('countdown');
-                    const interval = setInterval(() => {
-                        if (countdownElement) countdownElement.textContent = countdown;
-                        countdown--;
-                        if (countdown < 0) {
-                            clearInterval(interval);
-                            window.location.href = '/';
-                        }
-                    }, 1000);
-                    
-                    const redirectBtn = document.getElementById('redirectBtn');
-                    if (redirectBtn) {
-                        redirectBtn.addEventListener('click', function() {
-                            window.location.href = '/';
-                        }, { once: true });
-                    }
+       fetch('/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+    })
+    .then(async (response) => {
+    const data = await response.json();
+
+    // ❌ Handle server-side errors like "Username already taken"
+    if (!response.ok) {
+        showMessage(data.message || `Server error: ${response.status}`, true);
+        throw new Error(data.message || `Server error: ${response.status}`);
+    }
+
+    // ✅ Only continue if signup actually succeeded
+    if (data.success) {
+        closeModal(elements.signupModal);
+
+        // Handle auto-login (only when explicitly set)
+        if (data.autoLogin) {
+            localStorage.setItem("isLoggedIn", "true");
+            sessionStorage.setItem("isLoggedIn", "true");
+            lastAuthState = true;
+
+            // ✅ Only now update the UI (don’t show profile unless logged in)
+            updateUI();
+
+            showMessage("Account created successfully! You are now logged in.", false);
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        } else {
+            // Show success popup if auto-login is not enabled
+            openModal(elements.signupSuccessPopup);
+
+            let countdown = 5;
+            const countdownElement = document.getElementById('countdown');
+            const interval = setInterval(() => {
+                if (countdownElement) countdownElement.textContent = countdown;
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(interval);
+                    window.location.href = '/';
                 }
-            } else {
-                showMessage('Error creating user: ' + (data.message || 'Unknown error'), true);
+            }, 1000);
+
+            const redirectBtn = document.getElementById('redirectBtn');
+            if (redirectBtn) {
+                redirectBtn.addEventListener('click', function() {
+                    window.location.href = '/';
+                }, { once: true });
             }
-        })
-        .catch(error => {
-            console.error('Signup error:', error);
-            showMessage(error.message || "Something went wrong. Please try again later.", true);
-        })
-        .finally(() => {
-            // Restore button state
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText;
-        });
+        }
+    } else {
+        // ❌ Show backend-provided message, do NOT trigger updateUI()
+        showMessage(data.message || 'Error creating user. Please try again.', true);
+    }
+})
+.catch(error => {
+    console.error('Signup error:', error);
+    showMessage(error.message || "Something went wrong. Please try again later.", true);
+
+    // ❌ Make sure profile icon doesn’t appear on failed signup
+    localStorage.removeItem("isLoggedIn");
+    sessionStorage.removeItem("isLoggedIn");
+    lastAuthState = false;
+    updateUI();
+})
+.finally(() => {
+    // Restore button state
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalBtnText;
+});
     });
 }
     if (elements.switchToAdminBtn) { 
