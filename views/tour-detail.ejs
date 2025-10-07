@@ -684,5 +684,10 @@
     }
 });
     </script>
+    <script> loginFromDetailBtn.addEventListener('click', function() {
+    sessionStorage.setItem('openLoginModal', 'true');
+    window.location.href = '/';
+});
+</script>
 </body>
 </html>
