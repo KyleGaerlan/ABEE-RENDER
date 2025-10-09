@@ -17,12 +17,13 @@ const Admin = require('./models/Admin');
 const router = express.Router();
 const cron = require('node-cron');
 const multer = require('multer');
+const fetch = require('node-fetch');
 const fs = require('fs');
 const Tour = require('./models/Tour');
 const PageView = require('./models/PageView');
 const Contact = require('./models/Contact');
 const validator = require('validator');
-
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -129,7 +130,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-const twilio = require('twilio');
 
 async function sendSMS(phoneNumber, message) {
     try {
@@ -145,30 +145,34 @@ async function sendSMS(phoneNumber, message) {
                 formattedPhone = '+63' + formattedPhone;
             }
         }
-        
+
         console.log(`Sending SMS to ${formattedPhone}: ${message}`);
-        
-        const client = twilio(
-            process.env.TWILIO_ACCOUNT_SID,
-            process.env.TWILIO_AUTH_TOKEN
-        );
-        
-        const result = await client.messages.create({
-            body: message,
-            from: process.env.TWILIO_PHONE_NUMBER,
-            to: formattedPhone
+
+        const response = await fetch('https://textbelt.com/text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phone: formattedPhone,
+                message: message,
+                key: process.env.TEXTBELT_API_KEY
+            })
         });
-        
+
+        const result = await response.json();
         console.log('SMS API response:', result);
-        
-        return {
-            success: true,
-            message: 'SMS sent successfully',
-            details: {
-                sid: result.sid,
-                status: result.status
-            }
-        };
+
+        if (result.success) {
+            return {
+                success: true,
+                message: 'SMS sent successfully',
+                details: result
+            };
+        } else {
+            return {
+                success: false,
+                message: 'Failed to send SMS: ' + (result.error || 'Unknown error')
+            };
+        }
     } catch (error) {
         console.error('SMS sending error:', error);
         return {
@@ -177,7 +181,6 @@ async function sendSMS(phoneNumber, message) {
         };
     }
 }
-
 
 async function sendApprovalEmail(email) {
     await transporter.sendMail({
@@ -290,7 +293,7 @@ async function notifyAdminsAboutNewRequest(newAdmin) {
                         </div>
                         <p>Please log in to the admin dashboard to approve or decline this request.</p>
                         <div style="margin-top: 20px;">
-                            <a href="${process.env.BASE_URL || 'http://localhost:3000'}/admin-approvals" 
+                            <a href="${process.env.BASE_URL || 'https://abeetravel.com'}/admin-approvals" 
                                style="background-color: #f26523; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
                                 Review Request
                             </a>
@@ -343,69 +346,47 @@ apiRouter.delete('/users/:userId', checkAdminAuth, async (req, res) => {
         });
     }
 });
+// ✅ Middleware for user login
+const checkUserAuth = (req, res, next) => {
+  if (!req.session.user) {
+    return res.redirect('/login?next=/contact');
+  }
+  next();
+};
 
-apiRouter.get('/admin/check-auth', (req, res) => {
-    if (req.session && req.session.admin) {
-        return res.json({
-            success: true,
-            isAuthenticated: true,
-            admin: {
-                id: req.session.admin.id,
-                firstName: req.session.admin.firstName,
-                lastName: req.session.admin.lastName,
-                role: req.session.admin.role
-            }
-        });
-    } else {
-        return res.json({
-            success: false,
-            isAuthenticated: false,
-            message: 'Not authenticated'
-        });
-    }
+app.get('/message', (req, res) => {
+  res.render('message', { user: req.session.user }); // ✅ Add user
 });
-apiRouter.put('/users/:userId', checkAdminAuth, async (req, res) => {
+
+app.post('/contact', async (req, res) => {
     try {
-        const { userId } = req.params;
-        const { phoneNumber, firstName, lastName, birthdate, sex } = req.body;
-        
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid user ID format'
-            });
+        const user = req.session.user; // or however you store logged-in user
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'You must be logged in to send a message.' });
         }
-        
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            {
-                phoneNumber,
-                firstName,
-                lastName,
-                birthdate: birthdate ? new Date(birthdate) : null,
-                sex
-            },
-            { new: true }
-        );
-        
-        if (!updatedUser) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
+
+        const { subject, message } = req.body;
+
+        if (!subject || !message) {
+            return res.status(400).json({ success: false, message: 'Subject and message are required.' });
         }
-        
-        res.json({
-            success: true,
-            message: 'User updated successfully',
-            user: updatedUser
+
+        // Save message
+        const newMessage = new Contact({
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            phone: user.phone || '',
+            country: user.country || '',
+            subject,
+            message
         });
+
+        await newMessage.save();
+
+        res.json({ success: true, message: 'Message sent successfully!' });
     } catch (error) {
-        console.error('❌ Error updating user:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to update user: ' + error.message
-        });
+        console.error('Error saving contact message:', error);
+        res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
     }
 });
 
@@ -446,17 +427,15 @@ app.post('/admin-signup', async (req, res) => {
         });
         
         if (existingAdmin) {
-            if (existingAdmin.status === 'pending') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Your account request is already pending approval'
-                });
+            if (existingAdmin.username === username) {
+                return res.status(400).json({ success: false, message: 'Username already taken' });
             }
-            
-            return res.status(400).json({
-                success: false,
-                message: 'Email or username already in use'
-            });
+            if (existingAdmin.email === email) {
+                return res.status(400).json({ success: false, message: 'Email already taken' });
+            }
+            if (existingAdmin.status === 'pending') {
+                return res.status(400).json({ success: false, message: 'Your account request is already pending approval' });
+            }
         }
 
         const admin = new Admin({
@@ -1325,6 +1304,270 @@ app.post('/api/admin/account-action', checkAdminAuth, async (req, res) => {
         });
     }
 });
+// ========= 1️⃣ SALES FORECAST =========
+app.get('/api/predict/sales', async (req, res) => {
+  try {
+    const salesData = await Booking.aggregate([
+      { $match: { status: { $ne: "cancelled" } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          totalSales: { $sum: "$totalAmount" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    if (!salesData || salesData.length < 3)
+      return res.json({ success: false, message: "Not enough sales data for forecast." });
+
+    const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
+
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
+      series,
+      horizon: 30
+    });
+
+    console.log("🧠 Sales Forecast:", data.success, "—", data.forecast?.length, "points");
+    res.json(data);
+  } catch (err) {
+    console.error("❌ Prediction API Error (Sales):", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// ========= 2️⃣ USER FORECAST =========
+app.get('/api/predict/users', async (req, res) => {
+  try {
+    const users = await User.find({}, "createdAt").sort({ createdAt: 1 }).lean();
+    if (users.length < 3)
+      return res.json({ success: false, message: "Not enough user data for forecast." });
+
+    const series = users.map(u => ({ ds: u.createdAt, y: 1 }));
+
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
+      series,
+      horizon: 30
+    });
+
+    console.log("🧠 User Forecast:", data.success, "—", data.forecast?.length, "points");
+    res.json(data);
+  } catch (err) {
+    console.error("❌ Prediction API Error (Users):", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// ========= 3️⃣ BOOKING FORECAST =========
+app.get('/api/predict/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find({}, "createdAt").sort({ createdAt: 1 }).lean();
+    if (bookings.length < 3)
+      return res.json({ success: false, message: "Not enough booking data for forecast." });
+
+    const series = bookings.map(b => ({ ds: b.createdAt, y: 1 }));
+
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
+      series,
+      horizon: 30
+    });
+
+    console.log("🧠 Booking Forecast:", data.success, "—", data.forecast?.length, "points");
+    res.json(data);
+  } catch (err) {
+    console.error("❌ Prediction API Error (Bookings):", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+app.get('/api/predict/seasonal', async (req, res) => {
+  try {
+    const data = await Booking.aggregate([
+      { $match: { status: { $ne: "cancelled" } } },
+      { $group: { _id: "$season", totalBookings: { $sum: 1 } } },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    if (!data || data.length < 3)
+      return res.json({ success: false, message: "Not enough seasonal data" });
+
+    const seasonToDate = {
+      Winter: "2025-01-01",
+      Spring: "2025-04-01",
+      Summer: "2025-07-01",
+      Fall: "2025-10-01"
+    };
+
+    const series = data.map(d => ({
+      ds: seasonToDate[d._id] || "2025-01-01",
+      y: d.totalBookings
+    }));
+
+    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
+      series, horizon: 4
+    });
+
+    res.json(response);
+  } catch (err) {
+    console.error("Prediction API Error (Seasonal):", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// 🌍 DESTINATION DEMAND FORECAST
+app.get('/api/predict/destination-demand', async (req, res) => {
+  try {
+    const data = await Booking.aggregate([
+      { $match: { status: { $ne: "cancelled" } } },
+      { $group: { _id: "$destination", totalBookings: { $sum: 1 } } },
+      { $sort: { totalBookings: -1 } },
+      { $limit: 10 }
+    ]);
+
+    if (!data || data.length === 0)
+      return res.json({ success: false, message: "No destination data" });
+
+    res.json({
+      success: true,
+      forecast: data.map(d => ({
+        destination: d._id,
+        totalBookings: d.totalBookings
+      }))
+    });
+  } catch (err) {
+    console.error("Prediction API Error (Destination Demand):", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// 🧩 Helper: Build a time series dataset for forecasting
+function buildForecastSeries(historicalData, forecastData, label) {
+  const combined = [];
+
+  // Add historical data points
+  historicalData.forEach(point => {
+    combined.push({
+      date: point.date || point._id || point.time,
+      value: point.value || point.count || point.total || 0,
+      type: 'historical'
+    });
+  });
+
+  // Add forecasted data points
+  if (forecastData && forecastData.length > 0) {
+    forecastData.forEach(point => {
+      combined.push({
+        date: point.date || point._id || point.time,
+        value: point.forecast || point.value || 0,
+        type: 'forecast'
+      });
+    });
+  }
+
+  return { label, data: combined };
+}
+
+// 🧩 Bookings version
+async function buildBookingCountSeries() {
+  const bookings = await Booking.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } }
+  ]);
+
+  return bookings.map(b => ({
+    date: `${b._id.year}-${b._id.month}-01`,
+    value: b.count
+  }));
+}
+
+// 🧩 Users version
+async function buildUserSeries() {
+  const users = await User.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } }
+  ]);
+
+  return users.map(u => ({
+    date: `${u._id.year}-${u._id.month}-01`,
+    value: u.count
+  }));
+}
+
+// 🧩 Sales version
+async function buildSalesSeries() {
+  const sales = await Booking.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" }
+        },
+        total: { $sum: "$totalAmount" }
+      }
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } }
+  ]);
+
+  return sales.map(s => ({
+    date: `${s._id.year}-${s._id.month}-01`,
+    value: s.total
+  }));
+}
+
+app.get("/api/forecast", async (req, res) => {
+  try {
+    const response = await axios.get("http://127.0.0.1:8000/predict");
+    res.json(response.data);
+  } catch (error) {
+    console.error("❌ Error fetching forecast:", error.message);
+    res.status(500).json({ success: false, message: "Forecast service unavailable." });
+  }
+});
+app.get("/api/forecast/:type", async (req, res) => {
+  try {
+    const { type } = req.params;
+    let series;
+
+    if (type === "sales") {
+      series = await buildForecastSeries(); // uses Booking.totalAmount
+    } else if (type === "bookings") {
+      series = await buildBookingCountSeries();
+    } else if (type === "users") {
+      series = await buildUserSeries();
+    }
+
+    const response = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ series, horizon: 180 }),
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Forecast error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 app.post('/api/admin/forgot-password', async (req, res) => {
     const { email, role } = req.body;
@@ -1791,59 +2034,58 @@ app.get('/user-bookings', (req, res) => {
         res.redirect('/');
     }
 });
+// ✅ USER SIGNUP ROUTE
 app.post('/signup', async (req, res) => {
-    try {
-        const { username, email, phoneNumber, password, verificationCode } = req.body;
-        if (!username || !email || !phoneNumber || !password) {
-            return res.status(400).json({ success: false, message: 'All fields are required' });
-        }
+  try {
+    const { username, email, password, phoneNumber } = req.body;
 
-        if (!verificationCode) {
-            return res.status(400).json({ success: false, message: 'Please verify your email by entering the code sent.' });
-        }
-
-        const otpRecord = await OTP.findOne({ email }).lean();
-        if (!otpRecord) {
-            return res.status(400).json({ success: false, message: 'No verification code found for this email. Please request a new one.' });
-        }
-        if (otpRecord.otp !== verificationCode) {
-            return res.status(400).json({ success: false, message: 'Incorrect verification code.' });
-        }
-        if (Date.now() > otpRecord.expiresAt) {
-            return res.status(400).json({ success: false, message: 'Verification code expired. Please request a new one.' });
-        }
-        // optional: delete used OTP
-        await OTP.deleteOne({ email });
-
-        // --- then continue your existing signup checks ---
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: 'Username or Email already taken' });
-        }
-
-        const newUser = new User({ username, email, phoneNumber, password });
-        await newUser.save();
-
-        req.session.user = {
-            id: newUser._id,
-            username: newUser.username,
-            email: newUser.email,
-            phoneNumber: newUser.phoneNumber,
-            firstName: newUser.firstName,
-            lastName: newUser.lastName
-        };
-
-        return res.status(201).json({
-            success: true,
-            message: 'User created successfully',
-            autoLogin: true
-        });
-
-    } catch (error) {
-        console.error('❌ Signup error:', error);
-        return res.status(500).json({ success: false, message: 'Internal server error' });
+    if (!username || !email || !password || !phoneNumber) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
     }
+
+    // Check for duplicate username
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ success: false, message: 'Username already taken' });
+    }
+
+    // Check for duplicate email
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ success: false, message: 'Email already taken' });
+    }
+
+    // Create and save new user
+    const newUser = new User({ username, email, password, phoneNumber });
+    await newUser.save();
+
+    // ✅ Send confirmation email
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Account Created Successfully',
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Welcome to A.BEE Travel and Tours!</h2>
+          <p>Hi ${username},</p>
+          <p>Your account has been successfully created. You can now log in and start booking your tours!</p>
+          <br>
+          <p style="font-size: 0.9em;">— The A.BEE Travel and Tours Team</p>
+        </div>
+      `
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'User created successfully! A confirmation email has been sent.'
+    });
+
+  } catch (error) {
+    console.error('❌ Signup error:', error);
+    return res.status(500).json({ success: false, message: 'Error creating account' });
+  }
 });
+
 
 
 app.get('/settings', (req, res) => {
@@ -2363,7 +2605,6 @@ app.post('/update-profile', isAuthenticated, async (req, res) => {
     }
 });
 
-
 app.get('/admin-dashboard/data', async (req, res) => {
     try {
         console.log("🔄 Fetching admin dashboard data...");
@@ -2372,6 +2613,7 @@ app.get('/admin-dashboard/data', async (req, res) => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
         sevenDaysAgo.setUTCHours(0, 0, 0, 0);
 
+        // 🔹 Users this week
         const users = await User.find({ 
             createdAt: { $gte: sevenDaysAgo } 
         }).sort({ createdAt: 1 });
@@ -2380,14 +2622,12 @@ app.get('/admin-dashboard/data', async (req, res) => {
         users.forEach(user => {
             const dateKey = new Date(user.createdAt).toISOString().split('T')[0];
             if (!usersByDay[dateKey]) {
-                usersByDay[dateKey] = {
-                    date: user.createdAt,
-                    count: 0
-                };
+                usersByDay[dateKey] = { date: user.createdAt, count: 0 };
             }
             usersByDay[dateKey].count++;
         });
 
+        // 🔹 Bookings this week
         const bookings = await Booking.find({ 
             createdAt: { $gte: sevenDaysAgo } 
         }).sort({ createdAt: 1 });
@@ -2396,10 +2636,7 @@ app.get('/admin-dashboard/data', async (req, res) => {
         bookings.forEach(booking => {
             const dateKey = new Date(booking.createdAt).toISOString().split('T')[0];
             if (!bookingsByDay[dateKey]) {
-                bookingsByDay[dateKey] = {
-                    date: booking.createdAt,
-                    count: 0
-                };
+                bookingsByDay[dateKey] = { date: booking.createdAt, count: 0 };
             }
             bookingsByDay[dateKey].count++;
         });
@@ -2407,14 +2644,33 @@ app.get('/admin-dashboard/data', async (req, res) => {
         const usersThisWeek = Object.values(usersByDay);
         const bookingsThisWeek = Object.values(bookingsByDay);
 
-        console.log("✅ Users This Week:", usersThisWeek.length ? usersThisWeek : "No data found.");
-        console.log("✅ Bookings This Week:", bookingsThisWeek.length ? bookingsThisWeek : "No data found.");
+        // 🔹 All-time totals
+        const totalUsers = await User.countDocuments();
+        const totalBookings = await Booking.countDocuments();
 
-        res.json({ usersThisWeek: usersThisWeek || [], bookingsThisWeek: bookingsThisWeek || [] });
+        // 🔹 Total sales (confirmed + completed)
+        const totalSalesResult = await Booking.aggregate([
+            { $match: { status: { $in: ['confirmed', 'completed'] } } },
+            { $group: { _id: null, totalSales: { $sum: "$totalAmount" } } }
+        ]);
+        const totalSales = totalSalesResult[0]?.totalSales || 0;
+
+        console.log("✅ Users This Week:", usersThisWeek.length);
+        console.log("✅ Bookings This Week:", bookingsThisWeek.length);
+        console.log("✅ Total Sales:", totalSales);
+
+        res.json({
+            success: true,
+            usersThisWeek,
+            bookingsThisWeek,
+            totalUsers,
+            totalBookings,
+            totalSales
+        });
 
     } catch (error) {
         console.error("❌ Error fetching dashboard data:", error);
-        res.status(500).json({ error: "Failed to fetch dashboard data." });
+        res.status(500).json({ success: false, error: "Failed to fetch dashboard data." });
     }
 });
 
@@ -5439,6 +5695,30 @@ app.get('/api/analytics/yearly', checkAdminAuth, async (req, res) => {
             message: 'Failed to fetch yearly analytics'
         });
     }
+});
+
+app.get('/api/predict/bookings', async (req, res) => {
+  try {
+    const data = await DailyBookingCount.find().sort({ date: 1 }).lean();
+
+    // Prepare payload for ML API
+    const series = data.map(d => ({
+      date: d.date,
+      count: d.count
+    }));
+
+    // Send to external prediction service (could be a Python FastAPI endpoint)
+    const response = await axios.post('https://your-ml-api/predict', { series });
+
+    res.json({
+      success: true,
+      history: series,
+      forecast: response.data.forecast
+    });
+  } catch (err) {
+    console.error('Prediction error:', err);
+    res.status(500).json({ success: false, message: 'Prediction failed' });
+  }
 });
 const checkManagerAuth = (req, res, next) => {
     if (!req.session || !req.session.admin || req.session.admin.role !== 'manager') {
