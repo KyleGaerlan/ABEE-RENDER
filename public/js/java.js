@@ -65,6 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         notificationIcon: document.getElementById("notificationIcon"),
         notificationDropdown: document.getElementById("notificationDropdown"), 
         bookingStatus: document.getElementById("bookingStatus"),
+        signupForm: document.getElementById("signupForm"),
     }; 
 
     // ✅ UI Update Function
@@ -453,149 +454,62 @@ elements.logoutBtn?.addEventListener("click", async (e) => {
             }); 
         }); 
     } 
-    // Find the signup form submission handler in java.js and update it
 if (elements.signupForm) {
-    elements.signupForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const username = document.getElementById('signup-username').value.trim();
-        const email = document.getElementById('signup-email').value.trim();
-        const phoneNumber = document.getElementById('signup-phonenumber').value.trim();
-        const password = document.getElementById('signup-password').value;
-        const confirmPassword = document.getElementById('signup-confirm-password').value;
-        const verificationCode = document.getElementById('verification-code')?.value.trim();
-        
-        // Form validation
-        if (!username || !email || !phoneNumber || !password || !confirmPassword) {
-            showMessage("Please fill in all required fields.", true);
-            return;
-        }
-        
-        // Check password validity
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.isValid) {
-            showMessage(passwordValidation.message, true);
-            return;
-        }
-        
-        if (password !== confirmPassword) {
-            showMessage('Passwords do not match.', true);
-            return;
-        }
-        
-        const verificationSection = document.getElementById('verification-section');
-        const verificationSectionVisible = verificationSection && verificationSection.style.display !== 'none';
-        const codeMessage = document.getElementById('codeMessage');
-        const storedSignupEmail = sessionStorage.getItem('signupOtpEmail');
-        if (verificationSectionVisible) {
-            if (!verificationCode) {
-                if (codeMessage) {
-                    codeMessage.textContent = 'Please enter the verification code sent to your email.';
-                    codeMessage.style.display = 'block';
-                } else {
-                    showMessage('Please enter the verification code sent to your email.', true);
-                }
-                return;
-            }
+  elements.signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-            if (!storedSignupEmail || storedSignupEmail !== email) {
-                showMessage('The email was changed after the code was sent. Please request a new verification code for this email.', true);
-                const verificationSectionEl = document.getElementById('verification-section');
-                if (verificationSectionEl) {
-                    verificationSectionEl.style.display = 'none';
-                }
-                return;
-            }
-        }
-        
-        // Show loading state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Creating Account...";
-        
-        const userData = {
-            username,
-            email,
-            phoneNumber,
-            password,
-            verificationCode: verificationCode || null
-        };
-        
-       fetch('/signup', {
+    // Gather input values
+    const username = document.getElementById('signup-username').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const phoneNumber = document.getElementById('signup-phonenumber').value.trim();
+    const password = document.getElementById('signup-password').value.trim();
+    const confirmPassword = document.getElementById('signup-confirm-password').value.trim();
+    const verificationCode = document.getElementById('verification-code').value.trim();
+
+    // Basic validation
+    if (password !== confirmPassword) {
+      showPopup('❌ Passwords do not match!');
+      return;
+    }
+
+    try {
+      // Send data to backend
+      const response = await fetch('/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-    })
-    .then(async (response) => {
-    const data = await response.json();
+        body: JSON.stringify({
+          username,
+          email,
+          phoneNumber,
+          password,
+          verificationCode
+        })
+      });
+const data = await response.json();
+console.log('Signup Response:', data);
 
-    // ❌ Handle server-side errors like "Username already taken"
-    if (!response.ok) {
-        showMessage(data.message || `Server error: ${response.status}`, true);
-        throw new Error(data.message || `Server error: ${response.status}`);
-    }
+if (data.success) {
+  // ✅ Backend already logged the user in
+  closeAllModals();
+  showMessage("Signup successful! You are now logged in.", false);
 
-    // ✅ Only continue if signup actually succeeded
-    if (data.success) {
-        closeModal(elements.signupModal);
+  // ✅ Update UI to reflect login
+  localStorage.setItem("isLoggedIn", "true");
 
-        // Handle auto-login (only when explicitly set)
-        if (data.autoLogin) {
-            localStorage.setItem("isLoggedIn", "true");
-            sessionStorage.setItem("isLoggedIn", "true");
-            lastAuthState = true;
-
-            // ✅ Only now update the UI (don’t show profile unless logged in)
-            updateUI();
-
-            showMessage("Account created successfully! You are now logged in.", false);
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 1500);
-        } else {
-            // Show success popup if auto-login is not enabled
-            openModal(elements.signupSuccessPopup);
-
-            let countdown = 5;
-            const countdownElement = document.getElementById('countdown');
-            const interval = setInterval(() => {
-                if (countdownElement) countdownElement.textContent = countdown;
-                countdown--;
-                if (countdown < 0) {
-                    clearInterval(interval);
-                    window.location.href = '/';
-                }
-            }, 1000);
-
-            const redirectBtn = document.getElementById('redirectBtn');
-            if (redirectBtn) {
-                redirectBtn.addEventListener('click', function() {
-                    window.location.href = '/';
-                }, { once: true });
-            }
-        }
-    } else {
-        // ❌ Show backend-provided message, do NOT trigger updateUI()
-        showMessage(data.message || 'Error creating user. Please try again.', true);
-    }
-})
-.catch(error => {
-    console.error('Signup error:', error);
-    showMessage(error.message || "Something went wrong. Please try again later.", true);
-
-    // ❌ Make sure profile icon doesn’t appear on failed signup
-    localStorage.removeItem("isLoggedIn");
-    sessionStorage.removeItem("isLoggedIn");
-    lastAuthState = false;
-    updateUI();
-})
-.finally(() => {
-    // Restore button state
-    submitBtn.disabled = false;
-    submitBtn.textContent = originalBtnText;
-});
-    });
+  // Optional small delay to ensure session is active
+  setTimeout(() => updateUI(), 300);
+} else {
+  // ⚠️ Show backend error (username/email taken, etc.)
+  showMessage(`⚠️ ${data.message}`, true);
 }
+} catch (err) {
+  console.error('Signup Error:', err);
+  showMessage('❌ Something went wrong during signup.', true);
+}
+});
+
+}
+
     if (elements.switchToAdminBtn) { 
         elements.switchToAdminBtn.addEventListener('click', function() { 
             console.log("Switch to Admin button clicked"); 
@@ -1834,6 +1748,16 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 });
+const signupModalClose = document.getElementById('signupModalClose');
+const signupModal = document.getElementById('signupModal');
+
+if (signupModalClose && signupModal) {
+  signupModalClose.addEventListener('click', function() {
+    signupModal.style.display = 'none';
+    document.body.style.overflow = '';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const hamburgerMenu = document.querySelector('.hamburger-menu');
     const navMenu = document.querySelector('nav ul');
