@@ -2049,12 +2049,13 @@
         </div>
     </div>
 </div>
-
 <div id="signupModal" class="modal">
     <div class="modal-content signup-modal-content">
         <span class="close" id="signupModalClose">&times;</span>
         <h2>Sign Up</h2>
-        <form id="signup-form">
+
+        <!-- ✅ FIXED ID -->
+        <form id="signupForm" method="POST">
             <div class="form-group">
                 <label for="signup-username">Username:</label>
                 <input type="text" id="signup-username" name="username" placeholder="Enter your username" required>
@@ -2076,7 +2077,7 @@
 
             <div class="form-group">
                 <label for="signup-phonenumber">Phone Number:</label>
-                <input type="tel" id="signup-phonenumber" name="phonenumber" pattern="[0-9+()\-\s]{7,25}" placeholder="+63 912 345 6789" required>
+                <input type="tel" id="signup-phonenumber" name="phoneNumber" pattern="[0-9+()\-\s]{7,25}" placeholder="+63 912 345 6789" required>
             </div>
 
             <div class="form-group">
@@ -2104,7 +2105,10 @@
             <div class="form-group">
                 <div class="terms-checkbox">
                     <input type="checkbox" id="terms-checkbox" name="terms" required>
-                    <label for="terms-checkbox">I agree to the <a href="javascript:void(0);" id="termsLink">Terms and Conditions</a> and <a href="javascript:void(0);" id="privacyLink">Privacy Policy</a></label>
+                    <label for="terms-checkbox">
+                        I agree to the <a href="javascript:void(0);" id="termsLink">Terms and Conditions</a> and 
+                        <a href="javascript:void(0);" id="privacyLink">Privacy Policy</a>
+                    </label>
                 </div>
                 <p id="terms-error" class="error-message" style="display: none;">You must agree to the Terms and Conditions to continue.</p>
             </div>
