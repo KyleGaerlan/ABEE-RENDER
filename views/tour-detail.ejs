@@ -687,13 +687,13 @@
   <script>
 function redirectToLogin() {
   // Tell homepage to open the login modal automatically
-  sessionStorage.setItem('openLoginModal', 'true');
+  localStorage.setItem('openLoginModal', 'true');
 
-  // Redirect to your main domain
-  window.location.href = 'https://abeetravel.com/';
+  // Redirect to homepage (relative URL works both on localhost and your domain)
+  window.location.href = '/';
 }
 
-// Attach event listeners only if the buttons exist
+// Attach listeners only if buttons exist
 const loginBtn = document.getElementById('loginBtn');
 const loginFromDetailBtn = document.getElementById('loginFromDetailBtn');
 
