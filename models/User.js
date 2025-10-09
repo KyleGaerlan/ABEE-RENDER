@@ -28,23 +28,23 @@ const userSchema = new mongoose.Schema({
       enum: ['Male', 'Female', 'Other'], 
       default: null 
   },
-   nationality: { type: String, trim: true, default: null },
+  nationality: { type: String, trim: true, default: null },
   isActive: { type: Boolean, default: true },
   password: { type: String, required: true, minlength: 8 },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
   try {
-      if (this.isModified('password')) {
-          const isAlreadyHashed = this.password.startsWith('$2b$');
-          if (!isAlreadyHashed) {
-              const salt = await bcrypt.genSalt(10);
-              this.password = await bcrypt.hash(this.password, salt);
-          }
+    if (this.isModified('password')) {
+      const isAlreadyHashed = this.password.startsWith('$2b$');
+      if (!isAlreadyHashed) {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
       }
-      next();
+    }
+    next();
   } catch (error) {
-      next(error);
+    next(error);
   }
 });
 
@@ -54,24 +54,31 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 userSchema.statics.findByUsernameOrEmail = async function (identifier) {
   return await this.findOne({
-      $or: [{ username: identifier }, { email: identifier }]
+    $or: [{ username: identifier }, { email: identifier }]
   });
 };
 
+// ✅ Fixed timezone for DailyUserCount
 userSchema.post('save', async function () {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  try {
+    const now = new Date();
 
-  const dailyUser = await DailyUserCount.findOne({ date: today });
+    // Convert to local (Philippine) midnight
+    const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  if (dailyUser) {
-    dailyUser.count += 1;
-    await dailyUser.save();
-  } else {
-    await DailyUserCount.create({ date: today, count: 1 });
+    let dailyUser = await DailyUserCount.findOne({ date: localDate });
+
+    if (dailyUser) {
+      dailyUser.count += 1;
+      await dailyUser.save();
+    } else {
+      await DailyUserCount.create({ date: localDate, count: 1 });
+    }
+
+    console.log('✅ User registered and daily user count updated for local date:', localDate.toLocaleDateString());
+  } catch (err) {
+    console.error('❌ Error updating DailyUserCount:', err);
   }
-
-  console.log('User registered and daily user count updated');
 });
 
 const User = mongoose.model('User', userSchema);
