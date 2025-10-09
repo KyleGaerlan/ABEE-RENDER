@@ -684,13 +684,21 @@
     }
 });
     </script>
-    <script> loginFromDetailBtn.addEventListener('click', function() {
-    sessionStorage.setItem('openLoginModal', 'true');
-    window.location.href = 'https://abeetravel.com/';
-});
-loginBtn.addEventListener('click', function() {
-    sessionStorage.setItem('openLoginModal', 'true');
-    window.location.href = 'https://abeetravel.com/';
+  <script>
+function redirectToLogin() {
+  // Tell homepage to open the login modal automatically
+  sessionStorage.setItem('openLoginModal', 'true');
+
+  // Redirect to your main domain
+  window.location.href = 'https://abeetravel.com/';
+}
+
+// Attach event listeners only if the buttons exist
+const loginBtn = document.getElementById('loginBtn');
+const loginFromDetailBtn = document.getElementById('loginFromDetailBtn');
+
+if (loginBtn) loginBtn.addEventListener('click', redirectToLogin);
+if (loginFromDetailBtn) loginFromDetailBtn.addEventListener('click', redirectToLogin);
 </script>
 </body>
 </html>
