@@ -1889,10 +1889,18 @@
     <p class="footer-bottom">Copyright &copy; 2025 A.BEE Travel and Tours Website. All rights reserved.</p>
 </footer>
     </script>
-    <script> loginBtn.addEventListener('click', function() {
+  <script>
+const loginBtn = document.getElementById('loginBtn');
+
+if (loginBtn) {
+  loginBtn.addEventListener('click', function() {
+    // Tell homepage to open the login modal automatically
     sessionStorage.setItem('openLoginModal', 'true');
+
+    // Redirect to your main domain
     window.location.href = 'https://abeetravel.com/';
-});
+  });
+}
 </script>
    <script src="/js/unified-login.js"></script>
 <script src="/js/admin-signup.js"></script>
