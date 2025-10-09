@@ -2034,59 +2034,99 @@ app.get('/user-bookings', (req, res) => {
         res.redirect('/');
     }
 });
-// ✅ USER SIGNUP ROUTE
 app.post('/signup', async (req, res) => {
   try {
-    const { username, email, password, phoneNumber } = req.body;
+    const { username, email, password, phoneNumber, verificationCode } = req.body;
 
+    // 🔹 Validate required fields
     if (!username || !email || !password || !phoneNumber) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
+      return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
 
-    // Check for duplicate username
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({ success: false, message: 'Username already taken' });
-    }
-
-    // Check for duplicate email
+    // 🔹 Check if email already exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      return res.status(400).json({ success: false, message: 'Email already taken' });
+      return res.status(400).json({ success: false, message: 'Email already exists.' });
     }
 
-    // Create and save new user
-    const newUser = new User({ username, email, password, phoneNumber });
+    // 🔹 Check if username already exists
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ success: false, message: 'Username already taken.' });
+    }
+
+    // 🔹 Validate OTP
+    const otpRecord = await OTP.findOne({ email });
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: 'Verification code not found. Please resend the code.' });
+    }
+
+    if (otpRecord.otp !== verificationCode) {
+      return res.status(400).json({ success: false, message: 'Invalid verification code.' });
+    }
+
+    if (Date.now() > otpRecord.expiresAt) {
+      return res.status(400).json({ success: false, message: 'Verification code has expired.' });
+    }
+
+    // 🔹 Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 🔹 Create new user
+    const newUser = new User({
+      username,
+      email,
+      phoneNumber,
+      password: hashedPassword,
+    });
     await newUser.save();
 
-    // ✅ Send confirmation email
+    // 🔹 Remove OTP record after success
+    await OTP.deleteOne({ email });
+
+    // ✅ Automatically log the user in
+    req.session.user = {
+      id: newUser._id,
+      username: newUser.username,
+      email: newUser.email,
+      phoneNumber: newUser.phoneNumber,
+    };
+
+    // 🔹 Send welcome email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Account Created Successfully',
+      subject: 'Welcome to Abee Travel!',
       html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>Welcome to A.BEE Travel and Tours!</h2>
-          <p>Hi ${username},</p>
-          <p>Your account has been successfully created. You can now log in and start booking your tours!</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px;">
+          <h2>Welcome, ${username}!</h2>
+          <p>Thank you for signing up at <strong>Abee Travel</strong>.</p>
+          <p>Your account has been created successfully, and you are now logged in.</p>
+          <p>Start exploring and booking your next adventure!</p>
           <br>
-          <p style="font-size: 0.9em;">— The A.BEE Travel and Tours Team</p>
+          <a href="${process.env.BASE_URL || 'https://abeetravel.com'}" 
+             style="display:inline-block; background-color:#f26523; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">
+             Visit Abee Travel
+          </a>
         </div>
       `
     });
 
-    return res.status(201).json({
+    // ✅ Respond to frontend — triggers auto-login in java.js
+    return res.json({
       success: true,
-      message: 'User created successfully! A confirmation email has been sent.'
+      autoLogin: true,
+      message: 'Signup successful! You are now logged in.',
     });
 
   } catch (error) {
     console.error('❌ Signup error:', error);
-    return res.status(500).json({ success: false, message: 'Error creating account' });
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred during signup. Please try again later.',
+    });
   }
 });
-
-
 
 app.get('/settings', (req, res) => {
     res.render('settings');
