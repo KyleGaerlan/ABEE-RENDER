@@ -812,188 +812,106 @@
                 noResultsMsg.remove();
             }
         }
-        function viewBookingDetails(bookingId) {
-    const modal = document.getElementById('bookingDetailsModal');
-    const modalBody = document.getElementById('modalBody');
-    
-    modalBody.innerHTML = '<div class="loading">Loading booking details...</div>';
-    modal.style.display = 'block';
-    
-    fetch(`/api/bookings/${bookingId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch booking details');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success && data.booking) {
-                const booking = data.booking;
-                
-                const startDate = new Date(booking.startDate).toLocaleDateString();
-                const bookingDate = new Date(booking.createdAt).toLocaleString();
-                
-                const destinationWithCountry = (booking.tourDetails?.country || booking.country) ? 
-                    `${booking.tourDetails?.destination || booking.destination}, ${booking.tourDetails?.country || booking.country}` : 
-                    booking.tourDetails?.destination || booking.destination || 'Not specified';
+    function viewBookingDetails(bookingId) {
+  const modal = document.getElementById('bookingDetailsModal');
+  const modalBody = document.getElementById('modalBody');
 
-                let html = `
-                    <div class="detail-group">
-                        <div class="detail-group-title">Booking Information</div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Booking ID:</div>
-                            <div class="detail-item-value">${booking.bookingId}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Status:</div>
-                            <div class="detail-item-value">
-                                <span class="booking-status status-${booking.status}">
-                                    ${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Booking Date:</div>
-                            <div class="detail-item-value">${bookingDate}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-group">
-                        <div class="detail-group-title">Tour Details</div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Tour:</div>
-                            <div class="detail-item-value">${booking.tourDetails?.title || 'Not specified'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Destination:</div>
-                            <div class="detail-item-value">${destinationWithCountry}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Start Date:</div>
-                            <div class="detail-item-value">${startDate}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Duration:</div>
-                            <div class="detail-item-value">${booking.tourDetails?.duration || ''} ${booking.tourDetails?.durationUnit || ''}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Travelers:</div>
-                            <div class="detail-item-value">${booking.travelers} person${booking.travelers > 1 ? 's' : ''}</div>
-                        </div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-group-title">Contact Information</div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Full Name:</div>
-                            <div class="detail-item-value">${booking.fullName}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Email:</div>
-                            <div class="detail-item-value">${booking.email}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Phone:</div>
-                            <div class="detail-item-value">${booking.phone}</div>
-                        </div>
-                    </div>
-                `;
-                
-                html += `
-                    <div class="detail-group">
-                        <div class="detail-group-title">Payment Information</div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Total Amount:</div>
-                            <div class="detail-item-value">₱${typeof booking.totalAmount === 'number' ? booking.totalAmount.toLocaleString() : booking.totalAmount}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-item-label">Payment Method:</div>
-                            <div class="detail-item-value">${booking.paymentMethod.charAt(0).toUpperCase() + booking.paymentMethod.slice(1)}</div>
-                        </div>
-                    </div>
-                `;
-                
-                if (booking.status !== 'cancelled') {
-                    html += `
-                        <div class="detail-group">
-                            <div class="detail-group-title">Cancellation Policy</div>
-                            <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 14px;">
-                    `;
-                    
-                    if (booking.paymentMethod === 'gcash' || booking.paymentMethod === 'paypal') {
-                        html += `
-                            <p>For GCash and PayPal payments:</p>
-                            <ul>
-                                <li>You can cancel within 7 days of making your booking</li>
-                                <li>OR up to 3 days before your tour date</li>
-                            </ul>
-                        `;
-                    } else if (booking.paymentMethod === 'store') {
-                        html += `
-                            <p>For In-Store payments:</p>
-                            <ul>
-                                <li>Pending bookings can be cancelled at any time</li>
-                                <li>Once confirmed, standard cancellation policy applies</li>
-                            </ul>
-                        `;
-                    }
-                    
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                if (booking.paymentMethod === 'gcash' && booking.receiptUrl) {
-                    html += `
-                        <div class="payment-info">
-                            <div class="detail-group-title">GCash Payment Receipt</div>
-                            <img src="${booking.receiptUrl}" alt="GCash Receipt" class="receipt-image">
-                        </div>
-                    `;
-                } else if (booking.paymentMethod === 'paypal' && booking.paymentId) {
-                    html += `
-                        <div class="payment-info">
-                            <div class="detail-group-title">PayPal Payment Details</div>
-                            <div class="detail-item">
-                                <div class="detail-item-label">Transaction ID:</div>
-                                <div class="detail-item-value">${booking.paymentId}</div>
-                            </div>
-                        </div>
-                    `;
-                } else if (booking.paymentMethod === 'store') {
-                    html += `
-                        <div class="payment-info">
-                            <div class="detail-group-title">In-Store Payment</div>
-                            <p>Please visit our office to complete your payment:</p>
-                            <p><strong>A.BEE Travel and Tours</strong><br>
-                            Ground Level, Robinsons Townville, H. Concepcion., Cabanatuan City<br>
-                            Business Hours: Monday-Friday, 9:00 AM - 5:00 PM<br>
-                            Contact: (044) 604 7273</p>
-                            ${booking.status === 'pending' ? '<p><strong>Note:</strong> Your booking will be reserved for 8 hours only. If payment is not received within this time, your reservation will be automatically cancelled.</p>' : ''}
-                        </div>
-                    `;
-                }
-                
-                if (booking.specialRequests) {
-                    html += `
-                        <div class="detail-group">
-                            <div class="detail-group-title">Special Requests</div>
-                            <p>${booking.specialRequests}</p>
-                        </div>
-                    `;
-                }
-                
-                modalBody.innerHTML = html;
-            } else {
-                modalBody.innerHTML = '<p>Failed to load booking details. Please try again.</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching booking details:', error);
-            modalBody.innerHTML = '<p>An error occurred while loading booking details. Please try again.</p>';
+  modalBody.innerHTML = '<div class="loading">Loading booking details...</div>';
+  modal.style.display = 'block';
+
+  fetch(`/api/bookings/${bookingId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success || !data.booking) {
+        modalBody.innerHTML = '<p>Failed to load booking details.</p>';
+        return;
+      }
+
+      const b = data.booking;
+      const created = new Date(b.createdAt).toLocaleString();
+      const start = new Date(b.startDate).toLocaleDateString();
+      const end = new Date(b.endDate).toLocaleDateString();
+
+      const tour = b.tourDetails || {};
+
+      let html = `
+        <div class="detail-group">
+          <div class="detail-group-title">Booking Summary</div>
+          <div class="detail-item"><strong>Booking ID:</strong> ${b.bookingId}</div>
+          <div class="detail-item"><strong>Status:</strong> <span class="booking-status status-${b.status}">${b.status}</span></div>
+          <div class="detail-item"><strong>Date Created:</strong> ${created}</div>
+        </div>
+
+        <div class="detail-group">
+          <div class="detail-group-title">Tour Details</div>
+          <div class="detail-item"><strong>Tour:</strong> ${tour.title || "N/A"}</div>
+          <div class="detail-item"><strong>Destination:</strong> ${tour.destination || b.destination}, ${tour.country || b.country}</div>
+          <div class="detail-item"><strong>Duration:</strong> ${tour.duration || "N/A"} ${tour.durationUnit || ""}</div>
+          <div class="detail-item"><strong>Season:</strong> ${tour.season || b.season || "N/A"}</div>
+          <div class="detail-item"><strong>Dates:</strong> ${start} → ${end}</div>
+          <div class="detail-item"><strong>Price per Person:</strong> ₱${(tour.price || 0).toLocaleString()}</div>
+        </div>
+
+        <div class="detail-group">
+          <div class="detail-group-title">Traveler Information</div>
+          <div class="detail-item"><strong>Number of Travelers:</strong> ${b.travelers}</div>
+      `;
+
+      if (Array.isArray(b.travelerDetails) && b.travelerDetails.length) {
+        b.travelerDetails.forEach((t, i) => {
+          html += `
+            <div class="traveler-card">
+              <h4>Traveler ${i + 1}</h4>
+              <p><strong>Full Name:</strong> ${t.fullName || "N/A"}</p>
+              <p><strong>Nationality:</strong> ${t.nationality || "N/A"}</p>
+              <p><strong>Birthdate:</strong> ${t.birthdate ? new Date(t.birthdate).toLocaleDateString() : "N/A"}</p>
+              <p><strong>Sex:</strong> ${t.sex || "N/A"}</p>
+              <p><strong>Passport Number:</strong> ${t.passportNumber || "N/A"}</p>
+              <p><strong>Passport Expiry:</strong> ${t.passportExpiry ? new Date(t.passportExpiry).toLocaleDateString() : "N/A"}</p>
+              ${t.emergencyName || t.emergencyContact ? `<p><strong>Emergency Contact:</strong> ${t.emergencyName || ""} (${t.emergencyContact || ""})</p>` : ""}
+              ${t.specialRequests ? `<p><strong>Special Requests:</strong> ${t.specialRequests}</p>` : ""}
+            </div>
+          `;
         });
-}
+      }
 
+      html += `
+        </div>
+        <div class="detail-group">
+          <div class="detail-group-title">Contact Information</div>
+          <div class="detail-item"><strong>Full Name:</strong> ${b.fullName}</div>
+          <div class="detail-item"><strong>Email:</strong> ${b.email}</div>
+          <div class="detail-item"><strong>Phone:</strong> ${b.phone}</div>
+          <div class="detail-item"><strong>Nationality:</strong> ${b.nationality}</div>
+        </div>
+
+        <div class="detail-group">
+          <div class="detail-group-title">Payment</div>
+          <div class="detail-item"><strong>Payment Method:</strong> ${b.paymentMethod || b.travelerDetails?.[0]?.paymentMethod || "N/A"}</div>
+          <div class="detail-item"><strong>Budget:</strong> ₱${(b.budget || 0).toLocaleString()}</div>
+          <div class="detail-item"><strong>Total Amount:</strong> ₱${(b.totalAmount || 0).toLocaleString()}</div>
+          <div class="detail-item"><strong>Approval Status:</strong> ${b.approvalStatus || "Pending"}</div>
+        </div>
+      `;
+
+      if (b.statusChangeHistory?.length) {
+        html += `
+          <div class="detail-group">
+            <div class="detail-group-title">Status History</div>
+            <ul>
+              ${b.statusChangeHistory.map(s => `<li>${new Date(s.date).toLocaleString()} — ${s.status}</li>`).join("")}
+            </ul>
+          </div>
+        `;
+      }
+
+      modalBody.innerHTML = html;
+    })
+    .catch(err => {
+      console.error(err);
+      modalBody.innerHTML = '<p>Error loading booking details.</p>';
+    });
+}
 
         function cancelBooking(bookingId) {
             const modal = document.getElementById('confirmationModal');
@@ -1044,13 +962,12 @@ function confirmCancellation(bookingId) {
     const modalBody = document.getElementById('modalBody');
     modalBody.innerHTML = '<div style="text-align: center; padding: 20px;"><p>Processing your cancellation...</p></div>';
     
-    fetch(`/api/bookings/${bookingId}/cancel`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-    })
+    fetch(`/api/user/bookings/${bookingId}/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include'
+})
+
     .then(response => response.json())
     .then(data => {
         if (data.success) {
@@ -1095,8 +1012,6 @@ function confirmCancellation(bookingId) {
         `;
     });
 }
-
-
 
         function closeModal() {
             document.getElementById('bookingDetailsModal').style.display = 'none';
