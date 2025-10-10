@@ -27,6 +27,17 @@ const bookingSchema = new mongoose.Schema({
     endDate: { type: Date, required: true },
     createdAt: { type: Date, default: Date.now },
     travelers: { type: Number },
+    travelerDetails: [{
+            fullName: { type: String, required: true },
+            nationality: { type: String, trim: true },
+            birthdate: { type: Date },
+            sex: { type: String, enum: ['Male', 'Female'] },
+            passportNumber: { type: String, trim: true },
+            passportExpiry: { type: Date },
+            emergencyName: { type: String, trim: true },
+            emergencyContact: { type: String, trim: true },
+            specialRequests: { type: String, trim: true }
+            }],
     approvalStatus: { type: String, enum: ["Pending", "Approved", "Declined"], default: "Pending" },
     paymentMethod: { type: String, enum: ["paypal", "gcash", "store"], required: true },
     paymentId: { type: String },
