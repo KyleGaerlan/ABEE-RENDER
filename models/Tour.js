@@ -45,7 +45,10 @@ const tourSchema = new mongoose.Schema({
     exclusions: [{
         type: String
     }],
-    hidden: { type: Boolean, default: false },
+    hidden: { 
+        type: Boolean, 
+        default: false 
+    },
     itinerary: [{
         day: Number,
         title: String,
@@ -55,7 +58,18 @@ const tourSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    // New promotional duration fields
+
+    // ✈️ NEW: Travel Requirements Section
+    requirements: {
+        visaRequired: { type: Boolean, default: false },
+        passportRequired: { type: Boolean, default: true },
+        passportValidityMonths: { type: Number, default: 6 },
+        travelInsuranceRequired: { type: Boolean, default: false },
+        vaccinationRequired: { type: Boolean, default: false },
+        otherRequirements: { type: String, trim: true, default: '' }
+    },
+
+    // 🏷️ Promo-related fields
     promoDuration: {
         type: Number,
         default: null // Duration in days for the promo
@@ -72,6 +86,7 @@ const tourSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin',
