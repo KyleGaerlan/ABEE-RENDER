@@ -126,34 +126,46 @@
             flex-direction: column;
             gap: 15px;
         }
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: 0.3s;
+  cursor: pointer;
+}
 
-        .payment-option {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+.payment-option label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+}
 
-        .payment-option:hover {
-            border-color: #f26523;
-        }
+.payment-option input[type="radio"] {
+  margin: 0;
+}
 
-        .payment-option.selected {
-            border-color: #f26523;
-            background-color: rgba(242, 101, 35, 0.05);
-        }
+.payment-option:hover {
+  border-color: #f26523;
+  background-color: #fff7f2;
+}
 
-        .payment-option input[type="radio"] {
-            margin-right: 15px;
-        }
+.payment-option.selected {
+  border-color: #f26523;
+  background-color: rgba(242, 101, 35, 0.08);
+}
 
-        .payment-logo {
-            height: 30px;
-            margin-right: 15px;
-        }
+.payment-logo {
+  width: auto;
+  height: 40px;
+  object-fit: contain;
+}
+
 
         .payment-option-label {
             flex-grow: 1;
@@ -489,7 +501,7 @@
                 padding: 6px 12px;
                 font-size: 14px;
             }
-        }/* Mobile navbar styles */
+        }
 .hamburger-menu {
     display: none;
     flex-direction: column;
@@ -730,8 +742,506 @@
     margin-bottom: 15px;
     font-size: 18px;
 }
+.requirement-box {
+  background-color: #f9f9f9;
+  border-left: 5px solid #007bff;
+  padding: 15px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
 
-    </style>
+.requirement-box h3 {
+  margin-bottom: 10px;
+  color: #333;
+  font-weight: 600;
+}
+
+.requirement-box ul {
+  margin-left: 20px;
+  line-height: 1.6;
+}
+
+.requirement-box li {
+  margin-bottom: 5px;
+}
+.traveler-container {
+  margin-top: 15px;
+}
+
+.traveler-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.traveler-header {
+  background-color: #f26523;
+  color: #fff;
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.traveler-header h4 {
+  margin: 0;
+}
+
+.traveler-body {
+  padding: 15px;
+  background-color: #f9f9f9;
+}
+
+.toggle-icon {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+/* Tabs navigation */
+.tab-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  padding: 0;
+  border-bottom: 2px solid #f26523;
+}
+
+.tab-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  margin-right: 5px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.tab-item.active {
+  background-color: #f26523;
+  color: #fff;
+}
+
+.tab-item:hover {
+  background-color: #ffe1cc;
+}
+
+/* Form container */
+.tab-content {
+  border: 1px solid #ddd;
+  border-radius: 0 0 10px 10px;
+  background: #fff;
+  padding: 15px 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.traveler-form {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+</style>
+  <style>
+    /* --- FORM WIZARD STYLES --- */
+    .booking-container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 25px 35px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .progress-bar {
+      background: #eee;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .progress {
+      height: 10px;
+      background-color: #f26523;
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+    }
+
+    .form-step {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .form-step.active { display: block; }
+
+    .step-nav {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .next-btn, .prev-btn, .submit-btn {
+      background-color: #f26523;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .prev-btn { background-color: #888; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .traveler-box {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .summary-box {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
+  </style>
+  <style>
+    :root {
+  --primary: #f26523;
+  --gray-light: #f6f6f6;
+  --gray: #999;
+  --text-dark: #333;
+}
+
+body {
+  background-color: #fafafa;
+  font-family: "Inter", Arial, sans-serif;
+  color: var(--text-dark);
+}
+
+.booking-container {
+  max-width: 750px;
+  margin: 50px auto;
+  background: #fff;
+  padding: 35px 45px;
+  border-radius: 16px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease-in-out;
+}
+
+h2, h3 {
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(242, 101, 35, 0.1);
+}
+
+.next-btn, .prev-btn, .submit-btn {
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.next-btn:hover, .submit-btn:hover {
+  background-color: #d95514;
+}
+
+.prev-btn {
+  background-color: #999;
+}
+
+.step-nav {
+  margin-top: 25px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.traveler-box {
+  background-color: var(--gray-light);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  background-color: #eaeaea;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 10px;
+  margin-bottom: 15px;
+}
+.progress {
+  height: 10px;
+  background-color: var(--primary);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+.summary-box {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  margin-top: 10px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+  </style>
+  <style>
+
+
+/* 🧭 Progress Bar */
+.progress-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px auto;
+  width: 80%;
+  position: relative;
+}
+
+.progress-bg {
+  position: absolute;
+  height: 5px;
+  width: 100%;
+  background: #e0e0e0;
+  border-radius: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+/* 🪄 Form Step Card */
+.form-step {
+  display: none;
+  background: #fff;
+  max-width: 750px;
+  margin: 30px auto;
+  padding: 25px 35px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  animation: fadeIn 0.4s ease;
+}
+
+.form-step.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🧍 Form Fields */
+label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 600;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 4px rgba(242, 101, 35, 0.4);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* 🧳 Traveler Box */
+.traveler-box {
+  background: #f7faff;
+  border: 1px solid #d0e7ff;
+  border-radius: var(--border-radius);
+  padding: 15px 20px;
+  margin: 15px 0;
+}
+
+.traveler-box h4 {
+  color: var(--secondary-color);
+  margin-top: 0;
+}
+
+/* 🔘 Buttons */
+.form-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+button.next-btn {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+button.prev-btn {
+  background: #ccc;
+  color: #333;
+}
+
+button.next-btn:hover {
+  background: #e25510;
+}
+
+button.prev-btn:hover {
+  background: #bbb;
+}
+
+/* 💳 Payment Instructions */
+.payment-instructions {
+  background: #fff7e6;
+  border-left: 5px solid var(--primary-color);
+  padding: 15px 20px;
+  border-radius: var(--border-radius);
+  margin-top: 15px;
+  display: none;
+}
+
+.payment-instructions.active {
+  display: block;
+}
+
+.payment-instructions strong {
+  color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+  .form-step {
+    padding: 20px;
+  }
+  .progress-container {
+    width: 95%;
+  }
+}
+</style>
+<style>
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center; align-items: center;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  animation: fadeIn 0.2s ease-in-out;
+}
+.modal-btn {
+  margin-top: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+</style>
+ <style>
+    /* minimal page styles for wizard & overlays */
+    .form-step { display: none; }
+    .form-step.active { display: block; }
+    .progress-bar { height: 8px; background:#eee; border-radius:6px; overflow:hidden; margin-bottom:10px; }
+    .progress { height:100%; width:0; background:#2c7a7b; transition:width .25s ease; }
+    .step-nav { margin-top:18px; display:flex; gap:8px; justify-content:flex-end; }
+    .next-btn, .prev-btn, .submit-btn, .btn-home { padding:8px 14px; border-radius:6px; border:none; cursor:pointer; }
+    .next-btn { background:#2c7a7b; color:#fff; }
+    .prev-btn { background:#f0f0f0; }
+    .submit-btn { background:#1f6f6f; color:#fff; }
+    .error-field { border:1px solid #dc3545 !important; background:#fff0f0; }
+    .error-message { color:#dc3545; font-size:13px; margin-top:4px; }
+    .traveler-box{ border:1px solid #ddd; padding:12px; border-radius:8px; margin-bottom:12px; }
+    .payment-details { display:none; margin-top:10px; border:1px dashed #ddd; padding:10px; border-radius:8px; }
+    /* confirmation overlay (you had this markup) */
+    #bookingConfirmation { display:none; }
+    /* loading overlay */
+    #loadingOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center; }
+    #loadingOverlay .box { background:#fff; padding:20px 26px; border-radius:10px; text-align:center; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spinner { width:48px;height:48px;border:5px solid #eee;border-top-color:#2c7a7b;border-radius:50%;animation:spin 1s linear infinite; margin:0 auto 12px; }
+  #travelerTabContent {
+  display: block;
+  width: 100%;
+  min-height: auto;
+  overflow: visible;
+}
+.traveler-form {
+  display: block;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+  </style>
+
 </head>
 <body>
     <header>
@@ -769,224 +1279,265 @@
             </ul>
         </nav>
     </header>
+  <div class="booking-container">
+    <h2>Book Your Tour</h2>
 
-    <div class="booking-container">
-        <div class="booking-header">
-            <h1>Book Your Tour</h1>
-            <p>Complete the form below to book your dream vacation</p>
-        </div>
+    <!-- Progress -->
+    <div class="progress-bar"><div class="progress" id="progress"></div></div>
+    <p>Step <span id="stepNumber">1</span> of 6</p>
 
-        <div id="bookingForm">
-            <div class="booking-grid">
-                <div class="tour-details">
-                    <img src="" alt="Tour Image" class="tour-image" id="tourImage">
-                    <div class="tour-info">
-                        <h2 id="tourTitle">Loading tour details...</h2>
-                        <p id="tourDestination"></p>
-                        <p id="tourDuration"></p>
-                        <p id="tourDescription"></p>
-                        <div class="price-tag" id="tourPrice"></div>
-                    </div>
-                </div>
+    <form id="bookingForm">
+      <input type="hidden" id="tourId" name="tourId" value="<%= tour?._id %>">
 
-                <div class="booking-form">
-                    <h2>Personal Information</h2>
-                    <form id="tourBookingForm">
-    <input type="hidden" id="tourId" name="tourId">
-    
-    <div class="form-section">
+      <!-- STEP 1: Personal Info -->
+      <div class="form-step active" id="step1">
         <h3>Personal Information</h3>
-        
+
         <div class="form-group">
-            <label for="fullName">Full Name*</label>
-            <input type="text" id="fullName" name="fullName" required>
+          <label>Full Name*</label>
+          <input type="text" id="fullName" name="fullName" required>
         </div>
-        
+
         <div class="form-group">
-            <label for="email">Email Address*</label>
-            <input type="email" id="email" name="email" required>
+          <label>Birthdate</label>
+          <input type="date" id="birthdate" name="birthdate">
         </div>
-        
+
         <div class="form-group">
-            <label for="phone">Phone Number*</label>
-            <input type="tel" id="phone" name="phone" pattern="[0-9+()\-\s]{7,25}" placeholder="+63 912 345 6789">
+          <label>Sex</label>
+          <select id="sex" name="sex">
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
         </div>
+
         <div class="form-group">
-    <label for="nationality">Nationality*</label>
-    <input type="text" id="nationality" name="nationality" required>
+          <label>Email*</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number*</label>
+          <input type="text" id="phone" name="phone" required>
+        </div>
+
+        <div class="form-group">
+          <label>Nationality*</label>
+          <input type="text" id="nationality" name="nationality" required>
+        </div>
+
+        <div class="form-group">
+          <label>Passport Number*</label>
+          <input type="text" id="passportNumber" name="passportNumber" required>
+        </div>
+
+        <div class="form-group">
+          <label>Passport Expiry*</label>
+          <input type="date" id="passportExpiry" name="passportExpiry" required>
+        </div>
+
+        <div class="form-group">
+          <label>Emergency Contact Name (optional)</label>
+          <input type="text" id="emergencyName" name="emergencyName">
+        </div>
+
+        <div class="form-group">
+          <label>Emergency Contact Number (optional)</label>
+          <input type="text" id="emergencyContact" name="emergencyContact">
+        </div>
+
+        <div class="step-nav">
+          <button type="button" class="next-btn" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Travel Requirements -->
+      <div class="form-step" id="step2">
+        <h3>Travel Requirements</h3>
+        <div id="requirementsBox">
+          <% if (tour && tour.requirements) { %>
+            <ul>
+              <% if (tour.requirements.visaRequired) { %><li>Visa required</li><% } %>
+              <% if (tour.requirements.passportRequired) { %><li>Valid Passport (≥ <%= tour.requirements.passportValidityMonths %> months)</li><% } %>
+              <% if (tour.requirements.travelInsuranceRequired) { %><li>Travel insurance required</li><% } %>
+              <% if (tour.requirements.vaccinationRequired) { %><li>Vaccination required</li><% } %>
+              <% if (tour.requirements.otherRequirements) { %><li><%= tour.requirements.otherRequirements %></li><% } %>
+            </ul>
+          <% } else { %>
+            <p>No specific requirements listed for this tour.</p>
+          <% } %>
+        </div>
+
+        <div class="checkbox-group">
+        <input type="checkbox" id="requirementsConfirm">
+        <label for="requirementsConfirm">I confirm that I meet all the above travel requirements</label>
+      </div>
+
+
+        <div class="step-nav">
+          <button type="button" class="prev-btn" onclick="prevStep()">Back</button>
+          <button type="button" class="next-btn" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Travelers -->
+      <div class="form-step" id="step3">
+        <h3>Travelers</h3>
+        <div class="form-group">
+          <label>Number of Travelers*</label>
+          <input type="number" id="travelers" name="travelers" min="1" max="30" value="1" required>
+        </div>
+
+        <div id="travelerDetailsContainer"></div>
+
+        <div class="step-nav">
+          <button type="button" class="prev-btn" onclick="prevStep()">Back</button>
+          <button type="button" class="next-btn" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+
+      <!-- STEP 4: Dates & Requests -->
+      <div class="form-step" id="step4">
+        <h3>Dates and Special Requests</h3>
+
+        <div class="form-group">
+          <label>Start Date*</label>
+          <input type="date" id="startDate" name="startDate" required>
+        </div>
+
+        <div class="form-group">
+          <label>Special Requests (optional)</label>
+          <textarea id="specialRequests" name="specialRequests" rows="3"></textarea>
+        </div>
+
+        <div class="step-nav">
+          <button type="button" class="prev-btn" onclick="prevStep()">Back</button>
+          <button type="button" class="next-btn" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+
+      <!-- STEP 5: Payment -->
+      <div class="form-step" id="step5">
+        <h3>Payment Method</h3>
+
+        <div class="payment-methods">
+          <div class="payment-options">
+            <div class="payment-option" data-method="gcash">
+              <input type="radio" id="gcash" name="paymentMethod" value="gcash">
+              <img src="/images/gcash.png" alt="GCash" class="payment-logo">
+              <label for="gcash" class="payment-option-label">GCash</label>
+            </div>
+
+            <div class="payment-option" data-method="store">
+              <input type="radio" id="store" name="paymentMethod" value="store">
+              <img src="/images/shop.png" alt="In-store" class="payment-logo">
+              <label for="store" class="payment-option-label">Pay in Store</label>
+            </div>
+          </div>
+
+          <div id="gcashDetails" class="payment-details">
+            <p>Please send your payment to our GCash account:</p>
+            <p>Account Name: <strong>A.BEE Travel and Tours</strong></p>
+            <p>GCash Number: <strong>09361055665</strong></p>
+            <div class="payment-instructions">
+              <p>Instructions:</p>
+              <ol>
+                <li>Open your GCash app</li>
+                <li>Tap on "Send Money"</li>
+                <li>Enter the GCash number above</li>
+                <li>Enter the total amount</li>
+                <li>In the message field, include your name and booking reference</li>
+                <li>Complete the payment</li>
+                <li>Upload your payment receipt below</li>
+              </ol>
+            </div>
+            <div class="form-group">
+              <label for="gcashReceipt">Upload Payment Receipt*</label>
+              <input type="file" id="gcashReceipt" name="gcashReceipt" accept="image/*">
+            </div>
+          </div>
+
+          <div id="storeDetails" class="payment-details">
+            <p>Visit our office to complete your payment:</p>
+            <p class="store-address"><strong>A.BEE Travel and Tours</strong></p>
+            <p>Ground Level, Robinsons Townville, H. Concepcion, Cabanatuan City</p>
+            <p>Business Hours: Monday-Friday, 9:00 AM - 5:00 PM</p>
+            <p>Contact: (044) 604 7273</p>
+            <div class="payment-instructions">
+              <p>Instructions:</p>
+              <ol>
+                <li>Visit our office during business hours</li>
+                <li>Mention your booking reference number</li>
+                <li>Make your payment via cash, credit or debit card</li>
+                <li>Receive your booking confirmation</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-nav">
+          <button type="button" class="prev-btn" onclick="prevStep()">Back</button>
+          <button type="button" class="next-btn" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+<!-- ✅ STEP 6: Booking Summary -->
+<div class="form-step" id="step6">
+  <h3>Booking Summary</h3>
+  <div class="summary-box" id="bookingSummary">
+    <p><strong>Tour:</strong> <span id="summaryTour"><%= tour?.title %></span></p>
+    
+    <p><strong>Destination:</strong> 
+      <span id="summaryDestination">
+        <%= tour?.destination %><%= tour?.country ? ', ' + tour.country : '' %>
+      </span>
+    </p>
+
+    <!-- ✅ Include base price for calculation -->
+    <p><strong>Price per person:</strong> ₱<span id="tourPrice"><%= typeof tour?.price === 'number' ? tour.price.toLocaleString() : parseFloat(tour?.price).toLocaleString() %></span></p>
+    
+    <!-- ✅ Travelers count will be dynamically updated -->
+    <p><strong>Travelers:</strong> <span id="summaryTravelers">1</span></p>
+    
+    <!-- ✅ Total updates automatically via updateTotalPrice() -->
+    <div class="summary-total">
+      <span><strong>Total:</strong></span>
+      <span id="summaryTotal">₱<%= typeof tour?.price === 'number' ? tour.price.toLocaleString() : parseFloat(tour?.price).toLocaleString() %></span>
+    </div>
+  </div>
+
+  <div class="step-nav">
+    <button type="button" class="prev-btn" onclick="prevStep()">Back</button>
+    <button type="submit" class="submit-btn">Confirm Booking</button>
+  </div>
 </div>
+<input type="hidden" name="totalAmount" id="totalAmount" value="0">
+    </form>
 
+    <!-- Existing confirmation markup (we'll show this overlay on success) -->
+    <div id="bookingConfirmation" class="booking-confirmation" style="display:none;">
+      <div class="confirmation-icon">✓</div>
+      <h2 class="confirmation-message">Booking Pending</h2>
+      <p>Thank you for booking with A.BEE Travel and Tours.</p>
+        <p>Your booking reference number: <strong id="bookingReference"></strong></p>
+        <p>We have sent a confirmation email to <strong id="confirmationEmail"></strong>.</p>
+        <p id="paymentInstructions">Your booking is currently pending. Please complete your selected payment to confirm your slot.</p>
+
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+        <a href="javascript:void(0);" onclick="returnToHome()" class="btn-home">Return to Home</a>
+        <a href="tel:+63446047273" class="btn-home" style="background:#fff;color:#2c7a7b;border:1px solid #2c7a7b;">Contact Us</a>
+      </div>
+      <div style="margin-top:12px;color:#666;text-align:center;">
+        <p>📞 (044) 604 7273 &nbsp;&nbsp; 📞 09361055665 &nbsp;&nbsp; 📧 abeetravelandtours@gmail.com</p>
+      </div>
     </div>
 
-    <div class="travel-documents-section">
-        <h3>Travel Document Requirements</h3>
-        
-        <div class="document-info">
-            <h4>Passport Requirements</h4>
-            <ul>
-                <li>Passport must be valid for at least 6 months from travel date</li>
-                <li>Passport must have at least 2 blank pages for stamps</li>
-                <li>Passport should not be damaged or have missing pages</li>
-            </ul>
-        </div>
-
-        <div class="document-info">
-            <h4>Visa Requirements</h4>
-            <ul>
-                <li>Check if your destination requires a visa</li>
-                <li>Apply for visa at least 2-4 weeks before travel</li>
-                <li>Some countries offer visa-on-arrival or e-visa options</li>
-                <li>Tourist visa processing may take 5-15 business days</li>
-            </ul>
-        </div>
-
-        <div class="warning-box">
-            <h4>Important Notice</h4>
-            <p>Please ensure your passport meets all requirements before booking. A.BEE Travel and Tours is not responsible for denied entry due to invalid travel documents. We recommend consulting with our travel advisors for specific visa requirements.</p>
-        </div>
-
-        <div class="checkbox-group">
-            <input type="checkbox" id="passportValid" name="passportValid" required>
-            <label for="passportValid">I confirm that my passport is valid for at least 6 months from my travel date and has sufficient blank pages*</label>
-        </div>
-
-        <div class="checkbox-group">
-            <input type="checkbox" id="visaAware" name="visaAware" required>
-            <label for="visaAware">I understand the visa requirements for my destination and will obtain necessary visas before travel*</label>
-        </div>
-
-        <div class="checkbox-group">
-            <input type="checkbox" id="documentResponsibility" name="documentResponsibility" required>
-            <label for="documentResponsibility">I acknowledge that I am responsible for ensuring all my travel documents are valid and complete*</label>
-        </div>
-    </div>
-    <div class="form-section">
-        <h3>Booking Details</h3>
-        <div class="form-group">
-        <label for="travelers">Number of Travelers*</label>
-        <input type="number" 
-                id="travelers" 
-                name="travelers" 
-                min="1" 
-                max="30"
-                value="1" 
-                required 
-                onchange="updateTotalPrice()" 
-                oninput="this.value = Math.max(1, parseInt(this.value) || 1)">
-        <label for="travelers"><i>*Maximum of 30 travelers per booking</i></label>
-        </div>
-        
-        <div class="form-group">
-            <label for="startDate">Start Date*</label>
-            <input type="date" id="startDate" name="startDate" required>
-            <label for="startDate"><i>*Start Date of the tour can only be chosen 7 days in advance</i></label>
-        </div>
-        
-        <div class="form-group">
-            <label for="specialRequests">Special Requests</label>
-            <textarea id="specialRequests" name="specialRequests" rows="3" placeholder="Any dietary restrictions, accessibility needs, or special occasions..."></textarea>
-        </div>
-    </div>
-            <div class="payment-methods">
-                <h3>Payment Method</h3>
-                    <div class="payment-options">
-                        <div class="payment-option" data-method="gcash">
-                            <input type="radio" id="gcash" name="paymentMethod" value="gcash">
-                            <img src="/images/gcash.png" alt="GCash" class="payment-logo">
-                            <label for="gcash" class="payment-option-label">GCash</label>
-                                </div>
-                                
-                                <div class="payment-option" data-method="store">
-                                    <input type="radio" id="store" name="paymentMethod" value="store">
-                                    <img src="/images/shop.png" alt="In-store" class="payment-logo">
-                                    <label for="store" class="payment-option-label">Pay in Store</label>
-                                </div>
-                            </div>
-                            
-                        
-                            
-                            <div id="gcashDetails" class="payment-details">
-                                <p>Please send your payment to our GCash account:</p>
-                                <div class="gcash-details">
-                                    <p>Account Name: <strong>A.BEE Travel and Tours</strong></p>
-                                    <p>GCash Number: <span class="gcash-number">09361055665</span></p>
-                                </div>
-                                <div class="payment-instructions">
-                                    <p>Instructions:</p>
-                                    <ol>
-                                        <li>Open your GCash app</li>
-                                        <li>Tap on "Send Money"</li>
-                                        <li>Enter the GCash number above</li>
-                                        <li>Enter the total amount</li>
-                                        <li>In the message field, include your name and booking reference</li>
-                                        <li>Complete the payment</li>
-                                        <li>Upload your payment receipt below</li>
-                                    </ol>
-                                </div>
-                                <div class="form-group">
-                                    <label for="gcashReceipt">Upload Payment Receipt*</label>
-                                    <input type="file" id="gcashReceipt" name="gcashReceipt" accept="image/*">
-                                </div>
-                            </div>
-                            
-                            <div id="storeDetails" class="payment-details">
-                                <p>Visit our office to complete your payment:</p>
-                                <div class="store-details">
-                                    <p class="store-address">A.BEE Travel and Tours</p>
-                                    <p>Ground Level, Robinsons Townville, H. Concepcion., Cabanatuan City</p>
-                                    <p>Business Hours: Monday-Friday, 9:00 AM - 5:00 PM</p>
-                                    <p>Contact: (044) 604 7273</p>
-                                </div>
-                                <div class="payment-instructions">
-                                    <p>Instructions:</p>
-                                    <ol>
-                                        <li>Visit our office during business hours</li>
-                                        <li>Mention your booking reference                                         number</li>
-                                        <li>Make your payment via cash, credit card, or debit card</li>
-                                        <li>Receive your booking confirmation</li>
-                                    </ol>
-                                </div>
-                                
-                            </div>
-                        </div>
-                        
-                        <div class="booking-summary">
-                            <h3>Booking Summary</h3>
-                            <div class="summary-item">
-                                <span>Tour Price:</span>
-                                <span id="summaryPrice">₱0.00</span>
-                            </div>
-                            <div class="summary-item">
-                                <span>Number of Travelers:</span>
-                                <span id="summaryTravelers">1</span>
-                            </div>
-                            <div class="summary-total">
-                                <span>Total:</span>
-                                <span id="summaryTotal">₱0.00</span>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn-book" id="bookButton">Complete Booking</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div id="bookingConfirmation" class="booking-confirmation">
-            <div class="confirmation-icon">✓</div>
-            <h2 class="confirmation-message">Booking Successful!</h2>
-            <div class="confirmation-details">
-                <p>Thank you for booking with A.BEE Travel and Tours.</p>
-                <p>Your booking reference number: <strong id="bookingReference"></strong></p>
-                <p>We have sent a confirmation email to <strong id="confirmationEmail"></strong>.</p>
-                <p id="paymentInstructions"></p>
-            </div>
-            <a href="javascript:void(0);" onclick="returnToHome()" class="btn-home">Return to Home</a>
-        </div>
-    </div>
-
-    <div class="loading-overlay" id="loadingOverlay">
+    <!-- loading overlay -->
+    <div id="loadingOverlay" style="display:none; align-items:center; justify-content:center;">
+      <div class="box">
         <div class="spinner"></div>
+        <p>Processing your booking…</p>
+      </div>
     </div>
     <div id="errorModal" class="modal">
         <div class="modal-content">
@@ -1020,7 +1571,7 @@
         </div>
     </div>
 </div>
-
+</div> 
     <footer class="footer-columns">
         <div class="footer-content">
             <div class="footer-left">
@@ -1050,17 +1601,7 @@
             checkAuthStatus();
             updateNavbarUI();
             setupEventListeners();
-            function updateTotalPrice() {
-                const priceText = document.getElementById('tourPrice').textContent;
-                const price = parseFloat(priceText.replace('₱', '').replace(/,/g, ''));
-                const travelers = parseInt(document.getElementById('travelers').value);
-                
-                document.getElementById('summaryPrice').textContent = `₱${price.toLocaleString()}`;
-                document.getElementById('summaryTravelers').textContent = travelers;
-                
-                const total = price * travelers;
-                document.getElementById('summaryTotal').textContent = `₱${total.toLocaleString()}`;
-            }
+           
             const urlParams = new URLSearchParams(window.location.search);
             const tourId = urlParams.get('id');
             
@@ -1338,6 +1879,26 @@ if (dateValidationModal) {
         submitBooking(bookingData);
     }
 }
+function collectTravelerDetails() {
+  const container = document.getElementById('travelerDetailsContainer');
+  const cards = container.querySelectorAll('.traveler-card');
+  const arr = [];
+  cards.forEach((card, idx) => {
+    const prefix = `traveler_${idx}_`;
+    arr.push({
+      fullName: card.querySelector(`[name="${prefix}fullName"]`).value.trim(),
+      nationality: card.querySelector(`[name="${prefix}nationality"]`).value.trim(),
+      birthdate: card.querySelector(`[name="${prefix}birthdate"]`).value || null,
+      sex: card.querySelector(`[name="${prefix}sex"]`).value || null,
+      passportNumber: card.querySelector(`[name="${prefix}passportNumber"]`).value.trim() || null,
+      passportExpiry: card.querySelector(`[name="${prefix}passportExpiry"]`).value || null,
+      specialRequests: card.querySelector(`[name="${prefix}specialRequests"]`).value.trim() || null
+    });
+  });
+  return arr;
+}
+
+bookingData.travelerDetails = collectTravelerDetails();
 
 
         function submitBooking(bookingData) {
@@ -1509,6 +2070,21 @@ function fetchUserData() {
                 nationalityField.readOnly = true;
                 nationalityField.classList.add('readonly-field');
             }
+            if (userData.birthdate) {
+              const birthdateField = document.getElementById('birthdate');
+              const dateValue = new Date(userData.birthdate).toISOString().split('T')[0];
+              birthdateField.value = dateValue;
+              birthdateField.readOnly = true;
+              birthdateField.classList.add('readonly-field');
+            }
+
+            if (userData.sex) {
+              const sexField = document.getElementById('sex');
+              sexField.value = userData.sex.charAt(0).toUpperCase() + userData.sex.slice(1).toLowerCase();
+              sexField.readOnly = true;
+              sexField.classList.add('readonly-field');
+            }
+
         }
     })
     .catch(error => {
@@ -1647,24 +2223,34 @@ function fetchUserData() {
     }
 });
 function updateTotalPrice() {
-    const priceText = document.getElementById('tourPrice').textContent;
-    const basePrice = parseFloat(priceText.replace('₱', '').replace(/,/g, ''));
-    
-    const travelers = parseInt(document.getElementById('travelers').value) || 1;
-    const total = basePrice * travelers;
+  const priceElement = document.getElementById('tourPrice');
+  if (!priceElement) return;
 
-    document.getElementById('summaryPrice').textContent = `₱${basePrice.toLocaleString()}`;
-    document.getElementById('summaryTravelers').textContent = travelers;
-    document.getElementById('summaryTotal').textContent = `₱${total.toLocaleString()}`;
+  const basePrice = parseFloat(priceElement.textContent.replace(/[₱,]/g, '')) || 0;
+  const travelers = parseInt(document.getElementById('travelers')?.value) || 1;
+  const total = basePrice * travelers;
+
+  const summaryTravelers = document.getElementById('summaryTravelers');
+  const summaryTotal = document.getElementById('summaryTotal');
+  const totalInput = document.getElementById('totalAmount'); // ✅ hidden field
+
+  if (summaryTravelers) summaryTravelers.textContent = travelers;
+  if (summaryTotal) summaryTotal.textContent = `₱${total.toLocaleString()}`;
+  if (totalInput) totalInput.value = total; // ✅ keeps value in sync for backend
 }
+
+
+// Run after page loads and listen for changes
 document.addEventListener('DOMContentLoaded', function() {
-    const travelersInput = document.getElementById('travelers');
-    if (travelersInput) {
-        travelersInput.addEventListener('change', updateTotalPrice);
-        travelersInput.addEventListener('input', updateTotalPrice);
-    }
-    updateTotalPrice();
+  const travelersInput = document.getElementById('travelers');
+  if (travelersInput) {
+    travelersInput.addEventListener('change', updateTotalPrice);
+    travelersInput.addEventListener('input', updateTotalPrice);
+  }
+  updateTotalPrice();
 });
+
+
 function returnToHome() {
     if (isLoggedIn) {
         localStorage.setItem("isLoggedIn", "true");
@@ -1784,6 +2370,530 @@ function updateUIForLoggedInUser() {
     }
 }
 
-    </script>
+</script>
+<script>
+/* ===== Unified traveler tabs (Traveler 2..N) and collector ===== */
+
+function escapeAttr(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,"&#39;").replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function createTravelerFormHTML(index) {
+  // index is 1..N-1 for Traveler 2..N
+  return `
+    <div class="traveler-form" data-index="${index}" style="display: ${index === 1 ? 'block' : 'none'};">
+      <h4>Traveler ${index + 1}</h4>
+
+      <div class="form-group">
+        <label>Full Name*</label>
+        <input type="text" name="traveler_${index}_fullName" required>
+      </div>
+
+      <div class="form-group">
+        <label>Nationality*</label>
+        <input type="text" name="traveler_${index}_nationality" required>
+      </div>
+
+      <div class="form-group">
+        <label>Birthdate</label>
+        <input type="date" name="traveler_${index}_birthdate">
+      </div>
+
+      <div class="form-group">
+        <label>Sex</label>
+        <select name="traveler_${index}_sex">
+          <option value="">Select</option>
+          <option>Male</option>
+          <option>Female</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Passport Number</label>
+        <input type="text" name="traveler_${index}_passportNumber">
+      </div>
+
+      <div class="form-group">
+        <label>Passport Expiry</label>
+        <input type="date" name="traveler_${index}_passportExpiry">
+      </div>
+
+      <div class="form-group">
+        <label>Emergency Contact Name</label>
+        <input type="text" name="traveler_${index}_emergencyName">
+      </div>
+
+      <div class="form-group">
+        <label>Emergency Contact Number</label>
+        <input type="text" name="traveler_${index}_emergencyContact">
+      </div>
+
+      <div class="form-group">
+        <label>Special Requests</label>
+        <textarea name="traveler_${index}_specialRequests" rows="2" placeholder="Optional"></textarea>
+      </div>
+    </div>
+  `;
+}
+
+function updateTravelerTabs() {
+  const total = Math.min(30, Math.max(1, parseInt(document.getElementById('travelers').value || 1)));
+  const tabList = document.getElementById('travelerTabList');
+  const tabContent = document.getElementById('travelerTabContent');
+
+  tabList.innerHTML = '';
+  tabContent.innerHTML = '';
+
+  // If only 1 traveler, no tabs needed — but we still generate zero extra forms
+  if (total <= 1) {
+    // show a message or clear
+    tabList.innerHTML = '';
+    tabContent.innerHTML = '<div style="padding:10px;color:#666;">Only the primary traveler is required.</div>';
+    return;
+  }
+
+  // Create tabs and forms for Traveler 2 .. Traveler N (index 1..total-1)
+  for (let i = 1; i < total; i++) {
+    // tab
+    const li = document.createElement('li');
+    li.className = 'tab-item' + (i === 1 ? ' active' : '');
+    li.textContent = `Traveler ${i + 1}`;
+    li.onclick = () => switchTravelerTab(i);
+    tabList.appendChild(li);
+
+    // form HTML
+    tabContent.insertAdjacentHTML('beforeend', createTravelerFormHTML(i));
+  }
+
+  // Ensure price & summary updated
+  if (typeof updateTotalPrice === 'function') updateTotalPrice();
+}
+
+function switchTravelerTab(index) {
+  // index is the i used when creating forms (1..)
+  document.querySelectorAll('.tab-item').forEach((tab, idx) => {
+    tab.classList.toggle('active', idx === (index - 1));
+  });
+
+  document.querySelectorAll('#travelerTabContent .traveler-form').forEach(form => {
+    form.style.display = parseInt(form.dataset.index, 10) === index ? 'block' : 'none';
+  });
+}
+
+// collects traveler details: first element = main traveler (from main Personal Information),
+// then all other traveler forms (Traveler 2..N)
+function collectTravelerDetails() {
+  const total = Math.max(1, parseInt(document.getElementById('travelers').value || 1));
+  const arr = [];
+
+  // ---- Traveler 1 (main user fields) ----
+  const t1FullName = document.getElementById('fullName') ? document.getElementById('fullName').value.trim() : '';
+  const t1Nationality = document.getElementById('nationality') ? document.getElementById('nationality').value.trim() : '';
+  const t1Birthdate = document.getElementById('birthdateMain') ? document.getElementById('birthdateMain').value || null : null;
+  const t1Sex = document.getElementById('sexMain') ? document.getElementById('sexMain').value || null : null;
+  const t1Passport = document.getElementById('passportNumberMain') ? document.getElementById('passportNumberMain').value.trim() || null : null;
+  const t1PassportExpiry = document.getElementById('passportExpiryMain') ? document.getElementById('passportExpiryMain').value || null : null;
+
+  arr.push({
+    fullName: t1FullName || '',
+    nationality: t1Nationality || '',
+    birthdate: t1Birthdate ? new Date(t1Birthdate) : null,
+    sex: t1Sex || null,
+    passportNumber: t1Passport,
+    passportExpiry: t1PassportExpiry ? new Date(t1PassportExpiry) : null,
+    specialRequests: null
+  });
+
+  // ---- Traveler 2..N (from tab forms) ----
+  const forms = document.querySelectorAll('#travelerTabContent .traveler-form');
+  forms.forEach(form => {
+    const idx = parseInt(form.dataset.index, 10); // 1..N-1
+    const prefix = `traveler_${idx}_`;
+
+    const get = name => {
+      const el = form.querySelector(`[name="${name}"]`);
+      return el ? el.value.trim() : '';
+    };
+
+    arr.push({
+      fullName: get(`${prefix}fullName`),
+      nationality: get(`${prefix}nationality`),
+      birthdate: get(`${prefix}birthdate`) ? new Date(get(`${prefix}birthdate`)) : null,
+      sex: get(`${prefix}sex`) || null,
+      passportNumber: get(`${prefix}passportNumber`) || null,
+      passportExpiry: get(`${prefix}passportExpiry`) ? new Date(get(`${prefix}passportExpiry`)) : null,
+      specialRequests: get(`${prefix}specialRequests`) || null
+    });
+  });
+
+  return arr;
+}
+
+/* Hook the inputs */
+document.addEventListener('DOMContentLoaded', function() {
+  const travelersInput = document.getElementById('travelers');
+  if (travelersInput) {
+    travelersInput.addEventListener('input', updateTravelerTabs);
+    travelersInput.addEventListener('change', updateTravelerTabs);
+  }
+
+  // initial render
+  updateTravelerTabs();
+});
+</script>
+<script>
+/* Consolidated wizard script */
+document.addEventListener("DOMContentLoaded", () => {
+  const steps = Array.from(document.querySelectorAll('.form-step'));
+  const progress = document.getElementById('progress');
+  const stepNumber = document.getElementById('stepNumber');
+  const bookingForm = document.getElementById('bookingForm');
+  const travelerInput = document.getElementById('travelers');
+  const travelerContainer = document.getElementById('travelerDetailsContainer');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+
+  let currentStep = 0;
+
+  function showStep(index) {
+    steps.forEach((s, i) => s.classList.toggle('active', i === index));
+    if (progress) progress.style.width = ((index + 1) / steps.length * 100) + '%';
+    if (stepNumber) stepNumber.textContent = (index + 1);
+    currentStep = index;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // initial
+  showStep(0);
+
+  // try to auto-fill main traveler sex and other user fields
+  let storedUser = null;
+  try { storedUser = sessionStorage.getItem('userData') ? JSON.parse(sessionStorage.getItem('userData')) : window.userData || null; } catch(e){ storedUser = window.userData || null; }
+
+  if (storedUser) {
+    const fullNameEl = document.getElementById('fullName');
+    if (fullNameEl && !fullNameEl.value.trim()) {
+      const parts = [storedUser.firstName, storedUser.middleInitial ? (storedUser.middleInitial + '.') : '', storedUser.lastName, storedUser.suffix ? (', ' + storedUser.suffix) : ''].filter(Boolean);
+      fullNameEl.value = parts.join(' ').replace(/\s+/g,' ').trim();
+    }
+    if (storedUser.email) { const e = document.getElementById('email'); if (e && !e.value) e.value = storedUser.email; }
+    if (storedUser.phoneNumber) { const p = document.getElementById('phone'); if (p && !p.value) p.value = storedUser.phoneNumber; }
+    if (storedUser.nationality) { const n = document.getElementById('nationality'); if (n && !n.value) n.value = storedUser.nationality; }
+    if (storedUser.sex) { const s = document.getElementById('sex'); if (s && !s.value) s.value = storedUser.sex; }
+  }
+
+  // helper: clear errors
+  function clearErrors(stepEl) {
+    stepEl.querySelectorAll('.error-message').forEach(e => e.remove());
+    stepEl.querySelectorAll('.error-field').forEach(e => e.classList.remove('error-field'));
+  }
+
+  function markError(el, msg) {
+    if (!el) return;
+    el.classList.add('error-field');
+    const d = document.createElement('div');
+    d.className = 'error-message';
+    d.textContent = msg;
+    el.insertAdjacentElement('afterend', d);
+  }
+
+  // visibility helper
+  function visible(el) { return el && el.offsetParent !== null; }
+
+  // validation per step
+  function validateStep(index) {
+    const stepEl = steps[index];
+    clearErrors(stepEl);
+
+    if (index === 0) {
+      const fullName = document.getElementById('fullName');
+      const email = document.getElementById('email');
+      const phone = document.getElementById('phone');
+      const nationality = document.getElementById('nationality');
+      const passportNumber = document.getElementById('passportNumber');
+      const passportExpiry = document.getElementById('passportExpiry');
+
+      if (!fullName.value.trim()) { markError(fullName, 'Full name is required'); return false; }
+      if (!email.value.trim()) { markError(email, 'Email is required'); return false; }
+      if (!phone.value.trim()) { markError(phone, 'Phone is required'); return false; }
+      if (!nationality.value.trim()) { markError(nationality, 'Nationality is required'); return false; }
+      if (!passportNumber.value.trim()) { markError(passportNumber, 'Passport number is required'); return false; }
+      if (!passportExpiry.value) { markError(passportExpiry, 'Passport expiry is required'); return false; }
+
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+      if (!emailPattern.test(email.value.trim())) { markError(email, 'Enter a valid email address'); return false; }
+      return true;
+    }
+
+    if (index === 1) {
+      const checkbox = document.getElementById('requirementsConfirm');
+      if (!checkbox || !checkbox.checked) { markError(checkbox || stepEl, 'Please confirm travel requirements'); return false; }
+      return true;
+    }
+
+    if (index === 2) {
+      const travelersEl = document.getElementById('travelers');
+      const num = parseInt(travelersEl.value) || 0;
+      if (num < 1) { markError(travelersEl, 'Enter number of travelers'); return false; }
+
+      // validate dynamic traveler fields
+      for (let i = 1; i < num; i++) {
+        const full = document.querySelector(`[name="traveler_${i}_fullName"]`);
+        const nat = document.querySelector(`[name="traveler_${i}_nationality"]`);
+        const birth = document.querySelector(`[name="traveler_${i}_birthdate"]`);
+        const sex = document.querySelector(`[name="traveler_${i}_sex"]`);
+        const passNo = document.querySelector(`[name="traveler_${i}_passportNumber"]`);
+        const passExp = document.querySelector(`[name="traveler_${i}_passportExpiry"]`);
+
+        if (!full || !full.value.trim()) { markError(full || travelerContainer, `Traveler ${i+1}: Full name required`); return false; }
+        if (!nat || !nat.value.trim()) { markError(nat || travelerContainer, `Traveler ${i+1}: Nationality required`); return false; }
+        if (!birth || !birth.value) { markError(birth || travelerContainer, `Traveler ${i+1}: Birthdate required`); return false; }
+        if (!sex || !sex.value) { markError(sex || travelerContainer, `Traveler ${i+1}: Sex required`); return false; }
+        if (!passNo || !passNo.value.trim()) { markError(passNo || travelerContainer, `Traveler ${i+1}: Passport number required`); return false; }
+        if (!passExp || !passExp.value) { markError(passExp || travelerContainer, `Traveler ${i+1}: Passport expiry required`); return false; }
+        // emergency fields are optional -> no check
+      }
+      return true;
+    }
+
+    if (index === 3) {
+      const startDate = document.getElementById('startDate');
+      if (!startDate || !startDate.value) { markError(startDate || steps[index], 'Please select a start date'); return false; }
+      return true;
+    }
+
+    if (index === 4) {
+      const chosen = document.querySelector('input[name="paymentMethod"]:checked');
+      if (!chosen) { markError(document.querySelector('.payment-options') || steps[index], 'Please select a payment method'); return false; }
+      if (chosen.value === 'gcash') {
+        const r = document.getElementById('gcashReceipt');
+        if (!r || !r.files || !r.files.length) { markError(r || chosen, 'Please upload your GCash receipt'); return false; }
+      }
+      return true;
+    }
+
+    return true;
+  }
+window.nextStep = function() {
+  if (validateStep(currentStep)) {
+    if (currentStep < steps.length - 1) {
+      showStep(currentStep + 1);
+      if (typeof updateTotalPrice === 'function') updateTotalPrice();
+    }
+  }
+};
+
+window.prevStep = function() {
+  if (currentStep > 0) {
+    showStep(currentStep - 1);
+    if (typeof updateTotalPrice === 'function') updateTotalPrice();
+  }
+};
+
+
+  // render traveler forms (dynamic)
+  function renderTravelerForms() {
+    const count = Math.max(1, parseInt(travelerInput.value) || 1);
+    travelerContainer.innerHTML = '';
+    for (let i = 1; i < count; i++) {
+      const html = `
+        <div class="traveler-box" data-i="${i}">
+          <h4>Traveler ${i+1}</h4>
+
+          <label>Full Name*</label>
+          <input type="text" name="traveler_${i}_fullName" required>
+
+          <label>Nationality*</label>
+          <input type="text" name="traveler_${i}_nationality" required>
+
+          <label>Birthdate*</label>
+          <input type="date" name="traveler_${i}_birthdate" required>
+
+          <label>Sex*</label>
+          <select name="traveler_${i}_sex" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+
+          <label>Passport Number*</label>
+          <input type="text" name="traveler_${i}_passportNumber" required>
+
+          <label>Passport Expiry*</label>
+          <input type="date" name="traveler_${i}_passportExpiry" required>
+
+          <label>Emergency Contact Name (optional)</label>
+          <input type="text" name="traveler_${i}_emergencyName">
+
+          <label>Emergency Contact Number (optional)</label>
+          <input type="text" name="traveler_${i}_emergencyContact">
+
+          <label>Special Requests (optional)</label>
+          <textarea name="traveler_${i}_specialRequests" rows="2"></textarea>
+        </div>`;
+      travelerContainer.insertAdjacentHTML('beforeend', html);
+    }
+
+    // auto-fill sex for traveler_1 if user.sex exists
+    try {
+      if (storedUser && storedUser.sex) {
+        const sel = travelerContainer.querySelector('select[name="traveler_1_sex"]');
+        if (sel && !sel.value) sel.value = storedUser.sex;
+      }
+    } catch (e) {}
+  }
+
+  travelerInput.addEventListener('input', renderTravelerForms);
+  renderTravelerForms();
+
+  // Payment toggles - listen to radio changes globally
+  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const gcashDiv = document.getElementById('gcashDetails');
+      const storeDiv = document.getElementById('storeDetails');
+      if (gcashDiv) gcashDiv.style.display = (radio.value === 'gcash' && radio.checked) ? 'block' : 'none';
+      if (storeDiv) storeDiv.style.display = (radio.value === 'store' && radio.checked) ? 'block' : 'none';
+    });
+
+    // also ensure clicking the payment-option container selects the radio
+    const parent = radio.closest('.payment-option');
+    if (parent) {
+      parent.addEventListener('click', (ev) => {
+        // avoid double-checking when clicking the radio itself
+        if (ev.target.tagName.toLowerCase() === 'input') return;
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    }
+  });
+
+  // submit
+  bookingForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // validate all steps
+    for (let s = 0; s < steps.length; s++) {
+      if (!validateStep(s)) { showStep(s); return; }
+    }
+
+    // show loading
+    loadingOverlay.style.display = 'flex';
+
+    const fd = new FormData(bookingForm);
+    const tourId = fd.get('tourId') || '<%= tour?._id %>';
+    const numTravelers = parseInt(fd.get('travelers')) || 1;
+    const travelerDetails = [];
+
+    // main traveler
+    travelerDetails.push({
+      fullName: fd.get('fullName') || '',
+      nationality: fd.get('nationality') || '',
+      birthdate: fd.get('birthdate') || null,
+      sex: fd.get('sex') || null,
+      passportNumber: fd.get('passportNumber') || '',
+      passportExpiry: fd.get('passportExpiry') || '',
+      emergencyName: fd.get('emergencyName') || '',
+      emergencyContact: fd.get('emergencyContact') || '',
+      specialRequests: fd.get('specialRequests') || ''
+    });
+
+    // additional travelers
+    for (let i = 1; i < numTravelers; i++) {
+      travelerDetails.push({
+        fullName: fd.get(`traveler_${i}_fullName`) || '',
+        nationality: fd.get(`traveler_${i}_nationality`) || '',
+        birthdate: fd.get(`traveler_${i}_birthdate`) || null,
+        sex: fd.get(`traveler_${i}_sex`) || null,
+        passportNumber: fd.get(`traveler_${i}_passportNumber`) || '',
+        passportExpiry: fd.get(`traveler_${i}_passportExpiry`) || '',
+        emergencyName: fd.get(`traveler_${i}_emergencyName`) || '',
+        emergencyContact: fd.get(`traveler_${i}_emergencyContact`) || '',
+        specialRequests: fd.get(`traveler_${i}_specialRequests`) || ''
+      });
+    }
+
+    // receipt - send filename string if present, else empty
+    const gcashInput = document.getElementById('gcashReceipt');
+    const receiptUrl = (gcashInput && gcashInput.files && gcashInput.files.length) ? gcashInput.files[0].name : '';
+
+    const payload = {
+      tourId,
+      fullName: fd.get('fullName'),
+      email: fd.get('email'),
+      phone: fd.get('phone'),
+      nationality: fd.get('nationality'),
+      startDate: fd.get('startDate'),
+      travelers: numTravelers,
+      specialRequests: fd.get('specialRequests') || '',
+      paymentMethod: fd.get('paymentMethod') || '',
+      totalAmount: fd.get('totalAmount') || 0,
+      receiptUrl,
+      travelerDetails
+    };
+
+    try {
+      const res = await fetch('/submit-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      loadingOverlay.style.display = 'none';
+
+      if (data.success) {
+        const confirmation = document.getElementById('bookingConfirmation');
+        if (confirmation) {
+          document.getElementById('bookingReference').textContent = data.bookingReference || data.bookingId || 'N/A';
+          document.getElementById('confirmationEmail').textContent = data.email || fd.get('email') || '';
+          const paymentInstructions = document.getElementById('paymentInstructions');
+          if (paymentInstructions) {
+            if (payload.paymentMethod === 'gcash') {
+              paymentInstructions.innerHTML = 'You selected <strong>GCash</strong>. Please wait while we verify your receipt. Booking is currently <strong>pending verification</strong>.';
+            } else {
+              paymentInstructions.innerHTML = 'You selected <strong>Pay in Store</strong>. Please visit our branch within 8 hours to complete payment.';
+            }
+          }
+
+          // show overlay full screen
+          confirmation.style.display = 'flex';
+          confirmation.style.position = 'fixed';
+          confirmation.style.inset = 0;
+          confirmation.style.background = 'rgba(255,255,255,0.96)';
+          confirmation.style.zIndex = 99999;
+          confirmation.style.flexDirection = 'column';
+          confirmation.style.justifyContent = 'center';
+          confirmation.style.alignItems = 'center';
+
+          // keep logged in
+          sessionStorage.setItem('isLoggedIn','true');
+          localStorage.setItem('isLoggedIn','true');
+
+          // redirect after 6 seconds
+          setTimeout(() => { window.location.href = '/'; }, 6000);
+        } else {
+          // fallback redirect
+          setTimeout(() => { window.location.href = '/'; }, 1500);
+        }
+      } else {
+        alert(data.message || 'Failed to submit booking. Please try again.');
+      }
+    } catch (err) {
+      loadingOverlay.style.display = 'none';
+      console.error('Booking error:', err);
+      alert('An error occurred while submitting your booking. Please try again.');
+    }
+  });
+
+  // helper returnToHome used by markup
+  window.returnToHome = function () {
+    // keep logged in
+    sessionStorage.setItem('isLoggedIn','true');
+    localStorage.setItem('isLoggedIn','true');
+    window.location.href = '/';
+  };
+
+});
+</script>
 </body>
 </html>
