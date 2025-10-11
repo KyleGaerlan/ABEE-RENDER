@@ -918,203 +918,112 @@ function filterBookings() {
     currentPage = 1;
     displayBookings(filteredBookings);
 }
-
-
 function viewBookingDetails(bookingId) {
     const booking = allBookings.find(b => b._id === bookingId);
     if (!booking) return;
 
     currentBookingId = bookingId;
-    
     const bookingDetails = document.getElementById('bookingDetails');
-    
-    // Format booking date
-    const startDate = new Date(booking.startDate).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    
-    // Format end date if available
-    const endDate = booking.endDate ? new Date(booking.endDate).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    }) : 'Same as start date';
-    
-    // Format created at date
-    const createdAt = new Date(booking.createdAt).toLocaleString('en-US', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-    });
 
-    // Format amount with commas
-    const formattedAmount = booking.totalAmount ? 
-        '₱' + booking.totalAmount.toLocaleString() : 'N/A';
+    const formatDate = (date, withTime = true) =>
+        date
+            ? new Date(date).toLocaleString('en-US', {
+                  dateStyle: 'medium',
+                  timeStyle: withTime ? 'short' : undefined,
+              })
+            : 'N/A';
 
-    // Check if there's a receipt URL
-    const receiptSection = booking.receiptUrl ? `
-        <div class="detail-group">
-            <div class="detail-label">Proof of Payment</div>
-            <div class="detail-value">
-                <a href="${booking.receiptUrl}" target="_blank">View Payment</a>
-                <br>
-            </div>
-        </div>
-    ` : '';
+    const formattedAmount = booking.totalAmount
+        ? '₱' + booking.totalAmount.toLocaleString()
+        : 'N/A';
 
-    // Add expiration info for store payments
-    let expirationInfo = '';
-    if (booking.paymentMethod === 'store' && booking.status === 'pending' && booking.expiresAt) {
-        const expiryDate = new Date(booking.expiresAt);
-        const now = new Date();
-        const hoursLeft = Math.max(0, Math.round((expiryDate - now) / (1000 * 60 * 60)));
-        
-        if (hoursLeft > 0) {
-            expirationInfo = `
-                <div class="detail-group">
-                    <div class="detail-label">Payment Deadline</div>
-                    <div class="detail-value" style="color: ${hoursLeft <= 2 ? '#dc3545' : '#f26523'}">
-                        ${expiryDate.toLocaleString('en-US', {dateStyle: 'medium', timeStyle: 'short'})}
-                        (${hoursLeft} hours left)
-                    </div>
-                </div>
-            `;
-        } else {
-            expirationInfo = `
-                <div class="detail-group">
-                    <div class="detail-label">Payment Deadline</div>
-                    <div class="detail-value" style="color: #dc3545">
-                        Expired
-                    </div>
-                </div>
-            `;
-        }
-    }
+    const destinationWithCountry =
+        booking.country || booking.tourDetails?.country
+            ? `${booking.destination || booking.tourDetails?.destination || 'N/A'}, ${booking.country || booking.tourDetails?.country}`
+            : booking.destination || booking.tourDetails?.destination || 'N/A';
 
-    // Get destination with country
-    const destinationWithCountry = booking.country || booking.tourDetails?.country ? 
-        `${booking.destination || booking.tourDetails?.destination || 'N/A'}, ${booking.country || booking.tourDetails?.country}` : 
-        booking.destination || booking.tourDetails?.destination || 'N/A';
+    const expirationInfo =
+        booking.paymentMethod === 'store' && booking.expiresAt
+            ? `<div class="detail-group">
+                <div class="detail-label">Payment Deadline</div>
+                <div class="detail-value">${formatDate(booking.expiresAt)}</div>
+              </div>`
+            : '';
 
-    bookingDetails.innerHTML = `
+    // Core booking info
+    const bookingMeta = `
         <div class="detail-section">
-            <div class="detail-group">
-                <div class="detail-label">Booking ID</div>
-                <div class="detail-value">${booking.bookingId || booking._id}</div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">Status</div>
-                <div class="detail-value">
-                    <span class="status-badge status-${booking.status.toLowerCase()}">
-                        ${booking.status}
-                    </span>
-                </div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">Created</div>
-                <div class="detail-value">${createdAt || 'N/A'}</div>
-            </div>
+            <h3>Booking Information</h3>
+            <div class="detail-group"><div class="detail-label">Booking ID</div><div class="detail-value">${booking.bookingId}</div></div>
+            <div class="detail-group"><div class="detail-label">Full Name</div><div class="detail-value">${booking.fullName}</div></div>
+            <div class="detail-group"><div class="detail-label">Email</div><div class="detail-value">${booking.email}</div></div>
+            <div class="detail-group"><div class="detail-label">Phone</div><div class="detail-value">${booking.phone}</div></div>
+            <div class="detail-group"><div class="detail-label">Nationality</div><div class="detail-value">${booking.nationality}</div></div>
+            <div class="detail-group"><div class="detail-label">Destination</div><div class="detail-value">${destinationWithCountry}</div></div>
+            <div class="detail-group"><div class="detail-label">Start Date</div><div class="detail-value">${formatDate(booking.startDate, false)}</div></div>
+            <div class="detail-group"><div class="detail-label">Travelers</div><div class="detail-value">${booking.travelers || 0}</div></div>
+            <div class="detail-group"><div class="detail-label">Total Amount</div><div class="detail-value">${formattedAmount}</div></div>
+            <div class="detail-group"><div class="detail-label">Payment Method</div><div class="detail-value">${booking.paymentMethod}</div></div>
             ${expirationInfo}
-        </div>
-        
-        <div class="detail-section">
-            <div class="detail-group">
-                <div class="detail-label">Full Name</div>
-                <div class="detail-value">${booking.fullName || 'N/A'}</div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">Email</div>
-                <div class="detail-value">${booking.email || 'N/A'}</div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">Phone</div>
-                <div class="detail-value">${booking.phone || 'N/A'}</div>
-            </div>
-                <div class="detail-group">
-                <div class="detail-label">Nationality</div>
-                <div class="detail-value">${booking.nationality || 'N/A'}</div>
-            </div>
-        </div>
-        
-        <div class="detail-section">
-            <div class="detail-group">
-                <div class="detail-label">Destination</div>
-                <div class="detail-value">${destinationWithCountry}</div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">Start Date</div>
-                <div class="detail-value">${startDate}</div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">End Date</div>
-                <div class="detail-value">${endDate}</div>
-            </div>
-        </div>
-        
-        <div class="detail-section">
-            <div class="detail-group">
-                <div class="detail-label">Travelers</div>
-                <div class="detail-value">${booking.travelers || 0}</div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">Total Amount</div>
-                <div class="detail-value">${formattedAmount}</div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-label">Payment Method</div>
-                <div class="detail-value">${booking.paymentMethod || 'N/A'}</div>
-            </div>
-        </div>
-        
-        ${receiptSection}
-        
-        <div class="detail-section">
-    <div class="detail-group">
-        <div class="detail-label">Special Requests</div>
-        <div class="detail-value">${booking.specialRequests || 'None'}</div>
-    </div>
-</div>
+        </div>`;
 
-<!-- Traveler details -->
-<div class="detail-section" style="grid-column: 1 / -1;">
-    <h3 style="margin-bottom: 10px;">Traveler Information</h3>
-    ${booking.travelerDetails && booking.travelerDetails.length > 0
-        ? booking.travelerDetails.map(t => `
-            <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                <p><strong>Name:</strong> ${t.fullName || 'N/A'}</p>
-                <p><strong>Nationality:</strong> ${t.nationality || 'N/A'}</p>
-                <p><strong>Sex:</strong> ${t.sex || 'N/A'}</p>
-                <p><strong>Passport #:</strong> ${t.passportNumber || 'N/A'}</p>
-                <p><strong>Passport Expiry:</strong> ${t.passportExpiry ? new Date(t.passportExpiry).toLocaleDateString() : 'N/A'}</p>
-                <p><strong>Emergency Contact:</strong> ${t.emergencyName || 'N/A'} - ${t.emergencyContact || 'N/A'}</p>
-                <p><strong>Special Requests:</strong> ${t.specialRequests || 'None'}</p>
-            </div>
-        `).join('')
-        : '<p>No traveler details available.</p>'
-    }
-</div>
+    // Tour info (for employees to cross-check)
+    const tourInfo = booking.tourDetails
+        ? `
+        <div class="detail-section">
+            <h3>Tour Information</h3>
+            <div class="detail-group"><div class="detail-label">Title</div><div class="detail-value">${booking.tourDetails.title || 'N/A'}</div></div>
+            <div class="detail-group"><div class="detail-label">Duration</div><div class="detail-value">${booking.tourDetails.duration || 'N/A'} ${booking.tourDetails.durationUnit || ''}</div></div>
+            <div class="detail-group"><div class="detail-label">Price</div><div class="detail-value">${booking.tourDetails.price ? '₱' + booking.tourDetails.price.toLocaleString() : 'N/A'}</div></div>
+        </div>`
+        : '';
 
-<!-- Status change history -->
-<div class="detail-section" style="grid-column: 1 / -1;">
-    <h3 style="margin-bottom: 10px;">Status History</h3>
-    ${booking.statusChangeHistory && booking.statusChangeHistory.length > 0
-        ? booking.statusChangeHistory.map(s => `
-            <div style="margin-bottom: 5px;">
-                <span style="font-weight:600;">${s.status.toUpperCase()}</span>
-                by ${s.updatedBy?.firstName || 'Unknown'} on ${new Date(s.updatedAt).toLocaleString()}
-            </div>
-        `).join('')
-        : '<p>No status changes recorded.</p>'
-    }
-</div>
+    // Traveler info
+    const travelerInfo = `
+        <div class="detail-section" style="grid-column: 1 / -1;">
+            <h3>Traveler Information</h3>
+            ${
+                booking.travelerDetails && booking.travelerDetails.length > 0
+                    ? booking.travelerDetails
+                          .map(
+                              t => `
+                    <div style="margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px;">
+                        <p><strong>Name:</strong> ${t.fullName || 'N/A'}</p>
+                        <p><strong>Nationality:</strong> ${t.nationality || 'N/A'}</p>
+                        <p><strong>Sex:</strong> ${t.sex || 'N/A'}</p>
+                        <p><strong>Passport #:</strong> ${t.passportNumber || 'N/A'}</p>
+                        <p><strong>Passport Expiry:</strong> ${t.passportExpiry ? formatDate(t.passportExpiry, false) : 'N/A'}</p>
+                        <p><strong>Emergency Contact:</strong> ${t.emergencyName || 'N/A'} - ${t.emergencyContact || 'N/A'}</p>
+                        <p><strong>Special Requests:</strong> ${t.specialRequests || 'None'}</p>
+                    </div>`
+                          )
+                          .join('')
+                    : '<p>No traveler details available.</p>'
+            }
+        </div>`;
 
-    `;
+    // Status history (for accountability)
+    const statusHistory = `
+        <div class="detail-section" style="grid-column: 1 / -1;">
+            <h3>Status History</h3>
+            ${
+                booking.statusChangeHistory && booking.statusChangeHistory.length > 0
+                    ? booking.statusChangeHistory
+                          .map(
+                              s => `
+                        <div style="margin-bottom:5px;">
+                            <span style="font-weight:600;">${s.status.toUpperCase()}</span>
+                            by ${s.updatedBy?.firstName || s.updatedBy || 'Unknown'} on ${formatDate(s.updatedAt)}
+                        </div>`
+                          )
+                          .join('')
+                    : '<p>No status changes recorded.</p>'
+            }
+        </div>`;
+
+    bookingDetails.innerHTML = bookingMeta + tourInfo + travelerInfo + statusHistory;
+
     document.getElementById('updateStatusBtn').onclick = () => editBookingStatus(bookingId);
-    
-    // Show modal
     document.getElementById('bookingModal').style.display = 'block';
 }
 
@@ -1468,4 +1377,3 @@ checkTimeChangeAndUpdateBookings();
     </script>
 </body>
 </html>
-
