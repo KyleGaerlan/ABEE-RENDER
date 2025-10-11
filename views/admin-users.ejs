@@ -461,6 +461,26 @@
             margin: 0 10px;
             font-weight: 500;
         }
+        .pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 5px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 5px;
+  scroll-behavior: smooth;
+}
+
+.pagination::-webkit-scrollbar {
+  height: 6px;
+}
+
+.pagination::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
+}
+
     </style>
 </head>
 <body>
@@ -511,7 +531,7 @@
                 <input type="checkbox" id="userTypeToggle" />
                 <span class="slider"></span>
             </label>
-            <span class="toggle-label">Admins</span>
+            <span class="toggle-label">System Users</span>
         </div>
 
         <div class="user-table-container">
@@ -724,7 +744,7 @@
         document.getElementById('userTypeToggle').addEventListener('change', function() {
             if (this.checked) {
                 currentView = 'admins';
-                document.getElementById('userSearch').placeholder = "Search admins...";
+                document.getElementById('userSearch').placeholder = "Search system users...";
                 fetchAdminsAndRenderTable();
             } else {
                 currentView = 'users';
@@ -783,57 +803,108 @@
             console.log('Visible rows after filtering:', visibleCount);
             setupPagination();
         }
+function setupPagination() {
+    const rowsPerPage = 10;
+    const rows = Array.from(document.querySelectorAll('#userTableBody tr')).filter(row =>
+        row.style.display !== 'none'
+    );
 
-        function setupPagination() {
-            const rowsPerPage = 10;
-            const rows = Array.from(document.querySelectorAll('#userTableBody tr')).filter(row => 
-                row.style.display !== 'none'
-            );
-            console.log('Setting up pagination for', rows.length, 'visible rows');
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
 
-            const pageCount = Math.ceil(rows.length / rowsPerPage);
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = '';
+    if (totalPages <= 1) return;
 
-            if (pageCount <= 1) return;
-            const prevBtn = document.createElement('button');
-            prevBtn.textContent = '«';
-            prevBtn.addEventListener('click', () => {
-                const activePage = document.querySelector('.pagination button.active');
-                if (activePage && activePage.previousElementSibling && 
-                    activePage.previousElementSibling.tagName === 'BUTTON') {
-                    activePage.previousElementSibling.click();
-                }
-            });
-            pagination.appendChild(prevBtn);
+    let currentPage = 1;
 
-            for (let i = 1; i <= pageCount; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.textContent = i;
-                pageBtn.addEventListener('click', () => {
-                    document.querySelectorAll('.pagination button').forEach(btn => 
-                        btn.classList.remove('active')
-                    );
-                    pageBtn.classList.add('active');
-                    showPage(i, rowsPerPage, rows);
-                });
-                if (i === 1) pageBtn.classList.add('active');
-                pagination.appendChild(pageBtn);
-            }
+    function renderPagination() {
+        pagination.innerHTML = '';
 
-            const nextBtn = document.createElement('button');
-            nextBtn.textContent = '»';
-            nextBtn.addEventListener('click', () => {
-                const activePage = document.querySelector('.pagination button.active');
-                if (activePage && activePage.nextElementSibling && 
-                    activePage.nextElementSibling.tagName === 'BUTTON') {
-                    activePage.nextElementSibling.click();
-                }
-            });
-            pagination.appendChild(nextBtn);
+        const maxVisible = 7; // Show only up to 7 buttons at a time
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
 
-            showPage(1, rowsPerPage, rows);
+        if (endPage - startPage + 1 < maxVisible) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
         }
+
+        // Prev button
+        const prevBtn = document.createElement('button');
+        prevBtn.innerHTML = '&laquo;';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage, rowsPerPage, rows);
+                renderPagination();
+            }
+        });
+        pagination.appendChild(prevBtn);
+
+        // First page + ellipsis
+        if (startPage > 1) {
+            const firstBtn = document.createElement('button');
+            firstBtn.textContent = '1';
+            firstBtn.addEventListener('click', () => {
+                currentPage = 1;
+                showPage(currentPage, rowsPerPage, rows);
+                renderPagination();
+            });
+            pagination.appendChild(firstBtn);
+
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            pagination.appendChild(dots);
+        }
+
+        // Page buttons
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.classList.toggle('active', i === currentPage);
+            pageBtn.addEventListener('click', () => {
+                currentPage = i;
+                showPage(currentPage, rowsPerPage, rows);
+                renderPagination();
+            });
+            pagination.appendChild(pageBtn);
+        }
+
+        // Last page + ellipsis
+        if (endPage < totalPages) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            pagination.appendChild(dots);
+
+            const lastBtn = document.createElement('button');
+            lastBtn.textContent = totalPages;
+            lastBtn.addEventListener('click', () => {
+                currentPage = totalPages;
+                showPage(currentPage, rowsPerPage, rows);
+                renderPagination();
+            });
+            pagination.appendChild(lastBtn);
+        }
+
+        // Next button
+        const nextBtn = document.createElement('button');
+        nextBtn.innerHTML = '&raquo;';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage, rowsPerPage, rows);
+                renderPagination();
+            }
+        });
+        pagination.appendChild(nextBtn);
+    }
+
+    // Initialize
+    showPage(currentPage, rowsPerPage, rows);
+    renderPagination();
+}
+
 
         function showPage(pageNum, rowsPerPage, rows) {
             const startIndex = (pageNum - 1) * rowsPerPage;
@@ -1254,12 +1325,11 @@ function renderAdminsTable(admins) {
         document.getElementById('userTypeToggle').addEventListener('change', function() {
             if (this.checked) {
                 currentView = 'admins';
-                document.getElementById('userSearch').placeholder = "Search admins...";
+                document.getElementById('userSearch').placeholder = "Search system users...";
                 fetchAdminsAndRenderTable();
             } else {
                 currentView = 'users';
                 document.getElementById('userSearch').placeholder = "Search users...";
-                // Re-render initial user data or fetch again if needed
                 renderUsersTable(<%- JSON.stringify(users) %>);
             }
             toggleTableHeaders(currentView);
