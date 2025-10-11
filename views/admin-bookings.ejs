@@ -456,6 +456,25 @@
     background-color: #e5e7eb;
     color: #4b5563;
 }
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 5px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 5px;
+  scroll-behavior: smooth;
+}
+
+.pagination::-webkit-scrollbar {
+  height: 6px;
+}
+
+.pagination::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
+}
 
     </style>
 </head>
@@ -767,36 +786,47 @@
     // Update pagination
     updatePagination(totalPages);
 }
+function updatePagination(totalPages) {
+    const paginationContainer = document.getElementById('bookingsPagination');
+    let paginationHTML = '';
 
-        function updatePagination(totalPages) {
-            const paginationContainer = document.getElementById('bookingsPagination');
-            let paginationHTML = '';
-    
-            // Previous button
-            paginationHTML += `
-                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
-                    &laquo; Previous
-                </button>
-            `;
-    
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                paginationHTML += `
-                    <button onclick="changePage(${i})" class="${currentPage === i ? 'active' : ''}">
-                        ${i}
-                    </button>
-                `;
-            }
-    
-            // Next button
-            paginationHTML += `
-                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
-                    Next &raquo;
-                </button>
-            `;
-    
-            paginationContainer.innerHTML = paginationHTML;
-        }
+    const maxVisible = 7; // show only 7 buttons at a time
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage + 1 < maxVisible) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    // Previous
+    paginationHTML += `
+        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+            &laquo;
+        </button>
+    `;
+
+    if (startPage > 1) paginationHTML += `<button onclick="changePage(1)">1</button><span>...</span>`;
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <button onclick="changePage(${i})" class="${currentPage === i ? 'active' : ''}">
+                ${i}
+            </button>
+        `;
+    }
+
+    if (endPage < totalPages) paginationHTML += `<span>...</span><button onclick="changePage(${totalPages})">${totalPages}</button>`;
+
+    // Next
+    paginationHTML += `
+        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+            &raquo;
+        </button>
+    `;
+
+    paginationContainer.innerHTML = paginationHTML;
+}
+
     
         function changePage(page) {
             if (page < 1 || page > Math.ceil(allBookings.length / itemsPerPage)) {
@@ -1042,11 +1072,45 @@ function viewBookingDetails(bookingId) {
         ${receiptSection}
         
         <div class="detail-section">
-            <div class="detail-group">
-                <div class="detail-label">Special Requests</div>
-                <div class="detail-value">${booking.specialRequests || 'None'}</div>
+    <div class="detail-group">
+        <div class="detail-label">Special Requests</div>
+        <div class="detail-value">${booking.specialRequests || 'None'}</div>
+    </div>
+</div>
+
+<!-- Traveler details -->
+<div class="detail-section" style="grid-column: 1 / -1;">
+    <h3 style="margin-bottom: 10px;">Traveler Information</h3>
+    ${booking.travelerDetails && booking.travelerDetails.length > 0
+        ? booking.travelerDetails.map(t => `
+            <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                <p><strong>Name:</strong> ${t.fullName || 'N/A'}</p>
+                <p><strong>Nationality:</strong> ${t.nationality || 'N/A'}</p>
+                <p><strong>Sex:</strong> ${t.sex || 'N/A'}</p>
+                <p><strong>Passport #:</strong> ${t.passportNumber || 'N/A'}</p>
+                <p><strong>Passport Expiry:</strong> ${t.passportExpiry ? new Date(t.passportExpiry).toLocaleDateString() : 'N/A'}</p>
+                <p><strong>Emergency Contact:</strong> ${t.emergencyName || 'N/A'} - ${t.emergencyContact || 'N/A'}</p>
+                <p><strong>Special Requests:</strong> ${t.specialRequests || 'None'}</p>
             </div>
-        </div>
+        `).join('')
+        : '<p>No traveler details available.</p>'
+    }
+</div>
+
+<!-- Status change history -->
+<div class="detail-section" style="grid-column: 1 / -1;">
+    <h3 style="margin-bottom: 10px;">Status History</h3>
+    ${booking.statusChangeHistory && booking.statusChangeHistory.length > 0
+        ? booking.statusChangeHistory.map(s => `
+            <div style="margin-bottom: 5px;">
+                <span style="font-weight:600;">${s.status.toUpperCase()}</span>
+                by ${s.updatedBy?.firstName || 'Unknown'} on ${new Date(s.updatedAt).toLocaleString()}
+            </div>
+        `).join('')
+        : '<p>No status changes recorded.</p>'
+    }
+</div>
+
     `;
     document.getElementById('updateStatusBtn').onclick = () => editBookingStatus(bookingId);
     
