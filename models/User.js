@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
   nationality: { type: String, trim: true, default: null },
   isActive: { type: Boolean, default: true },
   password: { type: String, required: true, minlength: 8 },
+  lastActiveAt: {
+  type: Date,
+  default: Date.now
+}
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
