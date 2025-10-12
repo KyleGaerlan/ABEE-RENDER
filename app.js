@@ -26,6 +26,7 @@ const validator = require('validator');
 const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
 const PYTHON_API = "http://localhost:8000";
+const { getForecast } = require("./utils/forecast");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
