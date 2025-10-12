@@ -1351,46 +1351,84 @@ app.get('/api/predict/sales', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
-
-// ========= 2️⃣ USER FORECAST =========
-app.get('/api/predict/users', async (req, res) => {
+// ============================================
+// 📈 /api/admin/metrics-growth
+// ============================================
+app.get("/api/admin/metrics-growth", async (req, res) => {
   try {
-    const users = await User.find({}, "createdAt").sort({ createdAt: 1 }).lean();
-    if (users.length < 3)
-      return res.json({ success: false, message: "Not enough user data for forecast." });
+    const monthly = await Booking.aggregate([
+      // ✅ Only include confirmed and completed bookings
+      {
+        $match: {
+          status: { $in: ["confirmed", "completed"] }
+        }
+      },
 
-    const series = users.map(u => ({ ds: u.createdAt, y: 1 }));
+      // 🧮 Group by month-year based on createdAt
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          totalSales: { $sum: { $ifNull: ["$totalAmount", 0] } },
+          totalBookings: { $sum: 1 }
+        }
+      },
 
-    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
-      series,
-      horizon: 30
-    });
+      // 📅 Sort by date ascending
+      { $sort: { "_id": 1 } }
+    ]);
 
-    console.log("🧠 User Forecast:", data.success, "—", data.forecast?.length, "points");
-    res.json(data);
+    // ✅ Build continuous timeline (fill missing months with 0)
+    const months = [];
+    const sales = [];
+    const bookings = [];
+
+    if (monthly.length > 0) {
+      const firstMonth = new Date(monthly[0]._id + "-01");
+      const lastMonth = new Date(monthly[monthly.length - 1]._id + "-01");
+
+      let current = new Date(firstMonth);
+      while (current <= lastMonth) {
+        const ym = current.toISOString().slice(0, 7);
+        const found = monthly.find(m => m._id === ym);
+
+        months.push(ym);
+        sales.push(found ? found.totalSales : 0);
+        bookings.push(found ? found.totalBookings : 0);
+
+        current.setMonth(current.getMonth() + 1);
+      }
+    }
+
+    res.json({ months, sales, bookings });
   } catch (err) {
-    console.error("❌ Prediction API Error (Users):", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("❌ Error fetching metrics growth:", err);
+    res.status(500).json({ error: "Failed to load metrics growth" });
   }
 });
 
-
-// ========= 3️⃣ BOOKING FORECAST =========
 app.get('/api/predict/bookings', async (req, res) => {
   try {
-    const bookings = await Booking.find({}, "createdAt").sort({ createdAt: 1 }).lean();
-    if (bookings.length < 3)
+    const bookings = await Booking.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    if (!bookings || bookings.length < 3)
       return res.json({ success: false, message: "Not enough booking data for forecast." });
 
-    const series = bookings.map(b => ({ ds: b.createdAt, y: 1 }));
+    const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
     const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
 
-    console.log("🧠 Booking Forecast:", data.success, "—", data.forecast?.length, "points");
+    console.log("🧳 Booking Forecast:", data.success, "-", data.forecast?.length, "points");
     res.json(data);
   } catch (err) {
     console.error("❌ Prediction API Error (Bookings):", err.message);
@@ -2082,6 +2120,150 @@ app.get("/api/timeseries/:metric", async (req, res) => {
   } catch (err) {
     console.error("❌ Error generating timeseries:", err);
     res.status(500).json({ error: "Failed to generate timeseries data" });
+  }
+});
+// ============================================
+// 📅 /api/admin/seasonal-forecast
+// ============================================
+app.get("/api/admin/seasonal-forecast", async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+
+    // 1️⃣ Get monthly actual bookings for selected year (confirmed + completed only)
+    const actual = await Booking.aggregate([
+      {
+        $match: {
+          status: { $in: ["confirmed", "completed"] },
+          createdAt: {
+            $gte: new Date(`${year}-01-01`),
+            $lt: new Date(`${year + 1}-01-01`)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          totalBookings: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    const actualData = Array.from({ length: 12 }, (_, i) => {
+      const monthData = actual.find(a => a._id === i + 1);
+      return monthData ? monthData.totalBookings : 0;
+    });
+
+    // 2️⃣ Send this data to your Python API for Prophet forecasting
+    const response = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        series: Array.from({ length: actualData.length }, (_, i) => ({
+          ds: `${year}-${String(i + 1).padStart(2, "0")}-01`,
+          y: actualData[i]
+        })),
+        horizon: 12,  // forecast next 12 months
+        freq: "M"
+      })
+    });
+
+    const forecast = await response.json();
+
+    res.json({
+      year,
+      months: [
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec"
+      ],
+      actual: actualData,
+      predicted: forecast.success
+        ? forecast.forecast.map(f => f.yhat)
+        : Array(12).fill(0),
+      mape: forecast.mape || null,
+      rmse: forecast.rmse || null,
+      accuracy: forecast.accuracy || "N/A"
+    });
+
+  } catch (err) {
+    console.error("❌ Seasonal forecast error:", err);
+    res.status(500).json({ error: "Failed to load seasonal forecast" });
+  }
+});
+// ===============================================
+// 📊 Seasonal Analytics (Actual + Prophet Predicted)
+// ===============================================
+app.get('/api/analytics/seasonal', async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+
+    // ✅ Fetch completed or confirmed bookings only
+    const bookings = await Booking.aggregate([
+      {
+        $match: {
+          status: { $in: ["confirmed", "completed"] },
+          createdAt: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          totalBookings: { $sum: 1 },
+          totalSales: { $sum: "$totalAmount" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // ✅ Prepare monthly data
+    const months = [
+      "Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec"
+    ];
+    const actual = new Array(12).fill(0);
+    bookings.forEach(b => {
+      actual[b._id - 1] = b.totalBookings;
+    });
+
+    // ✅ Send actual data to FastAPI Prophet for prediction
+    const response = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        series: months.map((m, i) => ({
+          ds: `${year}-${String(i + 1).padStart(2, "0")}-01`,
+          y: actual[i] || 0
+        })),
+        horizon: 12
+      })
+    });
+
+    const forecast = await response.json();
+
+    if (!forecast.success) {
+      throw new Error(forecast.detail || "FastAPI forecast failed");
+    }
+
+    const predicted = forecast.forecast.map(f => f.yhat);
+
+    res.json({
+      success: true,
+      months,
+      actual,
+      predicted,
+      predictedMonths: months.map(m => m + " (Predicted)"),
+      mape: forecast.mape,
+      rmse: forecast.rmse
+    });
+  } catch (err) {
+    console.error("❌ Error fetching seasonal analytics:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Internal server error"
+    });
   }
 });
 
@@ -6335,29 +6517,6 @@ app.get('/api/analytics/yearly', checkAdminAuth, async (req, res) => {
     }
 });
 
-app.get('/api/predict/bookings', async (req, res) => {
-  try {
-    const data = await DailyBookingCount.find().sort({ date: 1 }).lean();
-
-    // Prepare payload for ML API
-    const series = data.map(d => ({
-      date: d.date,
-      count: d.count
-    }));
-
-    // Send to external prediction service (could be a Python FastAPI endpoint)
-    const response = await axios.post('https://your-ml-api/predict', { series });
-
-    res.json({
-      success: true,
-      history: series,
-      forecast: response.data.forecast
-    });
-  } catch (err) {
-    console.error('Prediction error:', err);
-    res.status(500).json({ success: false, message: 'Prediction failed' });
-  }
-});
 const checkManagerAuth = (req, res, next) => {
     if (!req.session || !req.session.admin || req.session.admin.role !== 'manager') {
         const isApiRequest = req.path.startsWith('/api/');
