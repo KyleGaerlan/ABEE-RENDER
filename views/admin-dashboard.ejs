@@ -6,6 +6,7 @@
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="/css/useradmin.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     
     <style>
@@ -550,8 +551,246 @@
     }
 }
 
+.predictive-analytics {
+  margin-top: 3rem;
+  padding: 2rem;
+  background-color: #f9fafc;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.predictive-analytics h2 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.chart-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 1.5rem;
+}
+.forecast-section {
+  margin-top: 30px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.forecast-metrics {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 14px;
+}
 
     </style>
+    <style>
+  .forecast-summary {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  .forecast-card {
+    flex: 1;
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .forecast-card h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+    .forecast-charts canvas {
+    width: 100%;
+    height: 300px;
+    margin-top: 25px;
+  }
+</style>
+<style>
+  .forecast-section + div.bg-gray-50 {
+    margin-top: 30px;
+  }
+</style>
+ <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f7fb;
+      color: #333;
+    }
+
+    .dashboard {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    .forecast-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+
+    .forecast-card h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    canvas {
+      max-width: 100%;
+      margin: 15px 0;
+    }
+
+    .text-red-500 { color: #dc2626; }
+    .text-green-500 { color: #16a34a; }
+    .text-orange-500 { color: #f97316; }
+    .ai-forecast-section {
+  margin-top: 2.5rem;
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.insight-card {
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.insight-card h3 {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+.insight-card p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #d55a1f;
+}
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+.chart-container {
+  background: #fafafa;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.recommendations {
+  background: #f9f9f9;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.text-muted {
+  color: #6b7280;
+}
+.mt-6 {
+  margin-top: 1.5rem;
+}
+.user-engagement {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+  margin-top: 1.5rem;
+}
+
+.engagement-grid {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.engagement-card {
+  flex: 1;
+  min-width: 200px;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+}
+
+.engagement-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.engagement-card p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #d55a1f;
+}
+.user-activity {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+}
+.user-activity-summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.user-activity-summary div {
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
+.user-activity-lists {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.activity-card {
+  flex: 1;
+  min-width: 300px;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+.activity-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.activity-card li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+  </style>
 </head>
 <body>
     <button class="menu-toggle" id="menuToggle">
@@ -734,7 +973,210 @@
                     <h3>Sales</h3>
                     <canvas id="timeBasedRevenueChart"></canvas>
                 </div>
+                
             </div>
+       
+<div class="mt-6 bg-gray-50 border border-gray-200 rounded-2xl p-4 shadow-sm">
+  <h3 class="text-lg font-semibold mb-2">📘 Forecast Accuracy Guide</h3>
+  <p class="text-sm text-gray-700 mb-1">
+    <strong>MAPE (Mean Absolute Percentage Error):</strong>
+    Measures forecast accuracy as a percentage. A lower MAPE means the prediction is closer to actual values.
+    <span class="block text-xs text-gray-500 mt-1">
+      ✅ <strong>0–5%</strong> Excellent | 🟧 <strong>5–15%</strong> Good | 🔴 <strong>>15%</strong> Needs Improvement
+    </span>
+  </p>
+
+  <p class="text-sm text-gray-700">
+    <strong>RMSE (Root Mean Squared Error):</strong>
+    Shows the average difference between predicted and actual values. Lower values mean more accurate forecasts.
+    <span class="block text-xs text-gray-500 mt-1">
+      💡 Tip: RMSE is in the same units as your data (e.g., pesos ₱).
+    </span>
+  </p>
+  <!-- ✅ FORECAST SUMMARY CARDS -->
+<div class="forecast-summary">
+  <div class="forecast-card">
+    <h3>💰 Projected Sales (Next 30 Days)</h3>
+    <p id="projectedSales">₱--</p>
+  </div>
+  <div class="forecast-card">
+    <h3>🧳 Projected Bookings</h3>
+    <p id="projectedBookings">--</p>
+  </div>
+  <div class="forecast-card">
+    <h3>📈 Forecast Confidence</h3>
+    <p id="forecastConfidenceSummary">--</p>
+  </div>
+</div>
+</div>
+<div class="dashboard">
+    <h1>📊 Admin Forecast Dashboard</h1>
+
+
+    <section>
+      <div class="forecast-card">
+        <h3>💰 Sales Forecast</h3>
+        <p id="salesForecastAccuracy">MAPE: -- | RMSE: --</p>
+        <p id="salesForecastNote" class="text-orange-500">Loading...</p>
+      </div>
+      <canvas id="salesForecastChart" height="120"></canvas>
+    </section>
+
+    <!-- 2️⃣ USER FORECAST -->
+    <section>
+      <div class="forecast-card">
+        <h3>👥 User Forecast</h3>
+        <p id="userForecastAccuracy">MAPE: -- | RMSE: --</p>
+        <p id="userForecastNote" class="text-orange-500">Loading...</p>
+      </div>
+      <canvas id="userForecastChart" height="120"></canvas>
+    </section>
+
+    <!-- 3️⃣ BOOKING FORECAST -->
+    <section>
+      <div class="forecast-card">
+        <h3>🧳 Booking Forecast</h3>
+        <p id="bookingForecastAccuracy">MAPE: -- | RMSE: --</p>
+        <p id="bookingForecastNote" class="text-orange-500">Loading...</p>
+      </div>
+      <canvas id="bookingForecastChart" height="120"></canvas>
+    </section>
+
+<!-- =============================================== -->
+<!-- 🔮 AI-Driven Forecast & Decision Analytics -->
+<!-- =============================================== -->
+<section class="ai-forecast-section">
+  <h2>🤖 Predictive Insights Dashboard</h2>
+
+  <!-- 📊 1️⃣ Forecast Insight Cards -->
+  <div class="insight-grid">
+    <div class="insight-card">
+      <h3>💰 Projected Sales</h3>
+      <p id="projectedTotalSales">₱--</p>
+      <small id="salesGrowthNote" class="text-muted">Loading...</small>
+    </div>
+
+    <div class="insight-card">
+      <h3>🧳 Expected Bookings</h3>
+      <p id="projectedTotalBookings">--</p>
+      <small id="bookingsTrendNote" class="text-muted">Loading...</small>
+    </div>
+
+    <div class="insight-card">
+      <h3>👥 New Users Forecast</h3>
+      <p id="projectedTotalUsers">--</p>
+      <small id="userGrowthNote" class="text-muted">Loading...</small>
+    </div>
+
+    <div class="insight-card">
+      <h3>🎯 Forecast Confidence</h3>
+      <p id="forecastConfidenceAI">--</p>
+      <small id="confidenceNote">Analyzing...</small>
+    </div>
+  </div>
+
+  <!-- 🧠 2️⃣ Decision Support Section -->
+  <section class="decision-support mt-6">
+    <h3>🧠 AI Recommendations</h3>
+    <div id="aiRecommendations" class="recommendations">
+      <p>Analyzing trends and generating recommendations...</p>
+    </div>
+  </section>
+
+  <!-- 📈 3️⃣ Comparison & Trend Charts -->
+  <section class="trend-comparison mt-6">
+    <h3>📊 Trend & Performance Comparison</h3>
+    <div class="chart-grid">
+      <div class="chart-container">
+        <h4>Sales vs Bookings Growth</h4>
+        <canvas id="growthComparisonChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h4>Top 5 Tours</h4>
+        <canvas id="topToursChart"></canvas>
+      </div>
+      <div class="chart-container">
+  <h4>🌱 Emerging vs ⚠️ Declining Tours</h4>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+    <div class="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm">
+      <h5 class="text-green-700 font-semibold mb-2">🌱 Emerging Tours</h5>
+      <ul id="emergingToursList" class="text-green-800 text-sm list-disc pl-4">
+        <li>Loading...</li>
+      </ul>
+    </div>
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
+      <h5 class="text-red-700 font-semibold mb-2">⚠️ Declining Tours</h5>
+      <ul id="decliningToursList" class="text-red-800 text-sm list-disc pl-4">
+        <li>Loading...</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+    </div>
+  </section>
+
+  <!-- ☀️ 4️⃣ Seasonal Demand Forecast -->
+  <section class="seasonal-insights mt-6">
+    <h3>☀️ Peak Season Predictions</h3>
+    <div class="chart-container full-width">
+      <canvas id="seasonalDemandChart"></canvas>
+    </div>
+  </section>
+</section>
+<!-- 🔁 USER RETENTION ANALYTICS -->
+<section class="user-retention mt-6">
+  <h3>🔁 User Retention & Engagement</h3>
+  <div class="chart-container full-width">
+    <canvas id="userRetentionChart"></canvas>
+  </div>
+</section>
+<!-- 👥 USER ENGAGEMENT SUMMARY -->
+<div class="analytics-section user-engagement">
+  <h2>👥 User Engagement Summary</h2>
+  <div class="engagement-grid">
+    <div class="engagement-card">
+      <h3>🟢 Active in Last 7 Days</h3>
+      <p id="activeUsers7">--</p>
+    </div>
+    <div class="engagement-card">
+      <h3>🟠 Active in Last 30 Days</h3>
+      <p id="activeUsers30">--</p>
+    </div>
+    <div class="engagement-card">
+      <h3>🔁 Retention Rate</h3>
+      <p id="retentionRate">--%</p>
+    </div>
+  </div>
+</div>
+<!-- 📊 USER ENGAGEMENT TREND CHART -->
+<section class="user-engagement-trend mt-6">
+  <h3>📊 Active Users & Retention Trend</h3>
+  <div class="chart-container full-width">
+    <canvas id="userEngagementTrendChart"></canvas>
+  </div>
+</section>
+<!-- 👥 USER ACTIVITY INSIGHTS -->
+<div class="analytics-section user-activity">
+  <h2>👥 User Activity Insights</h2>
+  <div class="user-activity-summary">
+    <div><strong>Total Users:</strong> <span id="activityTotalUsers">--</span></div>
+    <div><strong>Active (7 days):</strong> <span id="activityActiveCount">--</span></div>
+    <div><strong>Inactive (30+ days):</strong> <span id="activityInactiveCount">--</span></div>
+  </div>
+
+  <div class="user-activity-lists">
+    <div class="activity-card">
+      <h3>🔥 Most Active Users</h3>
+      <ul id="mostActiveUsers" class="detailed-list"></ul>
+    </div>
+    <div class="activity-card">
+      <h3>😴 Inactive Users (30+ Days)</h3>
+      <ul id="inactiveUsers" class="detailed-list"></ul>
+    </div>
+  </div>
+</div>
+
         </div>
         <div class="analytics-section">
             <h2>Seasonal Analytics</h2>
@@ -2903,6 +3345,917 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => n.remove(), 3500);
     }
   }
+</script>
+<script>
+async function drawLineChart(endpoint, chartId, label, color) {
+  try {
+    const res = await fetch(endpoint);
+    const data = await res.json();
+
+    if (!data.success || !data.forecast) {
+      console.warn(`⚠️ ${label} forecast failed:`, data.message);
+      const el = document.getElementById(chartId);
+      if (el) el.outerHTML = `<p style="color:red;">⚠️ ${label}: ${data.message}</p>`;
+      return;
+    }
+
+    const labels = data.forecast.map(f => new Date(f.ds).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    const values = data.forecast.map(f => f.yhat);
+
+    new Chart(document.getElementById(chartId), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label,
+          data: values,
+          borderColor: color,
+          backgroundColor: color + "20",
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: label }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  } catch (err) {
+    console.error(`❌ ${label} Forecast Error:`, err);
+  }
+}
+
+async function drawBarChart(endpoint, chartId, label, color) {
+  try {
+    const res = await fetch(endpoint);
+    const data = await res.json();
+
+    if (!data.success || !data.forecast) {
+      document.getElementById(chartId).outerHTML = `<p style="color:red;">⚠️ ${label}: No data</p>`;
+      return;
+    }
+
+    const labels = data.forecast.map(f => f.destination || f.ds);
+    const values = data.forecast.map(f => f.totalBookings || f.predictedBookings || f.yhat);
+
+    new Chart(document.getElementById(chartId), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label,
+          data: values,
+          backgroundColor: color + "90",
+          borderColor: color,
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: label }
+        },
+        scales: {
+          x: { title: { display: true, text: "Category" } },
+          y: { title: { display: true, text: "Value" }, beginAtZero: true }
+        }
+      }
+    });
+  } catch (err) {
+    console.error(`❌ ${label} Forecast Error:`, err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 🔮 Main Time-Series Forecasts
+  drawLineChart("/api/predict/sales", "salesForecastChart", "Sales Forecast (₱)", "#2196F3");
+  drawLineChart("/api/predict/users", "userForecastChart", "User Sign-ups Forecast", "#FF9800");
+  drawLineChart("/api/predict/bookings", "bookingForecastChart", "Booking Forecast", "#4CAF50");
+
+  // 🕒 Seasonal Trends
+  drawBarChart("/api/predict/seasonal", "seasonalBookingChart", "Seasonal Booking Forecast", "#F26523");
+
+  // 🌍 Destination Demand
+  drawBarChart("/api/predict/destination-demand", "destinationDemandChart", "Top Trending Destinations", "#6F42C1");
+});
+</script>
+<script>
+async function loadRevenueForecast() {
+  const note = document.getElementById("revenueForecastNote");
+  const ctx = document.getElementById("revenueForecastChart").getContext("2d");
+
+  try {
+    const res = await fetch("/api/predict/revenue-by-country");
+    const data = await res.json();
+
+    if (!data.success || !data.forecast || data.forecast.length === 0) {
+      note.textContent = "No revenue forecast data available.";
+      return;
+    }
+
+    const countries = data.forecast.map(f => f.country);
+    const revenues = data.forecast.map(f => f.predictedRevenue.toFixed(2));
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: countries,
+        datasets: [{
+          label: "Predicted Revenue (₱)",
+          data: revenues,
+          backgroundColor: "rgba(255, 206, 86, 0.6)",
+          borderColor: "rgba(255, 206, 86, 1)",
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: "Predicted Top 10 Countries by Revenue (Next Month)",
+            font: { size: 16 }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: "Country" } },
+          y: { title: { display: true, text: "Predicted Revenue (₱)" }, beginAtZero: true }
+        }
+      }
+    });
+
+    note.textContent = "✅ Revenue forecast generated successfully.";
+  } catch (err) {
+    console.error("❌ Revenue Forecast Error:", err);
+    note.textContent = "Error loading revenue forecast.";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadRevenueForecast);
+</script>
+
+<script>
+async function loadRevenueForecastByCountry() {
+  const note = document.getElementById("revenueByCountryNote");
+  const ctx = document.getElementById("revenueByCountryChart")?.getContext("2d");
+  if (!ctx) return console.warn("⚠️ Missing canvas: #revenueByCountryChart");
+
+  try {
+    const res = await fetch("/api/predict/revenue-by-country");
+    const data = await res.json();
+
+    if (!data.success || !data.forecast || data.forecast.length === 0) {
+      note.textContent = "No revenue forecast data available.";
+      return;
+    }
+
+    const countries = data.forecast.map(f => f.country);
+    const revenues = data.forecast.map(f => Math.max(0, f.predictedRevenue.toFixed(0))); // prevent negatives
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: countries,
+        datasets: [{
+          label: "Predicted Revenue (₱)",
+          data: revenues,
+          backgroundColor: "rgba(75, 192, 192, 0.6)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: "Revenue Forecast by Country (₱)",
+            font: { size: 16 }
+          },
+          legend: { display: false },
+        },
+        scales: {
+          x: { title: { display: true, text: "Country" } },
+          y: { beginAtZero: true, title: { display: true, text: "Predicted Revenue (₱)" } },
+        },
+      }
+    });
+
+    note.textContent = "✅ Revenue forecast loaded successfully!";
+  } catch (err) {
+    console.error("❌ Revenue Forecast Error:", err);
+    note.textContent = "Error loading forecast.";
+  }
+}
+
+// Auto-load on page load
+document.addEventListener("DOMContentLoaded", loadRevenueForecastByCountry);
+</script>
+
+  <script>
+  // 🧠 Helper for updating forecast metrics
+  function updateForecastMetrics(type, mape, rmse) {
+    const elem = document.getElementById(`${type}ForecastAccuracy`);
+    if (!elem) return;
+    let color = "gray";
+    if (mape <= 5) color = "green";
+    else if (mape <= 15) color = "orange";
+    else color = "red";
+    elem.style.color = color;
+    elem.innerHTML = `MAPE: ${mape?.toFixed(2) ?? "--"}% | RMSE: ${rmse?.toFixed(2) ?? "--"}`;
+  }
+
+  // 🪄 Generic forecast loader
+  async function loadForecast(endpoint, chartId, label, type) {
+    try {
+      const res = await fetch(endpoint);
+      const data = await res.json();
+
+      if (!data.success) throw new Error(data.message || "No forecast data");
+
+      const ctx = document.getElementById(chartId).getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.forecast.map(f => new Date(f.ds).toLocaleDateString()),
+          datasets: [{
+            label: `${label} (Predicted)`,
+            data: data.forecast.map(f => f.yhat),
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.1)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: label }
+          }
+        }
+      });
+
+      if (type) updateForecastMetrics(type, data.mape, data.rmse);
+    } catch (err) {
+      console.error(`❌ ${label} Forecast Error:`, err);
+      const note = document.getElementById(`${type}ForecastAccuracy`);
+      if (note) note.textContent = "Error loading forecast";
+    }
+  }
+
+  // 📈 Load all on page load
+  document.addEventListener('DOMContentLoaded', async () => {
+   await loadForecast('sales', 'salesForecastChart', 'salesAccuracy', 'salesNote');
+await loadForecast('users', 'userForecastChart', 'userAccuracy', 'userNote');
+await loadForecast('bookings', 'bookingForecastChart', 'bookingAccuracy', 'bookingNote');
+await loadForecast('seasonal', 'seasonalBookingChart', 'seasonalAccuracy', 'seasonalNote');
+  });
+  </script>
+ <script>
+// 🎯 Generic Forecast Chart Loader (with confidence interval)
+async function loadForecast(type, chartId, accuracyId, noteId, horizon = 180) {
+  try {
+    const response = await fetch(`/api/predict/${type}?horizon=${horizon}`);
+    const data = await response.json();
+
+    if (!data.success || !data.forecast?.length) {
+      document.getElementById(noteId).textContent = "⚠️ No forecast data available.";
+      return;
+    }
+
+    // 🧮 Display accuracy metrics
+    document.getElementById(accuracyId).textContent =
+      `MAPE: ${data.mape?.toFixed(2) ?? "--"}% | RMSE: ${data.rmse?.toFixed(2) ?? "--"}`;
+    document.getElementById(noteId).textContent = data.note || "Forecast loaded successfully.";
+
+    // 🪄 Chart setup
+    const ctx = document.getElementById(chartId).getContext("2d");
+    if (window[chartId]) window[chartId].destroy(); // Reset old chart
+
+    window[chartId] = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.forecast.map(f =>
+          new Date(f.ds).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+        ),
+        datasets: [
+          {
+            label: "Forecast",
+            data: data.forecast.map(f => f.yhat),
+            borderColor: "#f26523",
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false,
+          },
+          {
+            label: "Confidence Interval (Upper)",
+            data: data.forecast.map(f => f.yhat_upper),
+            backgroundColor: "rgba(242,101,35,0.1)",
+            borderColor: "rgba(242,101,35,0)",
+            fill: "+1",
+          },
+          {
+            label: "Confidence Interval (Lower)",
+            data: data.forecast.map(f => f.yhat_lower),
+            backgroundColor: "rgba(242,101,35,0.1)",
+            borderColor: "rgba(242,101,35,0)",
+            fill: "-1",
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { position: "bottom" },
+          title: {
+            display: true,
+            text: `${type.charAt(0).toUpperCase() + type.slice(1)} Forecast`,
+            font: { size: 16 }
+          }
+        },
+        scales: {
+          x: { ticks: { maxTicksLimit: 12, autoSkip: true } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  } catch (err) {
+    console.error(`❌ Forecast error for ${type}:`, err);
+    document.getElementById(noteId).textContent = "⚠️ Forecast unavailable.";
+  }
+}
+
+// 🧮 Forecast Summary Cards Updater
+async function updateForecastSummaries() {
+  try {
+    const resSales = await fetch("/api/predict/sales?horizon=30");
+    const resBookings = await fetch("/api/predict/bookings?horizon=30");
+    const dataSales = await resSales.json();
+    const dataBookings = await resBookings.json();
+
+    console.log("Sales Forecast Data:", dataSales);
+    console.log("Bookings Forecast Data:", dataBookings);
+
+    // 💰 Projected Sales (next 30 days)
+    if (dataSales.success && dataSales.forecast?.length) {
+      const totalSales = dataSales.forecast.reduce((sum, f) => sum + (f.yhat || 0), 0);
+      document.getElementById("projectedSales").textContent =
+        `₱${totalSales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    } else {
+      document.getElementById("projectedSales").textContent = "₱0";
+    }
+
+    // 🧳 Projected Bookings (next 30 days)
+    if (dataBookings.success && dataBookings.forecast?.length) {
+      const totalBookings = dataBookings.forecast.reduce((sum, f) => sum + (f.yhat || 0), 0);
+      document.getElementById("projectedBookings").textContent =
+        Math.round(totalBookings).toLocaleString();
+    } else {
+      document.getElementById("projectedBookings").textContent = "0";
+    }
+
+    // 📈 Forecast Confidence
+    const avgMAPE = ((dataSales.mape || 0) + (dataBookings.mape || 0)) / 2;
+    const confidence =
+      avgMAPE <= 5 ? "✅ Excellent" :
+      avgMAPE <= 15 ? "🟧 Good" :
+      "🔴 Needs Improvement";
+
+    document.getElementById("forecastConfidence").textContent = confidence;
+  } catch (err) {
+    console.error("❌ Summary update failed:", err);
+  }
+}
+
+// 🏁 Load Everything When Page Loads
+window.addEventListener("DOMContentLoaded", async () => {
+  const horizon = 180; // 6 months
+
+  await loadForecast("sales", "salesForecastChart", "salesForecastAccuracy", "salesForecastNote", horizon);
+  await loadForecast("users", "userForecastChart", "userForecastAccuracy", "userForecastNote", horizon);
+  await loadForecast("bookings", "bookingForecastChart", "bookingForecastAccuracy", "bookingForecastNote", horizon);
+
+  // Update summary cards after main charts finish loading
+  updateForecastSummaries();
+});
+</script>
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const horizon = 180; // 6 months
+  loadForecast("sales", "salesForecastChart", "salesForecastAccuracy", "salesForecastNote", horizon);
+  loadForecast("users", "userForecastChart", "userForecastAccuracy", "userForecastNote", horizon);
+  loadForecast("bookings", "bookingForecastChart", "bookingForecastAccuracy", "bookingForecastNote", horizon);
+});
+async function loadForecast(metric, chartId, accuracyId, noteId, horizon) {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        series: await getTimeSeries(metric),
+        horizon: horizon
+      })
+    });
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error || "Forecast failed.");
+
+    document.getElementById(accuracyId).textContent = `MAPE: ${data.mape}% | RMSE: ${data.rmse}`;
+    document.getElementById(noteId).textContent = `${data.trend_note} ${data.seasonality_note}`;
+    
+    // 🔹 Update summary cards if they exist
+    if (metric === "sales") {
+      document.getElementById("projectedTotalSales").textContent = 
+        "₱" + Math.round(data.forecast.slice(-30).reduce((a, b) => a + b.yhat, 0)).toLocaleString();
+      document.getElementById("salesGrowthNote").textContent = data.trend_note || "Stable sales";
+    }
+    if (metric === "bookings") {
+      document.getElementById("projectedTotalBookings").textContent =
+        Math.round(data.forecast.slice(-30).reduce((a, b) => a + b.yhat, 0));
+      document.getElementById("bookingsTrendNote").textContent = data.trend_note || "Stable bookings";
+    }
+    if (metric === "users") {
+      document.getElementById("projectedTotalUsers").textContent =
+        Math.round(data.forecast.slice(-30).reduce((a, b) => a + b.yhat, 0)) + " new";
+      document.getElementById("userGrowthNote").textContent = data.trend_note || "Stable user growth";
+    }
+
+    renderForecastChart(chartId, data.forecast);
+  } catch (err) {
+    console.error("Forecast error:", err);
+    document.getElementById(noteId).textContent = "❌ Forecast unavailable";
+  }
+}
+
+
+async function getTimeSeries(metric) {
+  const res = await fetch(`/api/timeseries/${metric}`); // You’ll need to create this route in app.js
+  return await res.json();
+}
+
+function renderForecastChart(chartId, forecast) {
+  const ctx = document.getElementById(chartId).getContext("2d");
+  const labels = forecast.map(f => f.ds);
+  const values = forecast.map(f => f.yhat);
+  
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Forecast",
+        data: values,
+        borderColor: "#f26523",
+        fill: false,
+        tension: 0.3
+      }]
+    }
+  });
+}
+
+</script>
+
+<script>
+// ===============================================
+// 📈 ADVANCED AI DASHBOARD CHARTS & INSIGHTS
+// ===============================================
+
+// Reuse Chart.js
+const chartColors = {
+  sales: '#f97316',
+  bookings: '#2563eb',
+  users: '#16a34a'
+};
+
+// Helper: Create Chart
+function makeChart(ctxId, label, labels, data, color) {
+  const ctx = document.getElementById(ctxId).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data,
+        borderColor: color,
+        backgroundColor: color + '33',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }},
+      scales: {
+        x: { ticks: { color: '#555' }},
+        y: { ticks: { color: '#555' }}
+      }
+    }
+  });
+}
+
+// ------------------------------------------------
+// 🧠 Load AI Insights (Recommendations + Top Tours)
+// ------------------------------------------------
+async function loadAIInsights() {
+  try {
+    const res = await fetch("/api/admin/tours-performance");
+    const tourData = await res.json();
+
+    const response = await fetch("http://127.0.0.1:8000/insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tours: tourData })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      document.getElementById("aiRecommendations").innerHTML =
+        data.recommendations.map(r => `<p>${r}</p>`).join("");
+      buildTopTourCharts(data.summary.top_revenue_tours);
+      updateEmergingDecliningTours(data);
+    }
+  } catch (err) {
+    console.error("AI Insights Error:", err);
+  }
+}
+// Parse Emerging and Declining Tours from recommendations
+function updateEmergingDecliningTours(data) {
+  const emergingMatch = data.recommendations.find(r => r.includes("🌱 Emerging Tours"));
+  const decliningMatch = data.recommendations.find(r => r.includes("⚠️ Underperforming Tours"));
+
+  const emergingTours = emergingMatch
+    ? emergingMatch.replace("🌱 Emerging Tours (rapid growth): ", "").split(", ")
+    : [];
+  const decliningTours = decliningMatch
+    ? decliningMatch.replace("⚠️ Underperforming Tours: ", "").split(", ")
+    : [];
+
+  const emergingEl = document.getElementById("emergingToursList");
+  const decliningEl = document.getElementById("decliningToursList");
+
+  emergingEl.innerHTML = emergingTours.length
+    ? emergingTours.map(t => `<li>${t}</li>`).join("")
+    : "<li>No emerging tours found</li>";
+
+  decliningEl.innerHTML = decliningTours.length
+    ? decliningTours.map(t => `<li>${t}</li>`).join("")
+    : "<li>No declining tours found</li>";
+}
+
+// ------------------------------------------------
+// 🧩 Build Charts: Top Tours & Emerging/Declining
+// ------------------------------------------------
+function buildTopTourCharts(topTours) {
+  if (!topTours || !topTours.length) return;
+
+  // Top 5 Tours Bar Chart
+  const ctxTop = document.getElementById("topToursChart").getContext("2d");
+  new Chart(ctxTop, {
+    type: "bar",
+    data: {
+      labels: topTours.map(t => t.title || t.tourId),
+      datasets: [{
+        label: "Revenue (₱)",
+        data: topTours.map(t => t.revenue),
+        backgroundColor: "#d55a1f99",
+        borderColor: "#d55a1f",
+        borderWidth: 1
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false }},
+      scales: {
+        x: { ticks: { color: "#333" }},
+        y: { ticks: { color: "#333" }}
+      }
+    }
+  });
+}
+
+// ------------------------------------------------
+// 📊 Combined Growth Chart (Sales vs Bookings)
+// ------------------------------------------------
+async function buildGrowthComparison() {
+  try {
+    const res = await fetch("/api/admin/metrics-growth");
+    const growth = await res.json(); // { months: [], sales: [], bookings: [] }
+
+    new Chart(document.getElementById("growthComparisonChart"), {
+      type: "line",
+      data: {
+        labels: growth.months,
+        datasets: [
+          {
+            label: "Sales",
+            data: growth.sales,
+            borderColor: chartColors.sales,
+            fill: false
+          },
+          {
+            label: "Bookings",
+            data: growth.bookings,
+            borderColor: chartColors.bookings,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "bottom" }},
+        scales: {
+          x: { ticks: { color: "#333" }},
+          y: { ticks: { color: "#333" }}
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Growth Chart Error:", err);
+  }
+}
+
+// ------------------------------------------------
+// 🌤 Seasonal Demand Forecast (AI via /predict)
+// ------------------------------------------------
+async function buildSeasonalForecast() {
+  try {
+    const res = await fetch("/api/admin/seasonal-data");
+    const dataset = await res.json(); // [{ ds, y }]
+    const response = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ series: dataset, horizon: 365 })
+    });
+    const forecast = await response.json();
+    if (forecast.success) {
+      const labels = forecast.forecast.map(f => f.ds);
+      const values = forecast.forecast.map(f => f.yhat);
+      makeChart("seasonalDemandChart", "Forecasted Demand", labels, values, "#10b981");
+    }
+  } catch (err) {
+    console.error("Seasonal Forecast Error:", err);
+  }
+}
+// ------------------------------------------------
+// 👥 User Growth Chart (Historical + Predictive)
+// ------------------------------------------------
+async function buildUserGrowthChart() {
+  try {
+    const res = await fetch("/api/admin/user-growth");
+    const data = await res.json();
+
+    // Send user data to FastAPI for predictive forecast
+    const series = data.months.map((m, i) => ({
+      ds: m + "-01", // convert YYYY-MM → YYYY-MM-01
+      y: data.counts[i]
+    }));
+
+    const forecastRes = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ series, horizon: 90 })
+    });
+    const forecastData = await forecastRes.json();
+
+    if (forecastData.success) {
+      const labels = forecastData.forecast.map(f => f.ds);
+      const values = forecastData.forecast.map(f => f.yhat);
+
+      makeChart("timeBasedUsersChart", "User Signups (Forecasted)", labels, values, "#16a34a");
+
+      // Update insight cards
+      document.getElementById("projectedTotalUsers").textContent =
+        Math.round(values.slice(-30).reduce((a, b) => a + b, 0)) + " new";
+      document.getElementById("userGrowthNote").textContent =
+        forecastData.trend_note || "Stable user trend";
+    }
+  } catch (err) {
+    console.error("User Growth Chart Error:", err);
+  }
+}
+// ------------------------------------------------
+// 🔁 User Retention Chart (Historical + Predictive)
+// ------------------------------------------------
+async function buildUserRetentionChart() {
+  try {
+    const res = await fetch("/api/admin/user-retention");
+    const data = await res.json();
+
+    // Draw retention chart
+    const ctx = document.getElementById("userRetentionChart").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.months,
+        datasets: [
+          {
+            label: "User Retention (%)",
+            data: data.retentionRate,
+            borderColor: "#8b5cf6",
+            backgroundColor: "#8b5cf633",
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false }},
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: { display: true, text: "Retention %" },
+            ticks: { color: "#555" }
+          },
+          x: { ticks: { color: "#555" }}
+        }
+      }
+    });
+
+    // ✅ Calculate & display forecast confidence
+    const latestRetention = data.retentionRate.slice(-1)[0];
+    const confidenceText = `${latestRetention.toFixed(1)}% Active Users`;
+
+    // Update both summary and AI cards if they exist
+    ["forecastConfidenceAI", "forecastConfidenceSummary"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = confidenceText;
+    });
+
+    // Add descriptive note based on confidence level
+    const confidenceNote = document.getElementById("confidenceNote");
+    if (confidenceNote) {
+      confidenceNote.textContent =
+        latestRetention >= 80
+          ? "💎 Excellent user loyalty"
+          : latestRetention >= 60
+          ? "🟢 Good retention — keep engagement"
+          : "🔴 Needs improvement — many users drop off";
+    }
+
+  } catch (err) {
+    console.error("User Retention Chart Error:", err);
+
+    // Graceful fallback for UI
+    ["forecastConfidenceAI", "forecastConfidenceSummary"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = "N/A";
+    });
+
+    const note = document.getElementById("confidenceNote");
+    if (note) note.textContent = "⚠️ Unable to compute forecast confidence.";
+  }
+}
+
+// ------------------------------------------------
+// 👥 Load User Engagement Summary
+// ------------------------------------------------
+async function loadUserEngagement() {
+  try {
+    const res = await fetch("/api/admin/user-engagement");
+    const data = await res.json();
+
+    document.getElementById("activeUsers7").textContent = data.active7Days;
+    document.getElementById("activeUsers30").textContent = data.active30Days;
+    document.getElementById("retentionRate").textContent = data.retentionRate + "%";
+  } catch (err) {
+    console.error("User Engagement Summary Error:", err);
+    document.getElementById("activeUsers7").textContent = "Error";
+    document.getElementById("activeUsers30").textContent = "Error";
+    document.getElementById("retentionRate").textContent = "--";
+  }
+}
+// ------------------------------------------------
+// 📊 User Engagement Trend Chart
+// ------------------------------------------------
+async function buildUserEngagementTrend() {
+  try {
+    const res = await fetch("/api/admin/user-engagement-trend");
+    const data = await res.json();
+
+    const ctx = document.getElementById("userEngagementTrendChart").getContext("2d");
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: data.months,
+        datasets: [
+          {
+            type: "bar",
+            label: "Active Users",
+            data: data.active,
+            backgroundColor: "#16a34a88",
+            borderColor: "#16a34a",
+            borderWidth: 1,
+            yAxisID: "y"
+          },
+          {
+            type: "line",
+            label: "Retention Rate (%)",
+            data: data.retention,
+            borderColor: "#8b5cf6",
+            backgroundColor: "#8b5cf633",
+            yAxisID: "y1",
+            tension: 0.3,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: "index", intersect: false },
+        stacked: false,
+        plugins: {
+          legend: { position: "bottom" },
+          title: { display: false }
+        },
+        scales: {
+          y: {
+            type: "linear",
+            position: "left",
+            title: { display: true, text: "Active Users" },
+            ticks: { color: "#444" }
+          },
+          y1: {
+            type: "linear",
+            position: "right",
+            title: { display: true, text: "Retention (%)" },
+            min: 0,
+            max: 100,
+            grid: { drawOnChartArea: false },
+            ticks: { color: "#8b5cf6" }
+          },
+          x: {
+            ticks: { color: "#555" }
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error("User Engagement Trend Error:", err);
+  }
+}
+// ------------------------------------------------
+// 👥 Load User Activity Insights
+// ------------------------------------------------
+async function loadUserActivity() {
+  try {
+    const res = await fetch("/api/admin/user-activity");
+    const data = await res.json();
+
+    document.getElementById("activityTotalUsers").textContent = data.totalUsers;
+    document.getElementById("activityActiveCount").textContent = data.activeCount;
+    document.getElementById("activityInactiveCount").textContent = data.inactiveCount;
+
+    const activeList = document.getElementById("mostActiveUsers");
+    const inactiveList = document.getElementById("inactiveUsers");
+
+    activeList.innerHTML = data.activeUsers.length
+      ? data.activeUsers.map(u =>
+          `<li>${u.firstName || ''} ${u.lastName || ''} — <small>${u.email}</small><br><em>Last active: ${new Date(u.lastActiveAt).toLocaleString()}</em></li>`
+        ).join("")
+      : "<li>No recent active users</li>";
+
+    inactiveList.innerHTML = data.inactiveUsers.length
+      ? data.inactiveUsers.map(u =>
+          `<li>${u.firstName || ''} ${u.lastName || ''} — <small>${u.email}</small><br><em>Last active: ${new Date(u.lastActiveAt).toLocaleDateString()}</em></li>`
+        ).join("")
+      : "<li>All users active recently 🎉</li>";
+
+  } catch (err) {
+    console.error("User Activity Insights Error:", err);
+  }
+}
+window.addEventListener("DOMContentLoaded", async () => {
+  await loadAIInsights();
+  await buildGrowthComparison();
+  await buildSeasonalForecast();
+  await buildUserGrowthChart();
+  await buildUserRetentionChart();
+  await loadUserEngagement();
+  await buildUserEngagementTrend();
+  await loadUserActivity();
+});
+
+
 </script>
 
 </body>
