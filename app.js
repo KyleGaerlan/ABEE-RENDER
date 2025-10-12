@@ -6944,6 +6944,26 @@ app.post("/api/ml-forecast", async (req, res) => {
     res.status(500).json({ error: "Failed to get forecast" });
   }
 });
+app.get("/test-ml", async (req, res) => {
+  try {
+    const { getForecast } = require("./utils/forecast");
+
+    const series = [
+      { ds: "2024-01-01", y: 120 },
+      { ds: "2024-01-02", y: 130 },
+      { ds: "2024-01-03", y: 125 },
+      { ds: "2024-01-04", y: 140 },
+      { ds: "2024-01-05", y: 135 },
+      { ds: "2024-01-06", y: 145 }
+    ];
+
+    const result = await getForecast(series);
+    res.json(result);
+  } catch (err) {
+    console.error("❌ Error testing FastAPI:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 🚫 This must stay at the very bottom
 app.use((req, res) => {
