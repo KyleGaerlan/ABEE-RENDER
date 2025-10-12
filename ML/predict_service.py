@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import hashlib
 import json
 
+
 app = FastAPI(title="Forecast & Insights API", version="3.1")
 
 # ------------------------
@@ -98,14 +99,19 @@ def run_forecast(data: Series) -> dict:
     df["month"] = df["ds"].dt.month
     df["day_of_week"] = df["ds"].dt.dayofweek
 
+   # ✅ Build Prophet model (simpler and more flexible)
     model = Prophet(
-        seasonality_mode='additive',
         yearly_seasonality=True,
         weekly_seasonality=True,
-        daily_seasonality=False
+        daily_seasonality=False,  # fewer data points benefit from simpler models
+        changepoint_prior_scale=0.3,  # allow more flexible trend shifts
+        seasonality_mode='additive'
     )
+
+    # ✅ Include month and day_of_week as regressors to help capture seasonal effects
     model.add_regressor("month")
     model.add_regressor("day_of_week")
+
 
     model.fit(df)
 
