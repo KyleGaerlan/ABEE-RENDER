@@ -24,6 +24,8 @@ const PageView = require('./models/PageView');
 const Contact = require('./models/Contact');
 const validator = require('validator');
 const axios = require('axios');
+const updateLastActive = require("./middleware/updateLastActive");
+const PYTHON_API = "http://localhost:8000";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +60,7 @@ app.use(session({
         collection: 'sessions'
     })
 }));
+app.use(updateLastActive);
 const checkAdminAuth = (req, res, next) => {
     if (!req.session || !req.session.admin) {
         const isApiRequest = req.path.startsWith('/api/');
@@ -968,44 +971,57 @@ app.get('/api/employee-performance', checkAdminAuth, checkRole(['admin', 'employ
 });
 // ✅ Update booking status (used by admin-bookings.ejs)
 app.patch('/api/admin/bookings/:id/status', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
-    try {
-        const { status } = req.body;
-        const bookingId = req.params.id;
+  try {
+    const { status } = req.body;
+    const bookingId = req.params.id;
+    const adminId = req.session.admin?._id || req.session.admin?.id; // support both
 
-        if (!['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
-            return res.status(400).json({ success: false, message: 'Invalid status' });
-        }
-
-        const booking = await Booking.findById(bookingId);
-        if (!booking) {
-            return res.status(404).json({ success: false, message: 'Booking not found' });
-        }
-
-        // Update status
-        booking.status = status;
-        if (status === 'confirmed') booking.confirmedBy = req.session.admin.id;
-        if (status === 'completed') booking.completedBy = req.session.admin.id;
-        booking.updatedAt = new Date();
-        await booking.save();
-
-        // ✅ Send notification email
-        await sendBookingStatusEmail(booking.email, booking, status);
-
-        res.json({
-            success: true,
-            message: `Booking updated to ${status} and email sent.`,
-            booking
-        });
-
-        console.log(`📩 Email sent for booking ${bookingId} (${status})`);
-    } catch (error) {
-        console.error('❌ Error updating booking status:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while updating booking status'
-        });
+    // Validate status input
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
     }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // ✅ Record the status change in history
+    booking.status = status;
+    booking.statusChangeHistory.push({
+      status,
+      updatedBy: adminId,
+      updatedAt: new Date()
+    });
+
+    // ✅ Record admin who performed each action
+    if (status === 'confirmed') booking.confirmedBy = adminId;
+    if (status === 'completed') booking.completedBy = adminId;
+    if (status === 'cancelled') booking.cancelledBy = adminId;
+
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    // ✅ Send notification email to user
+    await sendBookingStatusEmail(booking.email, booking, status);
+
+    res.json({
+      success: true,
+      message: `Booking updated to ${status} and recorded in history.`,
+      booking
+    });
+
+    console.log(`📩 Booking ${booking.bookingId || bookingId} updated (${status}) by admin ${adminId}`);
+  } catch (error) {
+    console.error('❌ Error updating booking status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating booking status'
+    });
+  }
 });
+
 
 app.post('/api/bookings/:id/confirm', checkAdminAuth, async (req, res) => {
     try {
@@ -1567,7 +1583,507 @@ app.get("/api/forecast/:type", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+async function getTimeSeries(metric) {
+  let pipeline = [];
+  let collection;
 
+  switch (metric) {
+    case "sales":
+      collection = Booking;
+      pipeline = [
+        { $match: { status: { $ne: "cancelled" }, archived: false } },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              day: { $dayOfMonth: "$createdAt" },
+            },
+            total: { $sum: "$totalAmount" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            ds: {
+              $dateFromParts: {
+                year: "$_id.year",
+                month: "$_id.month",
+                day: "$_id.day",
+              },
+            },
+            y: "$total",
+          },
+        },
+        { $sort: { ds: 1 } },
+      ];
+      break;
+
+    case "bookings":
+      collection = Booking;
+      pipeline = [
+        { $match: { archived: false } },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              day: { $dayOfMonth: "$createdAt" },
+            },
+            total: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            ds: {
+              $dateFromParts: {
+                year: "$_id.year",
+                month: "$_id.month",
+                day: "$_id.day",
+              },
+            },
+            y: "$total",
+          },
+        },
+        { $sort: { ds: 1 } },
+      ];
+      break;
+
+    case "users":
+      collection = User;
+      pipeline = [
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              day: { $dayOfMonth: "$createdAt" },
+            },
+            total: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            ds: {
+              $dateFromParts: {
+                year: "$_id.year",
+                month: "$_id.month",
+                day: "$_id.day",
+              },
+            },
+            y: "$total",
+          },
+        },
+        { $sort: { ds: 1 } },
+      ];
+      break;
+
+    default:
+      throw new Error("Invalid metric type");
+  }
+
+  const result = await collection.aggregate(pipeline);
+  return result.map(item => ({
+    ds: item.ds,
+    y: item.y,
+  }));
+}
+// =============================================
+// 🔮 FORECAST ENDPOINT (REAL DATA VERSION)
+// =============================================
+app.get("/api/analytics/forecast/:metric", async (req, res) => {
+  const { metric } = req.params;
+
+  try {
+    const series = await getTimeSeries(metric);
+
+    if (!series || series.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: `Not enough ${metric} data for forecasting.`,
+      });
+    }
+
+    // Send to Python API
+    const response = await axios.post(`${PYTHON_API}/predict`, {
+      series,
+      horizon: 90,
+      freq: "D",
+    });
+
+    res.json({
+      ...response.data,
+      count: series.length,
+      metric,
+    });
+  } catch (err) {
+    console.error(`❌ ${metric.toUpperCase()} Forecast Error:`, err.message);
+    res.status(500).json({
+      success: false,
+      message: `Failed to forecast ${metric}`,
+      error: err.message,
+    });
+  }
+});
+
+app.post("/api/analytics/forecast/batch", async (req, res) => {
+  const { datasets } = req.body;
+
+  if (!datasets || Object.keys(datasets).length === 0) {
+    return res.status(400).json({ success: false, message: "No datasets provided" });
+  }
+
+  try {
+    const response = await axios.post(`${PYTHON_API}/batch-predict`, { datasets });
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ Batch Forecast API error:", err.message);
+    res.status(500).json({ success: false, message: "Batch Forecast API unavailable", error: err.message });
+  }
+});
+
+// ----------------------------
+// AI Insights (Top & Emerging Tours)
+// ----------------------------
+app.post("/api/analytics/insights", async (req, res) => {
+  const { tours } = req.body;
+
+  if (!tours || tours.length === 0) {
+    return res.status(400).json({ success: false, message: "No tour data provided" });
+  }
+
+  try {
+    const response = await axios.post(`${PYTHON_API}/insights`, { tours });
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ Insights API error:", err.message);
+    res.status(500).json({ success: false, message: "Insights API unavailable", error: err.message });
+  }
+});
+// ============================================
+// 🧠 /api/admin/tours-performance
+// ============================================
+app.get("/api/admin/tours-performance", async (req, res) => {
+  try {
+    const tours = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$tourDetails.title",
+          title: { $first: "$tourDetails.title" },
+          bookings: { $sum: 1 },
+          revenue: { $sum: "$totalAmount" },
+          createdAt: { $first: "$createdAt" }
+        }
+      },
+      { $sort: { revenue: -1 } }
+    ]);
+
+    res.json(
+      tours.map(t => ({
+        tourId: t._id,
+        title: t.title,
+        bookings: t.bookings,
+        revenue: t.revenue,
+        createdAt: t.createdAt
+      }))
+    );
+  } catch (err) {
+    console.error("❌ Error fetching tour performance:", err);
+    res.status(500).json({ error: "Failed to load tour performance data" });
+  }
+});
+
+// ============================================
+// 📈 /api/admin/metrics-growth
+// ============================================
+app.get("/api/admin/metrics-growth", async (req, res) => {
+  try {
+    const monthly = await Booking.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          totalSales: { $sum: "$totalAmount" },
+          totalBookings: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    res.json({
+      months: monthly.map(m => m._id),
+      sales: monthly.map(m => m.totalSales),
+      bookings: monthly.map(m => m.totalBookings)
+    });
+  } catch (err) {
+    console.error("❌ Error fetching metrics growth:", err);
+    res.status(500).json({ error: "Failed to load metrics growth" });
+  }
+});
+// ============================================
+// ☀️ /api/admin/seasonal-data
+// ============================================
+app.get("/api/admin/seasonal-data", async (req, res) => {
+  try {
+    const dailySales = await Booking.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          y: { $sum: "$totalAmount" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    const formatted = dailySales.map(d => ({
+      ds: d._id,
+      y: d.y
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("❌ Error fetching seasonal data:", err);
+    res.status(500).json({ error: "Failed to load seasonal data" });
+  }
+});
+// ============================================
+// 👥 /api/admin/user-growth
+// ============================================
+app.get("/api/admin/user-growth", async (req, res) => {
+  try {
+    const monthlyUsers = await User.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    res.json({
+      months: monthlyUsers.map(u => u._id),
+      counts: monthlyUsers.map(u => u.count)
+    });
+  } catch (err) {
+    console.error("❌ Error fetching user growth:", err);
+    res.status(500).json({ error: "Failed to load user growth data" });
+  }
+});
+// ============================================
+// 🔁 /api/admin/user-retention
+// ============================================
+// Calculates user retention by tracking returning users each month.
+app.get("/api/admin/user-retention", async (req, res) => {
+  try {
+    const monthlyRetention = await User.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$lastActiveAt" } },
+          activeUsers: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    const signupUsers = await User.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          newUsers: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const retentionMap = {};
+    signupUsers.forEach(s => (retentionMap[s._id] = { newUsers: s.newUsers, activeUsers: 0 }));
+
+    monthlyRetention.forEach(r => {
+      if (!retentionMap[r._id]) retentionMap[r._id] = { newUsers: 0, activeUsers: 0 };
+      retentionMap[r._id].activeUsers = r.activeUsers;
+    });
+
+    const months = Object.keys(retentionMap).sort();
+    const retentionRate = months.map(m => {
+      const d = retentionMap[m];
+      return d.newUsers ? (d.activeUsers / d.newUsers) * 100 : 0;
+    });
+
+    res.json({ months, retentionRate });
+  } catch (err) {
+    console.error("❌ Error fetching user retention:", err);
+    res.status(500).json({ error: "Failed to load user retention data" });
+  }
+});
+app.get("/api/admin/user-engagement", async (req, res) => {
+  try {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    const totalUsers = await User.countDocuments();
+
+    const active7Days = await User.countDocuments({ lastActiveAt: { $gte: sevenDaysAgo } });
+    const active30Days = await User.countDocuments({ lastActiveAt: { $gte: thirtyDaysAgo } });
+
+    const retentionRate = totalUsers ? ((active30Days / totalUsers) * 100).toFixed(1) : 0;
+
+    res.json({
+      totalUsers,
+      active7Days,
+      active30Days,
+      retentionRate: Number(retentionRate)
+    });
+  } catch (err) {
+    console.error("❌ Error fetching user engagement summary:", err);
+    res.status(500).json({ error: "Failed to load user engagement summary" });
+  }
+});
+// ============================================
+// 📈 /api/admin/user-engagement-trend
+// ============================================
+// Provides historical monthly active user counts + retention rate
+app.get("/api/admin/user-engagement-trend", async (req, res) => {
+  try {
+    const monthlyActive = await User.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$lastActiveAt" } },
+          activeUsers: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    const monthlyNewUsers = await User.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          newUsers: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Match retention (active / total users)
+    const map = {};
+    monthlyNewUsers.forEach(n => (map[n._id] = { newUsers: n.newUsers, activeUsers: 0 }));
+
+    monthlyActive.forEach(a => {
+      if (!map[a._id]) map[a._id] = { newUsers: 0, activeUsers: 0 };
+      map[a._id].activeUsers = a.activeUsers;
+    });
+
+    const months = Object.keys(map).sort();
+    const active = months.map(m => map[m].activeUsers);
+    const retention = months.map(m => {
+      const { newUsers, activeUsers } = map[m];
+      return newUsers ? (activeUsers / newUsers) * 100 : 0;
+    });
+
+    res.json({ months, active, retention });
+  } catch (err) {
+    console.error("❌ Error fetching engagement trend:", err);
+    res.status(500).json({ error: "Failed to load engagement trend data" });
+  }
+});
+app.get("/api/admin/user-activity", async (req, res) => {
+  try {
+    const now = new Date();
+    const weekAgo = new Date();
+    weekAgo.setDate(now.getDate() - 7);
+    const monthAgo = new Date();
+    monthAgo.setDate(now.getDate() - 30);
+
+    // Fetch active users in last 7 days
+    const activeUsers = await User.find({ lastActiveAt: { $gte: weekAgo } })
+      .sort({ lastActiveAt: -1 })
+      .limit(10)
+      .select("firstName lastName email lastActiveAt");
+
+    // Fetch users inactive for 30+ days
+    const inactiveUsers = await User.find({ lastActiveAt: { $lt: monthAgo } })
+      .sort({ lastActiveAt: 1 })
+      .limit(10)
+      .select("firstName lastName email lastActiveAt");
+
+    const totalUsers = await User.countDocuments();
+    const activeCount = await User.countDocuments({ lastActiveAt: { $gte: weekAgo } });
+    const inactiveCount = await User.countDocuments({ lastActiveAt: { $lt: monthAgo } });
+
+    res.json({
+      totalUsers,
+      activeCount,
+      inactiveCount,
+      activeUsers,
+      inactiveUsers
+    });
+  } catch (err) {
+    console.error("❌ Error fetching user activity summary:", err);
+    res.status(500).json({ error: "Failed to load user activity summary" });
+  }
+});
+// ===========================================
+// 📊 Generate Time Series Data for Forecasts
+// ===========================================
+app.get("/api/timeseries/:metric", async (req, res) => {
+  try {
+    const { metric } = req.params;
+    let data = [];
+
+    if (metric === "sales") {
+      // 💰 Total sales per day
+      data = await Booking.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            y: { $sum: "$totalAmount" }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { _id: 0, ds: "$_id", y: 1 } }
+      ]);
+    } 
+    
+    else if (metric === "bookings") {
+      // 🧳 Number of bookings per day
+      data = await Booking.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            y: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { _id: 0, ds: "$_id", y: 1 } }
+      ]);
+    } 
+    
+    else if (metric === "users") {
+      // 👥 New users per day
+      const users = await User.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            y: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { _id: 0, ds: "$_id", y: 1 } }
+      ]);
+      data = users;
+    }
+
+    console.log(`📊 Timeseries for ${metric}:`, data.slice(0, 5)); // check your console
+    res.json(data);
+
+  } catch (err) {
+    console.error("❌ Error generating timeseries:", err);
+    res.status(500).json({ error: "Failed to generate timeseries data" });
+  }
+});
 
 app.post('/api/admin/forgot-password', async (req, res) => {
     const { email, role } = req.body;
@@ -2142,179 +2658,210 @@ app.delete('/delete-account', async (req, res) => {
     }
 });
 app.post('/submit-booking', isAuthenticated, async (req, res) => {
-    try {
-        console.log('Booking submission received:', req.body);
-        
-        const {
-            tourId,
-            fullName,
-            email,
-            phone,
-            nationality,
-            travelers,
-            startDate,
-            specialRequests,
-            paymentMethod,
-            paymentId,
-            receiptUrl,
-            totalAmount,
-            budget,
-            endDate,
-            middleInitial,
-            suffix,
-            country
-        } = req.body;
-        
-        if (!tourId || !fullName || !email || !phone || !travelers || !startDate || !paymentMethod) {
-            return res.status(400).json({
-                success: false,
-                message: 'Missing required fields'
-            });
-        }
-        
-        if (paymentMethod === 'gcash' && !receiptUrl) {
-            return res.status(400).json({
-                success: false,
-                message: 'Receipt upload is required for GCash payments'
-            });
-        }
-        
-        const tour = await Tour.findById(tourId);
-        if (!tour) {
-            return res.status(404).json({
-                success: false,
-                message: 'Tour not found'
-            });
-        }
-        
-        const booking = new Booking({
-            userId: req.session.user.id,
-            tourId: tourId,
-            fullName: fullName,
-            email: email,
-            phone: phone,
-            nationality: nationality,
-            travelers: parseInt(travelers),
-            startDate: new Date(startDate),
-            endDate: endDate ? new Date(endDate) : new Date(startDate), 
-            budget: budget || totalAmount,
-            specialRequests: specialRequests,
-            paymentMethod: paymentMethod,
-            paymentId: paymentId,
-            receiptUrl: receiptUrl,
-            totalAmount: typeof totalAmount === 'string' ? 
-                parseFloat(totalAmount.replace(/,/g, '')) : 
-                parseFloat(totalAmount),
-            status: paymentMethod === 'paypal' ? 'confirmed' : 'pending',
-            destination: tour.destination,
-            country: tour.country, // Added country field
-            middleInitial: middleInitial,
-            suffix: suffix,
-            tourDetails: {
-                title: tour.title,
-                destination: tour.destination,
-                country: tour.country, // Added country field to tourDetails
-                duration: tour.duration,
-                durationUnit: tour.durationUnit,
-                price: tour.price
-            }
-        });
-        
-        console.log('Saving booking:', booking);
-        await booking.save();
-        console.log('Booking saved successfully with ID:', booking.bookingId);
+  try {
+    console.log('Booking submission received:', req.body);
 
-        
-        let paymentDetails = '';
-        if (paymentMethod === 'paypal') {
-            paymentDetails = '<p><strong>Payment Status:</strong> Confirmed via PayPal</p>';
-        } else if (paymentMethod === 'gcash') {
-            paymentDetails = `
-                <p><strong>Payment Status:</strong> Pending verification</p>
-                <p>We have received your GCash payment receipt and will verify it shortly.</p>
-            `;
-        } else if (paymentMethod === 'store') {
-            paymentDetails = `
-                <div style="background-color: #fff3cd; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #ffc107;">
-                    <p><strong>Important:</strong> Please visit our office within 8 hours to complete your payment:</p>
-                    <p>A.BEE Travel and Tours<br>
-                    Ground Level, Robinsons Townville, H. Concepcion., Cabanatuan City<br>
-                    Business Hours: Monday-Friday, 9:00 AM - 5:00 PM<br>
-                    Contact: (044) 604 7273</p>
-                    <p><strong>Your booking will automatically be cancelled if payment is not received within 8 hours.</strong></p>
-                </div>
-            `;
-        }
-        
-        try {
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: "Your Tour Booking Confirmation",
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-                        <h2 style="color: #f26523;">Booking Confirmation</h2>
-                        <p>Dear ${fullName},</p>
-                        <p>Thank you for booking with A.BEE Travel and Tours. Your booking has been ${paymentMethod === 'paypal' ? 'confirmed' : 'received'}.</p>
-                        
-                        <div style="background-color: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
-                            <h3 style="margin-top: 0;">Booking Details:</h3>
-                            <p><strong>Booking Reference:</strong> ${booking.bookingId}</p>
-                            <p><strong>Tour:</strong> ${tour.title}</p>
-                            <p><strong>Destination:</strong> ${tour.destination}, ${tour.country || 'N/A'}</p>
-                            <p><strong>Start Date:</strong> ${new Date(startDate).toLocaleDateString()}</p>
-                            <p><strong>Duration:</strong> ${tour.duration} ${tour.durationUnit}</p>
-                            <p><strong>Number of Travelers:</strong> ${travelers}</p>
-                            <p><strong>Total Amount:</strong> ₱${typeof booking.totalAmount === 'number' ? booking.totalAmount.toLocaleString() : booking.totalAmount}</p>
-                            <p><strong>Payment Method:</strong> ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</p>
-                            <p><strong>Booking Status:</strong> ${paymentMethod === 'paypal' ? 'Confirmed' : 'Pending'}</p>
-                        </div>
-                        
-                        ${paymentDetails}
-                        
-                        <p>If you have any questions or need to make changes to your booking, please contact us at:</p>
-                        <p>📞 (044) 604 7273 or 09361055665<br>
-                        📧 <a href="mailto:abeetravelandtours@gmail.com">abeetravelandtours@gmail.com</a></p>
-                        
-                        <p>Thank you for choosing A.BEE Travel and Tours!</p>
-                    </div>
-                `
-            });
-            console.log('Confirmation email sent');
-        } catch (emailError) {
-            console.error('Error sending confirmation email:', emailError);
-        }
-        
-        if (phone) {
-            try {
-                const smsMessage = `A.BEE Travel: Your booking for ${tour.title} to ${tour.destination}, ${tour.country || 'N/A'} has been ${paymentMethod === 'paypal' ? 'confirmed' : 'received'}. Ref: ${booking.bookingId}. For details, check your email.`;
-                
-                const smsResult = await sendSMS(phone, smsMessage);
-                
-                if (smsResult.success) {
-                    console.log('SMS notification sent successfully');
-                } else {
-                    console.warn('SMS notification failed:', smsResult.message);
-                }
-            } catch (smsError) {
-                console.error('Error sending SMS notification:', smsError);
-            }
-        }
-        
-        res.json({
-            success: true,
-            message: 'Booking submitted successfully',
-            bookingId: booking._id,
-            bookingReference: booking.bookingId
-        });
-        
-    } catch (error) {
-        console.error('Error submitting booking:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while processing your booking: ' + error.message
-        });
+    const {
+      tourId,
+      fullName,
+      email,
+      phone,
+      nationality,
+      travelers,
+      startDate,
+      specialRequests,
+      paymentMethod,
+      paymentId,
+      receiptUrl,
+      totalAmount,
+      budget,
+      endDate,
+      middleInitial,
+      suffix,
+      country,
+      travelerDetails // 👈 we now expect this as an array from the frontend
+    } = req.body;
+
+    if (!tourId || !fullName || !email || !phone || !travelers || !startDate || !paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
     }
+
+    if (paymentMethod === 'gcash' && !receiptUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Receipt upload is required for GCash payments'
+      });
+    }
+
+    const tour = await Tour.findById(tourId);
+    if (!tour) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tour not found'
+      });
+    }
+
+    // 🧩 Parse travelerDetails (sent from frontend as JSON or object array)
+    let parsedTravelerDetails = [];
+    try {
+      if (typeof travelerDetails === 'string') {
+        parsedTravelerDetails = JSON.parse(travelerDetails);
+      } else if (Array.isArray(travelerDetails)) {
+        parsedTravelerDetails = travelerDetails;
+      }
+    } catch (parseErr) {
+      console.warn('Could not parse traveler details:', parseErr);
+    }
+
+    if (!Array.isArray(parsedTravelerDetails) || parsedTravelerDetails.length !== parseInt(travelers)) {
+      return res.status(400).json({
+        success: false,
+        message: `Traveler details mismatch: expected ${travelers}, got ${parsedTravelerDetails.length}`
+      });
+    }
+
+    // ✅ Create the booking
+    const booking = new Booking({
+      userId: req.session.user.id,
+      tourId,
+      fullName,
+      email,
+      phone,
+      nationality,
+      travelers: parseInt(travelers),
+      travelerDetails: parsedTravelerDetails, // 👈 Save here
+      startDate: new Date(startDate),
+      endDate: endDate ? new Date(endDate) : new Date(startDate),
+      budget: budget || totalAmount,
+      specialRequests,
+      paymentMethod,
+      paymentId,
+      receiptUrl,
+      totalAmount: typeof totalAmount === 'string'
+        ? parseFloat(totalAmount.replace(/,/g, ''))
+        : parseFloat(totalAmount),
+      status: paymentMethod === 'paypal' ? 'confirmed' : 'pending',
+      destination: tour.destination,
+      country: tour.country,
+      middleInitial,
+      suffix,
+      tourDetails: {
+        title: tour.title,
+        destination: tour.destination,
+        country: tour.country,
+        duration: tour.duration,
+        durationUnit: tour.durationUnit,
+        price: tour.price
+      }
+    });
+
+    console.log('Saving booking:', booking);
+    await booking.save();
+    console.log('Booking saved successfully with ID:', booking.bookingId);
+
+    // ✅ Email setup (same as before)
+    let paymentDetails = '';
+    if (paymentMethod === 'paypal') {
+      paymentDetails = '<p><strong>Payment Status:</strong> Confirmed via PayPal</p>';
+    } else if (paymentMethod === 'gcash') {
+      paymentDetails = `
+        <p><strong>Payment Status:</strong> Pending verification</p>
+        <p>We have received your GCash payment receipt and will verify it shortly.</p>
+      `;
+    } else if (paymentMethod === 'store') {
+      paymentDetails = `
+        <div style="background-color: #fff3cd; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #ffc107;">
+          <p><strong>Important:</strong> Please visit our office within 8 hours to complete your payment:</p>
+          <p>A.BEE Travel and Tours<br>
+          Ground Level, Robinsons Townville, H. Concepcion., Cabanatuan City<br>
+          Business Hours: Monday-Friday, 9:00 AM - 5:00 PM<br>
+          Contact: (044) 604 7273</p>
+          <p><strong>Your booking will automatically be cancelled if payment is not received within 8 hours.</strong></p>
+        </div>
+      `;
+    }
+
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Your Tour Booking Confirmation",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+            <h2 style="color: #f26523;">Booking Confirmation</h2>
+            <p>Dear ${fullName},</p>
+            <p>Thank you for booking with A.BEE Travel and Tours. Your booking has been ${paymentMethod === 'paypal' ? 'confirmed' : 'received'}.</p>
+            
+            <div style="background-color: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
+              <h3 style="margin-top: 0;">Booking Details:</h3>
+              <p><strong>Booking Reference:</strong> ${booking.bookingId}</p>
+              <p><strong>Tour:</strong> ${tour.title}</p>
+              <p><strong>Destination:</strong> ${tour.destination}, ${tour.country || 'N/A'}</p>
+              <p><strong>Start Date:</strong> ${new Date(startDate).toLocaleDateString()}</p>
+              <p><strong>Duration:</strong> ${tour.duration} ${tour.durationUnit}</p>
+              <p><strong>Number of Travelers:</strong> ${travelers}</p>
+              <p><strong>Total Amount:</strong> ₱${typeof booking.totalAmount === 'number' ? booking.totalAmount.toLocaleString() : booking.totalAmount}</p>
+              <p><strong>Payment Method:</strong> ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</p>
+              <p><strong>Booking Status:</strong> ${paymentMethod === 'paypal' ? 'Confirmed' : 'Pending'}</p>
+            </div>
+
+            ${
+              parsedTravelerDetails && parsedTravelerDetails.length > 0
+                ? `<h3>Traveler Information</h3>
+                  <ul>${parsedTravelerDetails
+                    .map(
+                      (t, i) => `<li><strong>Traveler ${i + 1}:</strong> ${t.fullName} (${t.nationality || 'N/A'})</li>`
+                    )
+                    .join('')}</ul>`
+                : ''
+            }
+
+            ${paymentDetails}
+
+            <p>If you have any questions or need to make changes to your booking, please contact us at:</p>
+            <p>📞 (044) 604 7273 or 09361055665<br>
+            📧 <a href="mailto:abeetravelandtours@gmail.com">abeetravelandtours@gmail.com</a></p>
+
+            <p>Thank you for choosing A.BEE Travel and Tours!</p>
+          </div>
+        `
+      });
+      console.log('Confirmation email sent');
+    } catch (emailError) {
+      console.error('Error sending confirmation email:', emailError);
+    }
+
+    if (phone) {
+      try {
+        const smsMessage = `A.BEE Travel: Your booking for ${tour.title} to ${tour.destination}, ${tour.country || 'N/A'} has been ${paymentMethod === 'paypal' ? 'confirmed' : 'received'}. Ref: ${booking.bookingId}. For details, check your email.`;
+        const smsResult = await sendSMS(phone, smsMessage);
+
+        if (smsResult.success) {
+          console.log('SMS notification sent successfully');
+        } else {
+          console.warn('SMS notification failed:', smsResult.message);
+        }
+      } catch (smsError) {
+        console.error('Error sending SMS notification:', smsError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Booking submitted successfully',
+      bookingId: booking._id,
+      bookingReference: booking.bookingId
+    });
+  } catch (error) {
+    console.error('Error submitting booking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while processing your booking: ' + error.message
+    });
+  }
 });
 
 
@@ -2354,6 +2901,27 @@ app.get("/admin-logout", (req, res) => {
         }
         res.redirect("/admin");
     });
+});
+// ✅ Check if admin is still authenticated (used by admin-users.ejs and others)
+app.get('/api/admin/check-auth', (req, res) => {
+  try {
+    if (req.session && req.session.admin) {
+      return res.json({
+        isAuthenticated: true,
+        admin: {
+          id: req.session.admin._id || req.session.admin.id,
+          firstName: req.session.admin.firstName,
+          lastName: req.session.admin.lastName,
+          role: req.session.admin.role
+        }
+      });
+    } else {
+      return res.json({ isAuthenticated: false });
+    }
+  } catch (error) {
+    console.error('❌ Error checking admin auth:', error);
+    return res.status(500).json({ isAuthenticated: false });
+  }
 });
 
 app.post('/update-booking-status/:bookingId', (req, res) => {
@@ -3198,7 +3766,6 @@ app.post('/api/tours', checkAdminAuth, tourUpload.single('tourImage'), async (re
         });
     }
 });
-// Update the POST /api/tours endpoint
 app.post('/api/tours', checkAdminAuth, tourUpload.single('tourImage'), async (req, res) => {
     try {
         const {
@@ -3219,26 +3786,37 @@ app.post('/api/tours', checkAdminAuth, tourUpload.single('tourImage'), async (re
             promoStartDate,
             promoStartTime
         } = req.body;
-        
+
         if (!title || !description || !destination || !country || !price || !duration) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields'
             });
         }
-        
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
                 message: 'Tour image is required'
             });
         }
-        
-        // Process promotional settings
+
+        // ✅ Handle travel requirements (NEW)
+        const reqs = req.body.requirements || {};
+        const requirements = {
+            visaRequired: reqs.visaRequired === 'on' || reqs.visaRequired === true,
+            passportRequired: reqs.passportRequired === 'on' || reqs.passportRequired === true,
+            passportValidityMonths: parseInt(reqs.passportValidityMonths || 6),
+            travelInsuranceRequired: reqs.travelInsuranceRequired === 'on' || reqs.travelInsuranceRequired === true,
+            vaccinationRequired: reqs.vaccinationRequired === 'on' || reqs.vaccinationRequired === true,
+            otherRequirements: reqs.otherRequirements || ''
+        };
+
+        // 🕒 Process promotional settings
         let promoStartTime_dt = null;
         let promoEndTime_dt = null;
         let isPromo = false;
-        
+
         if (isPromoActive === 'on' || isPromoActive === true) {
             if (!promoDuration || !promoStartDate || !promoStartTime) {
                 return res.status(400).json({
@@ -3246,45 +3824,39 @@ app.post('/api/tours', checkAdminAuth, tourUpload.single('tourImage'), async (re
                     message: 'Promotional duration, start date, and start time are required for promotional tours'
                 });
             }
-            
-            // Create start time in Philippine timezone
+
             const startDateTimeString = `${promoStartDate}T${promoStartTime}:00`;
             promoStartTime_dt = new Date(startDateTimeString);
-            
-            // Calculate end time
+
             const durationMs = parseInt(promoDuration) * 24 * 60 * 60 * 1000;
             promoEndTime_dt = new Date(promoStartTime_dt.getTime() + durationMs);
-            
+
             isPromo = true;
         }
-        
+
+        // 📝 Handle arrays
         const processedHighlights = Array.isArray(highlights) ? highlights : highlights ? [highlights] : [];
         const processedInclusions = Array.isArray(inclusions) ? inclusions : inclusions ? [inclusions] : [];
         const processedExclusions = Array.isArray(exclusions) ? exclusions : exclusions ? [exclusions] : [];
-        
+
+        // 🗓️ Process itinerary
         let processedItinerary = [];
         if (itinerary) {
             if (Array.isArray(itinerary)) {
                 processedItinerary = itinerary;
             } else {
                 const itineraryData = {};
-                
                 Object.keys(req.body).forEach(key => {
                     if (key.startsWith('itinerary[')) {
                         const match = key.match(/itinerary\[(\d+)\]\[(\w+)\]/);
                         if (match) {
                             const index = match[1];
                             const field = match[2];
-                            
-                            if (!itineraryData[index]) {
-                                itineraryData[index] = {};
-                            }
-                            
+                            if (!itineraryData[index]) itineraryData[index] = {};
                             itineraryData[index][field] = req.body[key];
                         }
                     }
                 });
-                
                 processedItinerary = Object.values(itineraryData).map(item => ({
                     day: parseInt(item.day),
                     title: item.title,
@@ -3292,9 +3864,11 @@ app.post('/api/tours', checkAdminAuth, tourUpload.single('tourImage'), async (re
                 }));
             }
         }
-        
+
+        // 🖼️ Handle image upload
         const imageUrl = `/uploads/tours/${req.file.filename}`;
-        
+
+        // ✅ Create new tour with requirements
         const newTour = new Tour({
             title,
             description,
@@ -3313,11 +3887,12 @@ app.post('/api/tours', checkAdminAuth, tourUpload.single('tourImage'), async (re
             promoDuration: isPromo ? parseInt(promoDuration) : null,
             promoStartTime: promoStartTime_dt,
             promoEndTime: promoEndTime_dt,
-            createdBy: req.session.admin.id
+            createdBy: req.session.admin.id,
+            requirements // ✅ Save travel requirements
         });
-        
+
         await newTour.save();
-        
+
         res.status(201).json({
             success: true,
             message: 'Tour created successfully',
@@ -3332,7 +3907,6 @@ app.post('/api/tours', checkAdminAuth, tourUpload.single('tourImage'), async (re
     }
 });
 
-// Update the PUT /api/tours/:id endpoint similarly
 app.put('/api/tours/:id', checkAdminAuth, tourUpload.single('tourImage'), async (req, res) => {
     try {
         const {
@@ -3353,28 +3927,38 @@ app.put('/api/tours/:id', checkAdminAuth, tourUpload.single('tourImage'), async 
             promoStartDate,
             promoStartTime
         } = req.body;
-        
+
         if (!title || !description || !destination || !country || !price || !duration) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields'
             });
         }
-        
+
         const tour = await Tour.findById(req.params.id);
-        
         if (!tour) {
             return res.status(404).json({
                 success: false,
                 message: 'Tour not found'
             });
         }
-        
-        // Process promotional settings
+
+        // ✅ Handle travel requirements (NEW)
+        const reqs = req.body.requirements || {};
+        const requirements = {
+            visaRequired: reqs.visaRequired === 'on' || reqs.visaRequired === true,
+            passportRequired: reqs.passportRequired === 'on' || reqs.passportRequired === true,
+            passportValidityMonths: parseInt(reqs.passportValidityMonths || 6),
+            travelInsuranceRequired: reqs.travelInsuranceRequired === 'on' || reqs.travelInsuranceRequired === true,
+            vaccinationRequired: reqs.vaccinationRequired === 'on' || reqs.vaccinationRequired === true,
+            otherRequirements: reqs.otherRequirements || ''
+        };
+
+        // 🕒 Process promotional settings
         let promoStartTime_dt = null;
         let promoEndTime_dt = null;
         let isPromo = false;
-        
+
         if (isPromoActive === 'on' || isPromoActive === true) {
             if (!promoDuration || !promoStartDate || !promoStartTime) {
                 return res.status(400).json({
@@ -3382,43 +3966,39 @@ app.put('/api/tours/:id', checkAdminAuth, tourUpload.single('tourImage'), async 
                     message: 'Promotional duration, start date, and start time are required for promotional tours'
                 });
             }
-            
+
             const startDateTimeString = `${promoStartDate}T${promoStartTime}:00`;
             promoStartTime_dt = new Date(startDateTimeString);
-            
+
             const durationMs = parseInt(promoDuration) * 24 * 60 * 60 * 1000;
             promoEndTime_dt = new Date(promoStartTime_dt.getTime() + durationMs);
-            
+
             isPromo = true;
         }
-        
+
+        // 📝 Convert arrays safely
         const processedHighlights = Array.isArray(highlights) ? highlights : highlights ? [highlights] : [];
         const processedInclusions = Array.isArray(inclusions) ? inclusions : inclusions ? [inclusions] : [];
         const processedExclusions = Array.isArray(exclusions) ? exclusions : exclusions ? [exclusions] : [];
-        
+
+        // 🗓️ Process itinerary
         let processedItinerary = [];
         if (itinerary) {
             if (Array.isArray(itinerary)) {
                 processedItinerary = itinerary;
             } else {
                 const itineraryData = {};
-                
                 Object.keys(req.body).forEach(key => {
                     if (key.startsWith('itinerary[')) {
                         const match = key.match(/itinerary\[(\d+)\]\[(\w+)\]/);
                         if (match) {
                             const index = match[1];
                             const field = match[2];
-                            
-                            if (!itineraryData[index]) {
-                                itineraryData[index] = {};
-                            }
-                            
+                            if (!itineraryData[index]) itineraryData[index] = {};
                             itineraryData[index][field] = req.body[key];
                         }
                     }
                 });
-                
                 processedItinerary = Object.values(itineraryData).map(item => ({
                     day: parseInt(item.day),
                     title: item.title,
@@ -3426,7 +4006,8 @@ app.put('/api/tours/:id', checkAdminAuth, tourUpload.single('tourImage'), async 
                 }));
             }
         }
-        
+
+        // 🖼️ Image replacement
         let imageUrl = tour.imageUrl;
         if (req.file) {
             imageUrl = `/uploads/tours/${req.file.filename}`;
@@ -3437,7 +4018,8 @@ app.put('/api/tours/:id', checkAdminAuth, tourUpload.single('tourImage'), async 
                 }
             }
         }
-        
+
+        // ✅ Update tour
         const updatedTour = await Tour.findByIdAndUpdate(
             req.params.id,
             {
@@ -3458,11 +4040,12 @@ app.put('/api/tours/:id', checkAdminAuth, tourUpload.single('tourImage'), async 
                 promoDuration: isPromo ? parseInt(promoDuration) : null,
                 promoStartTime: promoStartTime_dt,
                 promoEndTime: promoEndTime_dt,
+                requirements, // ✅ save travel requirements
                 updatedAt: Date.now()
             },
             { new: true }
         );
-        
+
         res.json({
             success: true,
             message: 'Tour updated successfully',
@@ -3476,6 +4059,7 @@ app.put('/api/tours/:id', checkAdminAuth, tourUpload.single('tourImage'), async 
         });
     }
 });
+
 
 app.delete('/api/tours/:id', checkAdminAuth, async (req, res) => {
     try {
@@ -3627,12 +4211,24 @@ app.get('/change-password', (req, res) => {
     res.render('change-password');
 });
 
-app.get('/book-tour', (req, res) => {
-    const tourId = req.query.id;
-    if (!tourId) {
-        return res.redirect('/tours');
+app.get('/book-tour', async (req, res) => {
+    try {
+        const tourId = req.query.id;
+        if (!tourId) {
+            return res.redirect('/tours');
+        }
+
+        const tour = await Tour.findById(tourId);
+        if (!tour) {
+            console.error(`❌ Tour not found with ID: ${tourId}`);
+            return res.redirect('/tours');
+        }
+
+        res.render('book-tour', { tour }); // ✅ send tour data to EJS
+    } catch (error) {
+        console.error('Error loading tour:', error);
+        res.redirect('/tours');
     }
-    res.render('book-tour');
 });
 
 
@@ -3832,23 +4428,32 @@ app.get('/api/user-profile', (req, res) => {
             res.status(500).json({ error: 'Server error' });
         });
 });
+// ✅ Fetch all bookings for admin panel
 app.get('/api/admin/bookings', checkAdminAuth, async (req, res) => {
-    try {
-        console.log('Fetching admin bookings...');
-        const bookings = await Booking.find().sort({ createdAt: -1 });
-        
-        res.json({
-            success: true,
-            bookings
-        });
-    } catch (error) {
-        console.error('❌ Error fetching bookings:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch bookings'
-        });
-    }
+  try {
+    console.log('Fetching admin bookings...');
+
+    const bookings = await Booking.find()
+      .sort({ createdAt: -1 })
+      // ✅ Populate related admin info
+      .populate('statusChangeHistory.updatedBy', 'firstName lastName email')
+      .populate('confirmedBy', 'firstName lastName')
+      .populate('cancelledBy', 'firstName lastName')
+      .populate('completedBy', 'firstName lastName');
+
+    res.json({
+      success: true,
+      bookings
+    });
+  } catch (error) {
+    console.error('❌ Error fetching bookings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch bookings'
+    });
+  }
 });
+
 
 app.get('/api/tours', async (req, res) => {
     try {
@@ -4115,7 +4720,7 @@ app.get('/api/bookings/:bookingId', isAuthenticated, async (req, res) => {
       });
     }
   });
-  app.post('/api/bookings/:bookingId/cancel', isAuthenticated, async (req, res) => {
+  app.post('/api/user/bookings/:bookingId/cancel', isAuthenticated, async (req, res) => {
     try {
       const { bookingId } = req.params;
       const userId = req.session.user.id;
@@ -4342,47 +4947,56 @@ app.post('/verify-login-otp', async (req, res) => {
     }
 });
 
-
 app.post('/login', async (req, res) => {
-    try {
-        const { username, password, otpVerified } = req.body;
-        
-        if (!otpVerified && !req.session.otpVerified) {
-            return res.status(400).json({ success: false, message: 'OTP verification required' });
-        }
-        if (req.session.otpVerified && req.session.verifiedUsername !== username) {
-            return res.status(400).json({ success: false, message: 'OTP verification mismatch' });
-        }
-
-        const user = await User.findOne({ username });
-
-        if (!user) {
-            return res.status(400).json({ success: false, message: 'Invalid credentials' });
-        }
-        
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ success: false, message: 'Invalid credentials' });
-        }
-        delete req.session.otpVerified;
-        delete req.session.verifiedUsername;
-
-        req.session.user = {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            phoneNumber: user.phoneNumber,
-            firstName: user.firstName,
-            lastName: user.lastName
-        };
-
-        return res.json({ success: true, message: 'Login successful' });
-
-    } catch (error) {
-        console.error('❌ Login Error:', error);
-        return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  try {
+    const { username, password, otpVerified } = req.body;
+    
+    // ✅ OTP verification checks
+    if (!otpVerified && !req.session.otpVerified) {
+      return res.status(400).json({ success: false, message: 'OTP verification required' });
     }
+    if (req.session.otpVerified && req.session.verifiedUsername !== username) {
+      return res.status(400).json({ success: false, message: 'OTP verification mismatch' });
+    }
+
+    // ✅ Find user
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // ✅ Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // ✅ Update last active timestamp (🧠 important for retention analytics)
+    await User.findByIdAndUpdate(user._id, { lastActiveAt: new Date() });
+
+    // ✅ Clear OTP session
+    delete req.session.otpVerified;
+    delete req.session.verifiedUsername;
+
+    // ✅ Store session user info
+    req.session.user = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      firstName: user.firstName,
+      lastName: user.lastName
+    };
+
+    // ✅ Send success
+    return res.json({ success: true, message: 'Login successful' });
+
+  } catch (error) {
+    console.error('❌ Login Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
 });
+
 app.post('/api/admin/send-login-otp', async (req, res) => {
     const { email } = req.body;
     
@@ -6034,14 +6648,145 @@ apiRouter.get('/analytics/summary', checkAdminAuth, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to fetch summary data' });
     }
 });
-app.use((req, res) => {
-    res.status(404).render('404', { url: req.url });
+// ==========================
+// 📊 FORECAST + INSIGHTS API
+// ==========================
+
+module.exports = app;
+
+
+// ---------- Forecast Endpoint ----------
+app.get("/api/forecast/:type", async (req, res) => {
+  try {
+    const { type } = req.params;
+    const now = new Date();
+
+    // 🧮 Create 12 months of random historical data
+    const history = Array.from({ length: 12 }).map((_, i) => ({
+      date: new Date(now.getFullYear(), now.getMonth() - i, 1),
+      value: Math.floor(Math.random() * 100000 + 50000) // Random value
+    }));
+
+    // 🔮 Create 3 months of projected data
+    const forecast = Array.from({ length: 3 }).map((_, i) => ({
+      date: new Date(now.getFullYear(), now.getMonth() + i + 1, 1),
+      value: Math.floor(Math.random() * 120000 + 80000)
+    }));
+
+    const accuracy = Math.floor(Math.random() * 15 + 85); // %
+    const note = "Based on simulated historical pattern.";
+
+    // Return type-specific data (future ready)
+    switch (type) {
+      case "sales":
+        res.json({
+          history,
+          forecast,
+          accuracy,
+          note,
+          metric: "₱"
+        });
+        break;
+      case "bookings":
+        res.json({
+          history,
+          forecast,
+          accuracy,
+          note,
+          metric: "bookings"
+        });
+        break;
+      case "users":
+        res.json({
+          history,
+          forecast,
+          accuracy,
+          note,
+          metric: "users"
+        });
+        break;
+      default:
+        res.status(400).json({ error: "Invalid forecast type" });
+    }
+  } catch (error) {
+    console.error("❌ Forecast Error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
+app.get("/api/insights", async (req, res) => {
+  try {
+    console.log("📊 Gathering booking data for insights...");
+
+    // ✅ Use the same aggregation that worked in /api/test-insights
+    const tours = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$tourDetails.title",
+          tourId: { $first: "$_id" },
+          title: { $first: "$tourDetails.title" },
+          bookings: { $sum: 1 },
+          revenue: { $sum: "$totalAmount" }
+        }
+      }
+    ]);
+
+    console.log("🧩 Aggregation output (for FastAPI):", tours);
+
+    if (!tours || tours.length === 0) {
+      console.warn("⚠️ No booking data found for insights");
+      return res.json({
+        success: true,
+        recommendations: ["⚠️ Not enough data for insights yet."],
+        summary: { total_tours: 0 }
+      });
+    }
+
+    // ✅ Clean tours data before sending to FastAPI
+    const cleanTours = tours.map(t => ({
+      tourId: String(t.tourId || t._id || "unknown"),
+      title: t.title || "Untitled Tour",
+      bookings: Number(t.bookings || 0),
+      revenue: Number(t.revenue || 0),
+      createdAt: new Date().toISOString()
+    }));
+
+    console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
+
+    // ✅ Send to FastAPI
+    const response = await fetch("http://127.0.0.1:8000/insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tours: cleanTours })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(JSON.stringify(data));
+
+    console.log("✅ Insights successfully fetched from FastAPI.");
+    res.json(data);
+
+  } catch (err) {
+    console.error("❌ Insight fetch error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate insights",
+      details: err.message
+    });
+  }
+});
+
+
+// 🚫 This must stay at the very bottom
+app.use((req, res) => {
+  res.status(404).render('404', { url: req.url });
+});
+
 
 app.get("/",(req, res) => {
     res.send("Hello from the server")
 });
 
+    
 app.listen(PORT,"0.0.0.0", () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
