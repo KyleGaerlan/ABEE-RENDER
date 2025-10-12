@@ -1,5 +1,5 @@
 const fetch = require("node-fetch");
-const FASTAPI_URL = process.env.FASTAPI_URL || "https://fast-api-service.onrender.com";
+const FASTAPI_URL = process.env.FASTAPI_URL || "https://fast-api-service-cap1.onrender.com";
 
 async function getForecast(series) {
   const res = await fetch(`${FASTAPI_URL}/predict`, {
