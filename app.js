@@ -6934,6 +6934,16 @@ app.get("/api/insights", async (req, res) => {
     });
   }
 });
+app.post("/api/forecast", async (req, res) => {
+  try {
+    const series = req.body.series;
+    const result = await getForecast(series);
+    res.json(result);
+  } catch (err) {
+    console.error("Forecast error:", err);
+    res.status(500).json({ error: "Failed to get forecast" });
+  }
+});
 
 
 // 🚫 This must stay at the very bottom
