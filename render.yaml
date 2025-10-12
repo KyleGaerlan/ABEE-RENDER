@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: my-combined-service
+    env: node
+    buildCommand: |
+      npm install
+      pip install -r ML/requirements.txt
+    startCommand: |
+      npx concurrently "npm start" "uvicorn ML.predict_service:app --host 0.0.0.0 --port 10000"
+    envVars:
+      - key: PORT
+        value: 10000
