@@ -1,3 +1,7 @@
+if (typeof fetch === "undefined") {
+  global.fetch = (...args) =>
+    import("node-fetch").then(({ default: fetch }) => fetch(...args));
+}
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -17,7 +21,6 @@ const Admin = require('./models/Admin');
 const router = express.Router();
 const cron = require('node-cron');
 const multer = require('multer');
-const fetch = require('node-fetch');
 const fs = require('fs');
 const Tour = require('./models/Tour');
 const PageView = require('./models/PageView');
@@ -26,7 +29,7 @@ const validator = require('validator');
 const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
 const PYTHON_API = "http://localhost:8000";
-const { getForecast } = require("./utils/forecast");
+const ExcelJS = require("exceljs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -61,6 +64,7 @@ app.use(session({
         collection: 'sessions'
     })
 }));
+
 app.use(updateLastActive);
 const checkAdminAuth = (req, res, next) => {
     if (!req.session || !req.session.admin) {
@@ -1340,7 +1344,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1424,7 +1428,7 @@ app.get('/api/predict/bookings', async (req, res) => {
 
     const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1433,6 +1437,41 @@ app.get('/api/predict/bookings', async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error("❌ Prediction API Error (Bookings):", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// ========= 2️⃣ USER FORECAST =========
+app.get('/api/predict/users', async (req, res) => {
+  try {
+    // 📅 Aggregate daily user registrations
+    const userData = await User.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          totalUsers: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // ⚠️ Validate data availability
+    if (!userData || userData.length < 3) {
+      return res.json({ success: false, message: "Not enough user data for forecast." });
+    }
+
+    // 📊 Format data for Prophet (ds = date, y = count)
+    const series = userData.map(u => ({ ds: u._id, y: u.totalUsers }));
+
+    // 🔮 Call your FastAPI Prophet forecast service
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
+      series,
+      horizon: 30 // Predict next 30 days — you can increase to 180 if needed
+    });
+
+    console.log("👥 User Forecast:", data.success, "—", data.forecast?.length, "points");
+    res.json(data);
+  } catch (err) {
+    console.error("❌ Prediction API Error (Users):", err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -1461,7 +1500,7 @@ app.get('/api/predict/seasonal', async (req, res) => {
       y: d.totalBookings
     }));
 
-    const { data: response } = await axios.post('https://fast-api-service-cap1.onrender.com/predict', {
+    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
       series, horizon: 4
     });
 
@@ -1590,7 +1629,7 @@ async function buildSalesSeries() {
 
 app.get("/api/forecast", async (req, res) => {
   try {
-    const response = await axios.get("https://fast-api-service-cap1.onrender.com/predict");
+    const response = await axios.get("http://127.0.0.1:8000/predict");
     res.json(response.data);
   } catch (error) {
     console.error("❌ Error fetching forecast:", error.message);
@@ -1610,7 +1649,7 @@ app.get("/api/forecast/:type", async (req, res) => {
       series = await buildUserSeries();
     }
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 180 }),
@@ -1863,29 +1902,49 @@ app.get("/api/admin/metrics-growth", async (req, res) => {
 // ============================================
 // ☀️ /api/admin/seasonal-data
 // ============================================
-app.get("/api/admin/seasonal-data", async (req, res) => {
+app.get("/api/admin/seasonal-data", checkAdminAuth, async (req, res) => {
   try {
-    const dailySales = await Booking.aggregate([
+    const grouped = await Booking.aggregate([
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          y: { $sum: "$totalAmount" }
+          _id: {
+            destination: "$destination",
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+          },
+          totalSales: { $sum: "$totalAmount" },
+          totalBookings: { $sum: 1 }
         }
       },
-      { $sort: { "_id": 1 } }
+      { $sort: { "_id.date": 1 } }
     ]);
 
-    const formatted = dailySales.map(d => ({
-      ds: d._id,
-      y: d.y
-    }));
+    const datasets = {};
 
-    res.json(formatted);
+    grouped.forEach((item) => {
+      const dest = item._id.destination || "Unknown";
+      if (!datasets[dest]) datasets[dest] = [];
+
+      // 🗓️ Format the date nicely
+      const formattedDate = new Date(item._id.date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+
+      datasets[dest].push({
+        ds: formattedDate,
+        y: item.totalSales
+      });
+    });
+
+    res.json({ success: true, datasets });
+
   } catch (err) {
     console.error("❌ Error fetching seasonal data:", err);
-    res.status(500).json({ error: "Failed to load seasonal data" });
+    res.status(500).json({ success: false, message: "Failed to load seasonal data" });
   }
 });
+
 // ============================================
 // 👥 /api/admin/user-growth
 // ============================================
@@ -2156,7 +2215,7 @@ app.get("/api/admin/seasonal-forecast", async (req, res) => {
     });
 
     // 2️⃣ Send this data to your Python API for Prophet forecasting
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2230,7 +2289,7 @@ app.get('/api/analytics/seasonal', async (req, res) => {
     });
 
     // ✅ Send actual data to FastAPI Prophet for prediction
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2268,6 +2327,272 @@ app.get('/api/analytics/seasonal', async (req, res) => {
   }
 });
 
+
+/* === Helper Functions === */
+async function calculateRetentionRate() {
+  const users = await Booking.distinct("userId");
+  if (users.length === 0) return 0;
+
+  const repeat = await Booking.aggregate([
+    { $group: { _id: "$userId", count: { $sum: 1 } } },
+    { $match: { count: { $gt: 1 } } },
+  ]);
+  return ((repeat.length / users.length) * 100).toFixed(2);
+}
+
+async function detectPeakSeason() {
+  const result = await Booking.aggregate([
+    { $group: { _id: "$season", bookings: { $sum: 1 } } },
+    { $sort: { bookings: -1 } },
+    { $limit: 1 },
+  ]);
+  return result.length ? result[0]._id : "—";
+}
+
+async function getActiveUsers(days) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return await User.countDocuments({ lastActiveAt: { $gte: cutoff } });
+}
+
+async function getMostActiveUsers(limit = 10) {
+  return await User.find().sort({ lastActiveAt: -1 }).limit(limit).lean();
+}
+
+async function getInactiveUsers(limit = 10) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  return await User.find({ lastActiveAt: { $lt: cutoff } })
+    .sort({ lastActiveAt: 1 })
+    .limit(limit)
+    .lean();
+}
+
+async function getTopDestinations(limit = 10) {
+  const result = await Booking.aggregate([
+    { $group: { _id: "$destination", count: { $sum: 1 }, totalRevenue: { $sum: "$totalAmount" } } },
+    { $sort: { count: -1 } },
+    { $limit: limit },
+  ]);
+  return result;
+}
+
+/* === Excel Export Endpoint === */
+app.get("/api/admin/export-dashboard", async (req, res) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "A.BEE Travel Admin";
+    workbook.created = new Date();
+
+    const orange = "FFF26523";
+    const blue = "FF1E90FF";
+
+    const addHeaderStyle = (sheet, title) => {
+      sheet.mergeCells("A1", "E1");
+      const header = sheet.getCell("A1");
+      header.value = title;
+      header.font = { bold: true, size: 16, color: { argb: orange } };
+      header.alignment = { horizontal: "center", vertical: "middle" };
+      sheet.addRow([]);
+    };
+
+    /* === 1️⃣ Summary & KPIs === */
+    const summary = workbook.addWorksheet("Summary & KPIs");
+    addHeaderStyle(summary, "A.BEE Travel & Tours — Admin Dashboard Summary Report");
+
+    const totalUsers = await User.countDocuments();
+    const totalBookings = await Booking.countDocuments();
+    const totalRevenueData = await Booking.aggregate([{ $group: { _id: null, total: { $sum: "$totalAmount" } } }]);
+    const totalRevenue = totalRevenueData.length ? totalRevenueData[0].total : 0;
+    const completedBookings = await Booking.countDocuments({ status: "completed" });
+    const retentionRate = await calculateRetentionRate();
+    const peakSeason = await detectPeakSeason();
+
+    const summaryData = [
+      ["Report Generated", new Date().toLocaleString()],
+      ["👥 Total Registered Users", totalUsers],
+      ["🧳 Total Bookings", totalBookings],
+      ["💰 Total Sales (₱)", totalRevenue.toLocaleString()],
+      ["✅ Completed Bookings", completedBookings],
+      ["🔁 Retention Rate", `${retentionRate}%`],
+      ["☀️ Peak Season", peakSeason],
+    ];
+
+    summaryData.forEach(([label, value], i) => {
+      const row = summary.addRow([label, value]);
+      if (i % 2 === 0)
+        row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8F8F8" } };
+      row.getCell(1).font = { bold: true, color: { argb: blue } };
+    });
+
+    summary.getColumn(1).width = 35;
+    summary.getColumn(2).width = 30;
+
+    /* === 2️⃣ Recent Activity === */
+    const activitySheet = workbook.addWorksheet("Recent Activity");
+    addHeaderStyle(activitySheet, "Recent Weekly User & Booking Activity");
+    activitySheet.columns = [
+      { header: "Date", key: "date", width: 20 },
+      { header: "Users Registered", key: "users", width: 20 },
+      { header: "Bookings Made", key: "bookings", width: 20 },
+    ];
+
+    const userCounts = await DailyUserCount.find().sort({ date: -1 }).limit(14).lean();
+    const bookingCounts = await DailyBookingCount.find().sort({ date: -1 }).limit(14).lean();
+    const combined = userCounts.map((u, i) => ({
+      date: new Date(u.date).toLocaleDateString(),
+      users: u.count,
+      bookings: bookingCounts[i] ? bookingCounts[i].count : 0,
+    }));
+    combined.forEach((d) => activitySheet.addRow(d));
+
+    /* === 3️⃣ Top Destinations === */
+    const destSheet = workbook.addWorksheet("Top Destinations");
+    addHeaderStyle(destSheet, "Most Popular Travel Destinations");
+    destSheet.columns = [
+      { header: "Destination", key: "destination", width: 25 },
+      { header: "Bookings", key: "count", width: 15 },
+      { header: "Total Revenue (₱)", key: "totalRevenue", width: 20 },
+    ];
+
+    const topDestinations = await getTopDestinations();
+    topDestinations.forEach((d) => {
+      destSheet.addRow({
+        destination: d._id,
+        count: d.count,
+        totalRevenue: d.totalRevenue.toLocaleString(),
+      });
+    });
+
+    /* === 4️⃣ Forecasts === */
+    const forecastSheet = workbook.addWorksheet("Forecasts");
+    addHeaderStyle(forecastSheet, "AI Forecast Results (Sales, Users, Bookings)");
+    forecastSheet.columns = [
+      { header: "Date", key: "ds", width: 20 },
+      { header: "Predicted Sales (₱)", key: "sales", width: 20 },
+      { header: "Predicted Users", key: "users", width: 20 },
+      { header: "Predicted Bookings", key: "bookings", width: 20 },
+    ];
+
+    let predictions = [];
+    try {
+      const response = await fetch("http://127.0.0.1:8000/predict-all");
+      if (response.ok) predictions = await response.json();
+    } catch (err) {
+      forecastSheet.addRow(["Error fetching forecast data"]);
+    }
+
+    if (Array.isArray(predictions)) {
+      predictions.forEach((p) => forecastSheet.addRow({
+        ds: new Date(p.ds).toLocaleDateString(),
+        sales: p.sales || 0,
+        users: p.users || 0,
+        bookings: p.bookings || 0,
+      }));
+    }
+
+    /* === 5️⃣ User Engagement === */
+    const engagementSheet = workbook.addWorksheet("User Engagement");
+    addHeaderStyle(engagementSheet, "User Engagement Overview");
+    const active7 = await getActiveUsers(7);
+    const active30 = await getActiveUsers(30);
+
+    engagementSheet.addRow(["🟢 Active in Last 7 Days", active7]);
+    engagementSheet.addRow(["🟠 Active in Last 30 Days", active30]);
+    engagementSheet.addRow(["🔁 Retention Rate", `${retentionRate}%`]);
+
+    /* === 6️⃣ User Activity Insights === */
+    const userActivity = workbook.addWorksheet("User Activity Insights");
+    addHeaderStyle(userActivity, "Most Active and Inactive Users");
+    userActivity.columns = [
+      { header: "User", key: "user", width: 30 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Last Active", key: "lastActive", width: 25 },
+      { header: "Status", key: "status", width: 15 },
+    ];
+
+    const activeUsers = await getMostActiveUsers(10);
+    const inactiveUsers = await getInactiveUsers(10);
+    activeUsers.forEach((u) => {
+      userActivity.addRow({
+        user: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+        email: u.email,
+        lastActive: new Date(u.lastActiveAt).toLocaleString(),
+        status: "Active",
+      });
+    });
+    inactiveUsers.forEach((u) => {
+      userActivity.addRow({
+        user: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+        email: u.email,
+        lastActive: new Date(u.lastActiveAt).toLocaleString(),
+        status: "Inactive",
+      });
+    });
+
+    /* === 7️⃣ Seasonal Forecast === */
+    const seasonalSheet = workbook.addWorksheet("Seasonal Forecast");
+    addHeaderStyle(seasonalSheet, "Predicted Peak Season Demand (AI)");
+    seasonalSheet.columns = [
+      { header: "Date", key: "ds", width: 20 },
+      { header: "Predicted Demand", key: "yhat", width: 20 },
+    ];
+    seasonalSheet.addRow(["Forecast data to be generated by ML service"]);
+
+    /* === 8️⃣ All Bookings === */
+    const bookingsSheet = workbook.addWorksheet("All Bookings");
+    addHeaderStyle(bookingsSheet, "Full Booking Records");
+    bookingsSheet.columns = [
+      { header: "Booking ID", key: "bookingId", width: 20 },
+      { header: "Full Name", key: "fullName", width: 25 },
+      { header: "Destination", key: "destination", width: 20 },
+      { header: "Season", key: "season", width: 15 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Payment Method", key: "paymentMethod", width: 20 },
+      { header: "Total (₱)", key: "totalAmount", width: 15 },
+      { header: "Start Date", key: "startDate", width: 20 },
+    ];
+    const allBookings = await Booking.find().lean();
+    allBookings.forEach((b) => {
+      bookingsSheet.addRow({
+        bookingId: b.bookingId,
+        fullName: b.fullName,
+        destination: b.destination,
+        season: b.season,
+        status: b.status,
+        paymentMethod: b.paymentMethod,
+        totalAmount: b.totalAmount,
+        startDate: new Date(b.startDate).toLocaleDateString(),
+      });
+    });
+
+    /* === 9️⃣ AI Recommendations === */
+    const recSheet = workbook.addWorksheet("AI Recommendations");
+    addHeaderStyle(recSheet, "Automated Insights & Strategic Recommendations");
+    const recommendations = [
+      "Increase promotions during upcoming peak season.",
+      "Target returning users with loyalty discounts.",
+      "Focus on top 3 destinations for bundled offers.",
+    ];
+    recommendations.forEach((r) => recSheet.addRow(["•", r]));
+
+    /* === Export Excel File === */
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="A.BEE_Admin_Dashboard_Report.xlsx"'
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error("❌ Dashboard export error:", err);
+    res.status(500).send("Failed to export dashboard data");
+  }
+});
 app.post('/api/admin/forgot-password', async (req, res) => {
     const { email, role } = req.body;
     
@@ -6354,65 +6679,70 @@ apiRouter.patch('/admins/:adminId/status', checkAdminAuth, async (req, res) => {
         });
     }
 });
-app.get('/api/analytics/daily', checkAdminAuth, async (req, res) => {
-    try {
-        const { startDate, endDate } = req.query;
-        const start = startDate ? new Date(startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
-        const end = endDate ? new Date(endDate) : new Date();
-        
-        start.setUTCHours(0, 0, 0, 0);
-        end.setUTCHours(23, 59, 59, 999);
-        
-        // Get daily user registrations
-        const dailyUsers = await User.aggregate([
-            { 
-                $match: { 
-                    createdAt: { $gte: start, $lte: end } 
-                } 
-            },
-            {
-                $group: {
-                    _id: { 
-                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } 
-                    },
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ]);
-        
-        // Get daily bookings
-        const dailyBookings = await Booking.aggregate([
-            { 
-                $match: { 
-                    createdAt: { $gte: start, $lte: end } 
-                } 
-            },
-            {
-                $group: {
-                    _id: { 
-                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } 
-                    },
-                    count: { $sum: 1 },
-                    revenue: { $sum: "$totalAmount" }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ]);
-        
-        res.json({
-            success: true,
-            dailyUsers,
-            dailyBookings
-        });
-    } catch (error) {
-        console.error('Error fetching daily analytics:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch daily analytics'
-        });
+// ✅ Weekly Analytics Endpoint
+app.get('/api/analytics/weekly', checkAdminAuth, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Normalize week boundaries (start on Monday)
+    const day = start.getDay();
+    const diff = (day === 0 ? -6 : 1) - day; // if Sunday, go back 6 days
+    start.setDate(start.getDate() + diff);
+    end.setDate(end.getDate() + (7 - end.getDay()));
+
+    // Match stage for the selected date range
+    const matchStage = {
+      createdAt: { $gte: start, $lte: end }
+    };
+
+    // Aggregate users and bookings per week
+    const [userData, bookingData] = await Promise.all([
+      User.aggregate([
+        { $match: matchStage },
+        {
+          $group: {
+            _id: { $dateTrunc: { date: "$createdAt", unit: "week" } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ]),
+      Booking.aggregate([
+        { $match: matchStage },
+        {
+          $group: {
+            _id: { $dateTrunc: { date: "$createdAt", unit: "week" } },
+            count: { $sum: 1 },
+            revenue: { $sum: "$totalAmount" }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ])
+    ]);
+
+    // Combine both datasets
+    const weeks = {};
+    for (const u of userData) {
+      const week = new Date(u._id).toISOString().split("T")[0];
+      if (!weeks[week]) weeks[week] = { users: 0, bookings: 0, revenue: 0 };
+      weeks[week].users = u.count;
     }
+    for (const b of bookingData) {
+      const week = new Date(b._id).toISOString().split("T")[0];
+      if (!weeks[week]) weeks[week] = { users: 0, bookings: 0, revenue: 0 };
+      weeks[week].bookings = b.count;
+      weeks[week].revenue = b.revenue;
+    }
+
+    res.json({ success: true, data: weeks });
+  } catch (error) {
+    console.error("❌ Weekly analytics error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 });
+
 
 app.get('/api/analytics/monthly', checkAdminAuth, async (req, res) => {
     try {
@@ -6913,7 +7243,7 @@ app.get("/api/insights", async (req, res) => {
     console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
 
     // ✅ Send to FastAPI
-    const response = await fetch("hhttps://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: cleanTours })
@@ -6934,16 +7264,7 @@ app.get("/api/insights", async (req, res) => {
     });
   }
 });
-app.post("/api/ml-forecast", async (req, res) => {
-  try {
-    const series = req.body.series;
-    const result = await getForecast(series);
-    res.json(result);
-  } catch (err) {
-    console.error("Forecast error:", err);
-    res.status(500).json({ error: "Failed to get forecast" });
-  }
-});
+
 
 // 🚫 This must stay at the very bottom
 app.use((req, res) => {
