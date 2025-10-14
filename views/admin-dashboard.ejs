@@ -803,6 +803,32 @@
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
 }
+.selector-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.destination-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+.export-btn {
+  background-color: #f26523;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+.export-btn:hover {
+  background-color: #d8561f;
+}
 
   </style>
   
@@ -853,10 +879,8 @@
                     <button id="exportCSV" class="action-button export-button">
                         <i class="fas fa-file-csv"></i> Export to CSV
                     </button>
-                    <button id="exportExcel" class="action-button export-button">
-                        <i class="fas fa-file-excel"></i> Export to Excel
-                    </button>
-                </div>
+                <button id="exportDashboardExcel" class="export-btn">📤 Export Dashboard Report</button>
+          </div>
                 
                 <div class="last-updated">Last updated: <span id="lastUpdated">Never</span></div>
             </div>
@@ -939,19 +963,35 @@
         <div class="analytics-section">
             <h2>Time-Based Analytics</h2>
             <div class="chart-tabs">
-                <div class="chart-tab active" data-period="daily">Daily</div>
+                <div class="chart-tab active" data-period="weekly">Weekly</div>
                 <div class="chart-tab" data-period="monthly">Monthly</div>
                 <div class="chart-tab" data-period="yearly">Yearly</div>
             </div>
-            
-            <div class="date-range-selector">
-                <div class="daily-selector chart-tab-content active">
-                    <label for="daily-date-range">Date Range:</label>
-                    <input type="date" id="daily-start-date">
-                    <span>to</span>
-                    <input type="date" id="daily-end-date">
-                    <button id="daily-apply-range" class="action-button" style="background-color: #d55a1f; color:white">Apply</button>
-                </div>
+           <div class="weekly-selector chart-tab-content active">
+  <label for="weekly-month">Select Month:</label>
+  <select id="weekly-month">
+    <option value="0">January</option>
+    <option value="1">February</option>
+    <option value="2">March</option>
+    <option value="3">April</option>
+    <option value="4">May</option>
+    <option value="5">June</option>
+    <option value="6">July</option>
+    <option value="7">August</option>
+    <option value="8">September</option>
+    <option value="9">October</option>
+    <option value="10">November</option>
+    <option value="11">December</option>
+  </select>
+
+  <label for="weekly-year">Year:</label>
+  <select id="weekly-year"></select>
+
+  <button id="weekly-apply-range" class="action-button" style="background-color:#d55a1f;color:white">
+    Apply
+  </button>
+</div>
+
                 
                 <div class="monthly-selector chart-tab-content">
                     <label for="monthly-year">Select Year:</label>
@@ -992,22 +1032,7 @@
             </div>
        
 <div class="mt-6 bg-gray-50 border border-gray-200 rounded-2xl p-4 shadow-sm">
-  <h3 class="text-lg font-semibold mb-2">📘 Forecast Accuracy Guide</h3>
-  <p class="text-sm text-gray-700 mb-1">
-    <strong>MAPE (Mean Absolute Percentage Error):</strong>
-    Measures forecast accuracy as a percentage. A lower MAPE means the prediction is closer to actual values.
-    <span class="block text-xs text-gray-500 mt-1">
-      ✅ <strong>0–5%</strong> Excellent | 🟧 <strong>5–15%</strong> Good | 🔴 <strong>>15%</strong> Needs Improvement
-    </span>
-  </p>
-
-  <p class="text-sm text-gray-700">
-    <strong>RMSE (Root Mean Squared Error):</strong>
-    Shows the average difference between predicted and actual values. Lower values mean more accurate forecasts.
-    <span class="block text-xs text-gray-500 mt-1">
-      💡 Tip: RMSE is in the same units as your data (e.g., pesos ₱).
-    </span>
-  </p>
+<h1>📊 Admin Forecast Dashboard</h1>
   <!-- ✅ FORECAST SUMMARY CARDS -->
 <div class="forecast-summary">
   <div class="forecast-card">
@@ -1018,15 +1043,9 @@
     <h3>🧳 Projected Bookings</h3>
     <p id="projectedBookings">--</p>
   </div>
-  <div class="forecast-card">
-    <h3>📈 Forecast Confidence</h3>
-    <p id="forecastConfidenceSummary">--</p>
-  </div>
 </div>
 </div>
 <div class="dashboard">
-    <h1>📊 Admin Forecast Dashboard</h1>
-
 
     <section>
       <div class="forecast-card">
@@ -1062,7 +1081,7 @@
 <!-- 🔮 AI-Driven Forecast & Decision Analytics -->
 <!-- =============================================== -->
 <section class="ai-forecast-section">
-  <h2>🤖 Predictive Insights Dashboard</h2>
+  <h2>Predictive Insights Dashboard</h2>
 
   <!-- 📊 1️⃣ Forecast Insight Cards -->
   <div class="insight-grid">
@@ -1084,11 +1103,7 @@
       <small id="userGrowthNote" class="text-muted">Loading...</small>
     </div>
 
-    <div class="insight-card">
-      <h3>🎯 Forecast Confidence</h3>
-      <p id="forecastConfidenceAI">--</p>
-      <small id="confidenceNote">Analyzing...</small>
-    </div>
+
   </div>
 
   <!-- 🧠 2️⃣ Decision Support Section -->
@@ -1131,22 +1146,21 @@
 
     </div>
   </section>
+<!-- ☀️ 4️⃣ Seasonal Demand Forecast -->
+<section class="seasonal-insights mt-6">
+  <h3>☀️ Peak Season Predictions</h3>
 
-  <!-- ☀️ 4️⃣ Seasonal Demand Forecast -->
-  <section class="seasonal-insights mt-6">
-    <h3>☀️ Peak Season Predictions</h3>
-    <div class="chart-container full-width">
-      <canvas id="seasonalDemandChart"></canvas>
-    </div>
-  </section>
-</section>
-<!-- 🔁 USER RETENTION ANALYTICS -->
-<section class="user-retention mt-6">
-  <h3>🔁 User Retention & Engagement</h3>
+  <!-- 📍 New Summary Line -->
+  <p id="peakSeasonSummary" class="text-gray-600 text-sm mt-1"></p>
+
+  <!-- Dropdown for destinations -->
+  <select id="destinationSelect" class="mt-2 mb-3 p-2 border rounded"></select>
+
   <div class="chart-container full-width">
-    <canvas id="userRetentionChart"></canvas>
+    <canvas id="seasonalDemandChart"></canvas>
   </div>
 </section>
+  
 <!-- 👥 USER ENGAGEMENT SUMMARY -->
 <div class="analytics-section user-engagement">
   <h2>👥 User Engagement Summary</h2>
@@ -1964,853 +1978,227 @@ function showNotification(message, type) {
         notification.remove();
     }, 3000);
 }
-// Add this to your existing JavaScript
 let timeBasedUsersChart = null;
 let timeBasedBookingsChart = null;
 let timeBasedRevenueChart = null;
-let currentPeriod = 'daily';
+let currentPeriod = 'weekly';
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize date pickers with default values
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    
-    document.getElementById('daily-start-date').valueAsDate = thirtyDaysAgo;
-    document.getElementById('daily-end-date').valueAsDate = today;
-    
-    // Populate year dropdown for monthly view
-    const yearSelect = document.getElementById('monthly-year');
-    const currentYear = today.getFullYear();
-    for (let year = currentYear; year >= currentYear - 5; year--) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-    }
-    // Set up tab switching
-const chartTabs = document.querySelectorAll('.chart-tabs .chart-tab');
-chartTabs.forEach(tab => {
+  // ✅ Populate Weekly Year dropdown
+  const weeklyYearSelect = document.getElementById('weekly-year');
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear - 5; y <= currentYear + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) opt.selected = true;
+    weeklyYearSelect.appendChild(opt);
+  }
+
+  // ✅ Populate Monthly Year dropdown
+  const monthYearSelect = document.getElementById('monthly-year');
+  for (let y = currentYear; y >= currentYear - 5; y--) {
+    const option = document.createElement('option');
+    option.value = y;
+    option.textContent = y;
+    monthYearSelect.appendChild(option);
+  }
+
+  // ✅ Tab switching
+  const chartTabs = document.querySelectorAll('.chart-tabs .chart-tab');
+  chartTabs.forEach(tab => {
     tab.addEventListener('click', function() {
-        // Remove active class from all tabs
-        chartTabs.forEach(t => t.classList.remove('active'));
-        // Add active class to clicked tab
-        this.classList.add('active');
-        
-        // Hide all tab content
-        document.querySelectorAll('.chart-tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        
-        // Show selected tab content
-        const period = this.getAttribute('data-period');
-        currentPeriod = period;
-        
-        if (period === 'daily') {
-            document.querySelector('.daily-selector').classList.add('active');
-            fetchDailyAnalytics();
-        } else if (period === 'monthly') {
-            document.querySelector('.monthly-selector').classList.add('active');
-            fetchMonthlyAnalytics();
-        } else if (period === 'yearly') {
-            document.querySelector('.yearly-selector').classList.add('active'); // Add this line
-            fetchYearlyAnalytics();
-        }
+      chartTabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      document.querySelectorAll('.chart-tab-content').forEach(c => c.classList.remove('active'));
+
+      const period = this.getAttribute('data-period');
+      currentPeriod = period;
+
+      if (period === 'weekly') {
+        document.querySelector('.weekly-selector').classList.add('active');
+        fetchWeeklyAnalytics();
+      } else if (period === 'monthly') {
+        document.querySelector('.monthly-selector').classList.add('active');
+        fetchMonthlyAnalytics();
+      } else if (period === 'yearly') {
+        document.querySelector('.yearly-selector').classList.add('active');
+        fetchYearlyAnalytics();
+      }
     });
+  });
+
+  // ✅ Apply button event listeners
+  document.getElementById('weekly-apply-range').addEventListener('click', fetchWeeklyAnalytics);
+  document.getElementById('monthly-apply').addEventListener('click', fetchMonthlyAnalytics);
+  document.getElementById('yearly-apply').addEventListener('click', fetchYearlyAnalytics);
+
+  // ✅ Initial fetch
+  fetchWeeklyAnalytics();
 });
 
-    
-    // Set up button event listeners
-    document.getElementById('daily-apply-range').addEventListener('click', fetchDailyAnalytics);
-    document.getElementById('monthly-apply').addEventListener('click', fetchMonthlyAnalytics);
-    document.getElementById('yearly-apply').addEventListener('click', fetchYearlyAnalytics);
-    
-    // Initial data fetch
-    fetchDailyAnalytics();
-});
+// ✅ Weekly Analytics
+async function fetchWeeklyAnalytics() {
+  try {
+    const month = parseInt(document.getElementById('weekly-month').value);
+    const year = parseInt(document.getElementById('weekly-year').value);
 
-async function fetchDailyAnalytics() {
-    try {
-        const startDate = document.getElementById('daily-start-date').value;
-        const endDate = document.getElementById('daily-end-date').value;
-        
-        const response = await fetch(`/api/analytics/daily?startDate=${startDate}&endDate=${endDate}`, {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        updateTimeBasedCharts('daily', data);
-    } catch (error) {
-        console.error('Error fetching daily analytics:', error);
-        showNotification('Failed to load daily analytics data', 'error');
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+
+    const response = await fetch(`/api/analytics/weekly?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+    const result = await response.json();
+    if (result.success) {
+      updateTimeBasedCharts('weekly', result.data);
     }
+  } catch (error) {
+    console.error('Error fetching weekly analytics:', error);
+    showNotification('Failed to load weekly analytics data', 'error');
+  }
 }
 
+// ✅ Monthly Analytics
 async function fetchMonthlyAnalytics() {
-    try {
-        const year = document.getElementById('monthly-year').value;
-        
-        const response = await fetch(`/api/analytics/monthly?year=${year}`, {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        updateTimeBasedCharts('monthly', data);
-    } catch (error) {
-        console.error('Error fetching monthly analytics:', error);
-        showNotification('Failed to load monthly analytics data', 'error');
-    }
+  try {
+    const year = document.getElementById('monthly-year').value;
+    const response = await fetch(`/api/analytics/monthly?year=${year}`, { credentials: 'include' });
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+    const data = await response.json();
+    updateTimeBasedCharts('monthly', data);
+  } catch (error) {
+    console.error('Error fetching monthly analytics:', error);
+    showNotification('Failed to load monthly analytics data', 'error');
+  }
 }
+
+// ✅ Yearly Analytics
 async function fetchYearlyAnalytics() {
-    try {
-        const response = await fetch('/api/analytics/yearly', {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // Get the number of future years to show from the UI
-        const futurePeriod = parseInt(document.getElementById('yearly-future-years').value) || 2;
-        
-        updateTimeBasedCharts('yearly', data, futurePeriod);
-    } catch (error) {
-        console.error('Error fetching yearly analytics:', error);
-        showNotification('Failed to load yearly analytics data', 'error');
-    }
+  try {
+    const response = await fetch('/api/analytics/yearly', { credentials: 'include' });
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+    const data = await response.json();
+    updateTimeBasedCharts('yearly', data);
+  } catch (error) {
+    console.error('Error fetching yearly analytics:', error);
+    showNotification('Failed to load yearly analytics data', 'error');
+  }
 }
 
+// ✅ Chart Data Processor
 function updateTimeBasedCharts(period, data) {
-    // Process data based on period
-    let labels = [];
-    let userData = [];
-    let bookingData = [];
-    let revenueData = [];
-    
-    if (period === 'daily') {
-        // Create a map of all dates in the range
-        const startDate = new Date(document.getElementById('daily-start-date').value);
-        const endDate = new Date(document.getElementById('daily-end-date').value);
-        const dateMap = new Map();
-        
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0];
-            dateMap.set(dateStr, { users: 0, bookings: 0, revenue: 0 });
-        }
-        
-        // Fill in actual data
-        data.dailyUsers.forEach(item => {
-            dateMap.get(item._id).users = item.count;
-        });
-        
-        data.dailyBookings.forEach(item => {
-            dateMap.get(item._id).bookings = item.count;
-            dateMap.get(item._id).revenue = item.revenue;
-        });
-        
-        // Convert map to arrays
-        dateMap.forEach((value, key) => {
-            const date = new Date(key);
-            labels.push(date.toLocaleDateString());
-            userData.push(value.users);
-            bookingData.push(value.bookings);
-            revenueData.push(value.revenue);
-        });
-    } else if (period === 'monthly') {
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const year = document.getElementById('monthly-year').value;
-        
-        // Initialize data for all months
-        const monthlyData = Array(12).fill().map(() => ({ users: 0, bookings: 0, revenue: 0 }));
-        
-        // Fill in actual data
-        data.monthlyUsers.forEach(item => {
-            if (item._id.year.toString() === year) {
-                monthlyData[item._id.month - 1].users = item.count;
-            }
-        });
-        
-        data.monthlyBookings.forEach(item => {
-            if (item._id.year.toString() === year) {
-                monthlyData[item._id.month - 1].bookings = item.count;
-                monthlyData[item._id.month - 1].revenue = item.revenue;
-            }
-        });
-        
-        // Convert to arrays
-        labels = monthNames;
-        userData = monthlyData.map(m => m.users);
-        bookingData = monthlyData.map(m => m.bookings);
-        revenueData = monthlyData.map(m => m.revenue);
-    } else  if (period === 'yearly') {
-        // Get all unique years from the data
-        const years = new Set();
-        data.yearlyUsers.forEach(item => years.add(item._id.year));
-        data.yearlyBookings.forEach(item => years.add(item._id.year));
-        
-        // Sort years
-        const sortedYears = Array.from(years).sort();
-        
-        // Get current year
-        const currentYear = new Date().getFullYear();
-        
-        // Add future years
-        const futureYears = [];
-        for (let year = currentYear; year <= currentYear + futurePeriod; year++) {
-            if (!years.has(year)) {
-                futureYears.push(year);
-            }
-        }
-        
-        // Combine existing and future years
-        const allYears = [...sortedYears, ...futureYears].sort();
-        
-        // Initialize data for all years
-        const yearlyData = {};
-        allYears.forEach(year => {
-            yearlyData[year] = { users: 0, bookings: 0, revenue: 0 };
-        });
-        
-        // Fill in actual data
-        data.yearlyUsers.forEach(item => {
-            yearlyData[item._id.year].users = item.count;
-        });
-        
-        data.yearlyBookings.forEach(item => {
-            yearlyData[item._id.year].bookings = item.count;
-            yearlyData[item._id.year].revenue = item.revenue;
-        });
-        
-        // Convert to arrays
-        labels = allYears.map(year => year.toString());
-        userData = allYears.map(year => yearlyData[year].users);
-        bookingData = allYears.map(year => yearlyData[year].bookings);
-        revenueData = allYears.map(year => yearlyData[year].revenue);
-    }
-    // Update charts
-    updateUsersChart(labels, userData);
-    updateBookingsChart(labels, bookingData);
-    updateRevenueChart(labels, revenueData);
-}
-function updateUsersChart(labels, userData) {
-    const ctx = document.getElementById('timeBasedUsersChart').getContext('2d');
-    
-    if (timeBasedUsersChart) {
-        timeBasedUsersChart.destroy();
-    }
-    
-    timeBasedUsersChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'User Registrations',
-                data: userData,
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
+  let labels = [], userData = [], bookingData = [], revenueData = [];
+
+  if (period === 'weekly') {
+    const weekEntries = Object.entries(data);
+    weekEntries.forEach(([weekStart, values]) => {
+      const start = new Date(weekStart);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      labels.push(`${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
+      userData.push(values.users || 0);
+      bookingData.push(values.bookings || 0);
+      revenueData.push(values.revenue || 0);
     });
-}
-
-function updateBookingsChart(labels, bookingData) {
-    const ctx = document.getElementById('timeBasedBookingsChart').getContext('2d');
-    
-    if (timeBasedBookingsChart) {
-        timeBasedBookingsChart.destroy();
-    }
-    
-    timeBasedBookingsChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Bookings',
-                data: bookingData,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
+  } else if (period === 'monthly') {
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const year = document.getElementById('monthly-year').value;
+    const monthlyData = Array(12).fill().map(() => ({ users: 0, bookings: 0, revenue: 0 }));
+    data.monthlyUsers.forEach(item => {
+      if (item._id.year.toString() === year) monthlyData[item._id.month - 1].users = item.count;
     });
-}
-
-function updateRevenueChart(labels, revenueData) {
-    const ctx = document.getElementById('timeBasedRevenueChart').getContext('2d');
-    
-    if (timeBasedRevenueChart) {
-        timeBasedRevenueChart.destroy();
-    }
-    
-    timeBasedRevenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Sales',
-                data: revenueData,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₱' + value.toLocaleString();
-                        }
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return '₱' + context.raw.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
+    data.monthlyBookings.forEach(item => {
+      if (item._id.year.toString() === year) {
+        monthlyData[item._id.month - 1].bookings = item.count;
+        monthlyData[item._id.month - 1].revenue = item.revenue;
+      }
     });
-}
-document.addEventListener('DOMContentLoaded', function() {
-    const analyticsSelector = document.getElementById('analyticsType');
-    const userAnalytics = document.getElementById('userAnalytics');
-    const bookingAnalytics = document.getElementById('bookingAnalytics');
-    const seasonalAnalytics = document.getElementById('seasonalAnalytics');
+    labels = monthNames;
+    userData = monthlyData.map(m => m.users);
+    bookingData = monthlyData.map(m => m.bookings);
+    revenueData = monthlyData.map(m => m.revenue);
+  } else if (period === 'yearly') {
+    const years = new Set();
+    data.yearlyUsers.forEach(item => years.add(item._id.year));
+    data.yearlyBookings.forEach(item => years.add(item._id.year));
+    const sortedYears = Array.from(years).sort();
+    labels = sortedYears.map(y => y.toString());
+    userData = sortedYears.map(y => (data.yearlyUsers.find(i => i._id.year === y)?.count) || 0);
+    bookingData = sortedYears.map(y => (data.yearlyBookings.find(i => i._id.year === y)?.count) || 0);
+    revenueData = sortedYears.map(y => (data.yearlyBookings.find(i => i._id.year === y)?.revenue) || 0);
+  }
 
-    analyticsSelector.addEventListener('change', function() {
-        // Hide all analytics sections
-        userAnalytics.style.display = 'none';
-        bookingAnalytics.style.display = 'none';
-        seasonalAnalytics.style.display = 'none';
-
-        // Show selected analytics section
-        switch(this.value) {
-            case 'user':
-                userAnalytics.style.display = 'block';
-                break;
-            case 'booking':
-                bookingAnalytics.style.display = 'block';
-                break;
-            case 'seasonal':
-                seasonalAnalytics.style.display = 'block';
-                break;
-        }
-
-        // Trigger a resize event to fix any chart rendering issues
-        window.dispatchEvent(new Event('resize'));
-    });
-});
-const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-        y: {
-            beginAtZero: true
-        }
-    }
-};
-
-// Add resize event listener
-window.addEventListener('resize', function() {
-    if (userChart) userChart.resize();
-    if (bookingChart) bookingChart.resize();
-    if (destinationChart) destinationChart.resize();
-    if (revenueChart) revenueChart.resize();
-    if (userTrendsChart) userTrendsChart.resize();
-    if (seasonalTrendsChart) seasonalTrendsChart.resize();
-    if (paymentMethodsChart) paymentMethodsChart.resize();
-});
-
-async function fetchDailyAnalytics() {
-    try {
-        const startDate = document.getElementById('daily-start-date').value;
-        const endDate = document.getElementById('daily-end-date').value;
-        
-        const response = await fetch(`/api/analytics/daily?startDate=${startDate}&endDate=${endDate}`, {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        updateTimeBasedCharts('daily', data);
-    } catch (error) {
-        console.error('Error fetching daily analytics:', error);
-        showNotification('Failed to load daily analytics data', 'error');
-    }
+  updateUsersChart(labels, userData);
+  updateBookingsChart(labels, bookingData);
+  updateRevenueChart(labels, revenueData);
 }
 
-async function fetchMonthlyAnalytics() {
-    try {
-        const year = document.getElementById('monthly-year').value;
-        
-        const response = await fetch(`/api/analytics/monthly?year=${year}`, {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        updateTimeBasedCharts('monthly', data);
-    } catch (error) {
-        console.error('Error fetching monthly analytics:', error);
-        showNotification('Failed to load monthly analytics data', 'error');
-    }
-}
-
-async function fetchYearlyAnalytics() {
-    try {
-        const response = await fetch('/api/analytics/yearly', {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        updateTimeBasedCharts('yearly', data);
-    } catch (error) {
-        console.error('Error fetching yearly analytics:', error);
-        showNotification('Failed to load yearly analytics data', 'error');
-    }
-}
-function updateTimeBasedCharts(period, data) {
-    // Process data based on period
-    let labels = [];
-    let userData = [];
-    let bookingData = [];
-    let revenueData = [];
-    
-    if (period === 'daily') {
-        // Create a map of all dates in the range
-        const startDate = new Date(document.getElementById('daily-start-date').value);
-        const endDate = new Date(document.getElementById('daily-end-date').value);
-        const dateMap = new Map();
-        
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0];
-            dateMap.set(dateStr, { users: 0, bookings: 0, revenue: 0 });
-        }
-        
-        // Fill in actual data
-        data.dailyUsers.forEach(item => {
-            dateMap.get(item._id).users = item.count;
-        });
-        
-        data.dailyBookings.forEach(item => {
-            dateMap.get(item._id).bookings = item.count;
-            dateMap.get(item._id).revenue = item.revenue;
-        });
-        
-        // Convert map to arrays
-        dateMap.forEach((value, key) => {
-            const date = new Date(key);
-            labels.push(date.toLocaleDateString());
-            userData.push(value.users);
-            bookingData.push(value.bookings);
-            revenueData.push(value.revenue);
-        });
-    } else if (period === 'monthly') {
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const year = document.getElementById('monthly-year').value;
-        
-        // Initialize data for all months
-        const monthlyData = Array(12).fill().map(() => ({ users: 0, bookings: 0, revenue: 0 }));
-        
-        // Fill in actual data
-        data.monthlyUsers.forEach(item => {
-            if (item._id.year.toString() === year) {
-                monthlyData[item._id.month - 1].users = item.count;
-            }
-        });
-        
-        data.monthlyBookings.forEach(item => {
-            if (item._id.year.toString() === year) {
-                monthlyData[item._id.month - 1].bookings = item.count;
-                monthlyData[item._id.month - 1].revenue = item.revenue;
-            }
-        });
-        
-        // Convert to arrays
-        labels = monthNames;
-        userData = monthlyData.map(m => m.users);
-        bookingData = monthlyData.map(m => m.bookings);
-        revenueData = monthlyData.map(m => m.revenue);
-    } else if (period === 'yearly') {
-        // Get all unique years from the data
-        const years = new Set();
-        data.yearlyUsers.forEach(item => years.add(item._id.year));
-        data.yearlyBookings.forEach(item => years.add(item._id.year));
-        
-        // Sort years
-        const sortedYears = Array.from(years).sort();
-        
-        // Get current year
-        const currentYear = new Date().getFullYear();
-       // Get the number of future years to show from the UI
-const futurePeriod = parseInt(document.getElementById('yearly-future-years').value) || 2;
-
-// Add future years
-const futureYears = [];
-for (let year = currentYear; year <= currentYear + futurePeriod; year++) {
-    if (!years.has(year)) {
-        futureYears.push(year);
-    }
-}
-
-        
-        // Combine existing and future years
-        const allYears = [...sortedYears, ...futureYears].sort();
-        
-        // Initialize data for all years
-        const yearlyData = {};
-        allYears.forEach(year => {
-            yearlyData[year] = { users: 0, bookings: 0, revenue: 0 };
-        });
-        
-        // Fill in actual data
-        data.yearlyUsers.forEach(item => {
-            yearlyData[item._id.year].users = item.count;
-        });
-        
-        data.yearlyBookings.forEach(item => {
-            yearlyData[item._id.year].bookings = item.count;
-            yearlyData[item._id.year].revenue = item.revenue;
-        });
-        
-        // Convert to arrays
-        labels = allYears.map(year => year.toString());
-        userData = allYears.map(year => yearlyData[year].users);
-        bookingData = allYears.map(year => yearlyData[year].bookings);
-        revenueData = allYears.map(year => yearlyData[year].revenue);
-    }
-    
-    // Update charts
-    updateUsersChart(labels, userData);
-    updateBookingsChart(labels, bookingData);
-    updateRevenueChart(labels, revenueData);
-}
-
-
-function updateUsersChart(labels, userData) {
-    const ctx = document.getElementById('timeBasedUsersChart').getContext('2d');
-    
-    if (timeBasedUsersChart) {
-        timeBasedUsersChart.destroy();
-    }
-    
-    timeBasedUsersChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'User Registrations',
-                data: userData,
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
-}
-
-function updateBookingsChart(labels, bookingData) {
-    const ctx = document.getElementById('timeBasedBookingsChart').getContext('2d');
-    
-    if (timeBasedBookingsChart) {
-        timeBasedBookingsChart.destroy();
-    }
-    
-    timeBasedBookingsChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Bookings',
-                data: bookingData,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
-}
-
-function updateRevenueChart(labels, revenueData) {
-    const ctx = document.getElementById('timeBasedRevenueChart').getContext('2d');
-    
-    if (timeBasedRevenueChart) {
-        timeBasedRevenueChart.destroy();
-    }
-    
-    timeBasedRevenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Sales',
-                data: revenueData,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₱' + value.toLocaleString();
-                        }
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return '₱' + context.raw.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
+// ✅ Moving Average Helper
 function calculateMovingAverage(data, windowSize) {
-    const movingAverages = [];
-    for (let i = 0; i < data.length; i++) {
-        const start = Math.max(0, i - windowSize + 1);
-        const windowData = data.slice(start, i + 1);
-        const sum = windowData.reduce((acc, val) => acc + val, 0);
-        movingAverages.push(Math.round(sum / windowData.length));
-    }
-    return movingAverages;
-}
-function updateUsersChart(labels, userData) {
-    const ctx = document.getElementById('timeBasedUsersChart').getContext('2d');
-    
-    if (timeBasedUsersChart) {
-        timeBasedUsersChart.destroy();
-    }
-    
-    const movingAverageData = calculateMovingAverage(userData, 7); // 7-day moving average
-    
-    timeBasedUsersChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'User Registrations',
-                data: userData,
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                fill: true
-            }, {
-                label: '7-Day Moving Average',
-                data: movingAverageData,
-                backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
+  const averages = [];
+  for (let i = 0; i < data.length; i++) {
+    const start = Math.max(0, i - windowSize + 1);
+    const slice = data.slice(start, i + 1);
+    averages.push(Math.round(slice.reduce((a, b) => a + b, 0) / slice.length));
+  }
+  return averages;
 }
 
-function updateBookingsChart(labels, bookingData) {
-    const ctx = document.getElementById('timeBasedBookingsChart').getContext('2d');
-    
-    if (timeBasedBookingsChart) {
-        timeBasedBookingsChart.destroy();
+// ✅ Chart Updaters (with Moving Averages)
+function updateUsersChart(labels, data) {
+  const ctx = document.getElementById('timeBasedUsersChart').getContext('2d');
+  if (timeBasedUsersChart) timeBasedUsersChart.destroy();
+  const avg = calculateMovingAverage(data, 2);
+  timeBasedUsersChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Users', data, borderColor: 'rgba(54,162,235,1)', fill: true },
+        { label: 'Moving Avg', data: avg, borderColor: 'rgba(255,159,64,1)', fill: false }
+      ]
     }
-    
-    const movingAverageData = calculateMovingAverage(bookingData, 7); // 7-day moving average
-    
-    timeBasedBookingsChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Bookings',
-                data: bookingData,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                fill: true
-            }, {
-                label: '7-Day Moving Average',
-                data: movingAverageData,
-                backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                borderColor: 'rgba(255, 206, 86, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
+  });
 }
 
-function updateRevenueChart(labels, revenueData) {
-    const ctx = document.getElementById('timeBasedRevenueChart').getContext('2d');
-    
-    if (timeBasedRevenueChart) {
-        timeBasedRevenueChart.destroy();
+function updateBookingsChart(labels, data) {
+  const ctx = document.getElementById('timeBasedBookingsChart').getContext('2d');
+  if (timeBasedBookingsChart) timeBasedBookingsChart.destroy();
+  const avg = calculateMovingAverage(data, 2);
+  timeBasedBookingsChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Bookings', data, borderColor: 'rgba(255,99,132,1)', fill: true },
+        { label: 'Moving Avg', data: avg, borderColor: 'rgba(255,206,86,1)', fill: false }
+      ]
     }
-    
-    const movingAverageData = calculateMovingAverage(revenueData, 7); // 7-day moving average
-    
-    timeBasedRevenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Sales',
-                data: revenueData,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                fill: true
-            }, {
-                label: '7-Day Moving Average',
-                data: movingAverageData,
-                backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                borderColor: 'rgba(153, 102, 255, 1)',
-                borderWidth: 1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₱' + value.toLocaleString();
-                        }
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return '₱' + context.raw.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
+  });
 }
+
+function updateRevenueChart(labels, data) {
+  const ctx = document.getElementById('timeBasedRevenueChart').getContext('2d');
+  if (timeBasedRevenueChart) timeBasedRevenueChart.destroy();
+  const avg = calculateMovingAverage(data, 2);
+  timeBasedRevenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Sales (₱)', data, borderColor: 'rgba(75,192,192,1)', fill: true },
+        { label: 'Moving Avg', data: avg, borderColor: 'rgba(153,102,255,1)', fill: false }
+      ]
+    }
+  });
+}
+
 let seasonalTrendsChart = null;
 let predictedDestinationsChart = null;
 document.addEventListener('DOMContentLoaded', function() {
@@ -3763,7 +3151,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 async function loadForecast(metric, chartId, accuracyId, noteId, horizon) {
   try {
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3879,7 +3267,7 @@ async function loadAIInsights() {
     const res = await fetch("/api/admin/tours-performance");
     const tourData = await res.json();
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: tourData })
@@ -4023,30 +3411,128 @@ async function buildGrowthComparison() {
     console.error("❌ Growth Chart Error:", err);
   }
 }
-
-
-// ------------------------------------------------
-// 🌤 Seasonal Demand Forecast (AI via /predict)
-// ------------------------------------------------
 async function buildSeasonalForecast() {
   try {
     const res = await fetch("/api/admin/seasonal-data");
-    const dataset = await res.json(); // [{ ds, y }]
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ series: dataset, horizon: 365 })
-    });
-    const forecast = await response.json();
-    if (forecast.success) {
-      const labels = forecast.forecast.map(f => f.ds);
+    const data = await res.json();
+    if (!data.success) throw new Error("Failed to load seasonal data");
+
+    const select = document.getElementById("destinationSelect");
+    const summary = document.getElementById("peakSeasonSummary");
+    const ctx = document.getElementById("seasonalDemandChart").getContext("2d");
+    let seasonalChart;
+
+    const destinations = Object.keys(data.datasets);
+    select.innerHTML = destinations
+      .map(dest => `<option value="${dest}">${dest}</option>`)
+      .join("");
+
+    async function updateChart(destination) {
+      const series = data.datasets[destination];
+      const response = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ series, horizon: 365 })
+      });
+      const forecast = await response.json();
+      if (!forecast.success) throw new Error("Prediction failed");
+
+      const labels = forecast.forecast.map(f =>
+        new Date(f.ds).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        })
+      );
       const values = forecast.forecast.map(f => f.yhat);
-      makeChart("seasonalDemandChart", "Forecasted Demand", labels, values, "#10b981");
+
+      // 🏔 Find the highest value and its date
+      const maxIndex = values.indexOf(Math.max(...values));
+      const peakDate = labels[maxIndex];
+      const peakValue = values[maxIndex].toLocaleString();
+
+      // 🪄 Update summary text
+      summary.textContent = `🌟 Peak Season for ${destination}: ${peakDate} — Highest predicted demand (${peakValue} bookings)`;
+
+      // 🔄 Destroy existing chart if it exists
+      if (seasonalChart) seasonalChart.destroy();
+
+      // 📊 Draw new chart
+      seasonalChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: `${destination} Seasonal Demand`,
+              data: values,
+              borderColor: "#f26523",
+              backgroundColor: "rgba(242, 101, 35, 0.2)",
+              borderWidth: 2,
+              tension: 0.3,
+              fill: true,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.formattedValue} bookings`
+              }
+            },
+            annotation: {
+              annotations: {
+                peakLine: {
+                  type: "line",
+                  xMin: maxIndex,
+                  xMax: maxIndex,
+                  borderColor: "#f26523",
+                  borderWidth: 2,
+                  label: {
+                    content: `Peak: ${peakDate}`,
+                    enabled: true,
+                    position: "start"
+                  }
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              title: {
+                display: true,
+                text: "Predicted Bookings"
+              }
+            }
+          }
+        }
+      });
     }
+
+    // 🧠 Auto-select destination with highest total demand
+    const totals = destinations.map(dest => {
+      const sum = data.datasets[dest].reduce((a, b) => a + b.y, 0);
+      return { dest, total: sum };
+    });
+    const topDestination = totals.reduce((a, b) => (a.total > b.total ? a : b)).dest;
+    select.value = topDestination;
+
+    // Load top destination first
+    updateChart(topDestination);
+
+    // Allow switching between destinations
+    select.addEventListener("change", e => updateChart(e.target.value));
+
   } catch (err) {
-    console.error("Seasonal Forecast Error:", err);
+    console.error("Seasonal forecast error:", err);
   }
 }
+
 // ------------------------------------------------
 // 👥 User Growth Chart (Historical + Predictive)
 // ------------------------------------------------
@@ -4061,7 +3547,7 @@ async function buildUserGrowthChart() {
       y: data.counts[i]
     }));
 
-    const forecastRes = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const forecastRes = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 90 })
@@ -4463,6 +3949,25 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 document.getElementById("seasonal-apply").addEventListener("click", loadSeasonalForecast);
+</script>
+<script>
+document.getElementById("exportDashboardExcel").addEventListener("click", async () => {
+  try {
+    const res = await fetch("/api/admin/export-dashboard");
+    if (!res.ok) throw new Error("Export failed");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "A.BEE_Admin_Report.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Export error:", err);
+    alert("⚠️ Failed to export report. Please try again.");
+  }
+});
 </script>
 
 </body>
