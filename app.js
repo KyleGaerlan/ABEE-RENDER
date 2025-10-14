@@ -1344,7 +1344,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("${FASTAPI_URL}/predict", {
+    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
       series,
       horizon: 30
     });
