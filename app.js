@@ -1344,7 +1344,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1428,7 +1428,7 @@ app.get('/api/predict/bookings', async (req, res) => {
 
     const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1463,7 +1463,7 @@ app.get('/api/predict/users', async (req, res) => {
     const series = userData.map(u => ({ ds: u._id, y: u.totalUsers }));
 
     // 🔮 Call your FastAPI Prophet forecast service
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30 // Predict next 30 days — you can increase to 180 if needed
     });
@@ -1500,7 +1500,7 @@ app.get('/api/predict/seasonal', async (req, res) => {
       y: d.totalBookings
     }));
 
-    const { data: response } = await axios.post('https://fast-api-service-cap1.onrender.com/predict', {
+    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
       series, horizon: 4
     });
 
@@ -1629,7 +1629,7 @@ async function buildSalesSeries() {
 
 app.get("/api/forecast", async (req, res) => {
   try {
-    const response = await axios.get("https://fast-api-service-cap1.onrender.com/predict");
+    const response = await axios.get("http://127.0.0.1:8000/predict");
     res.json(response.data);
   } catch (error) {
     console.error("❌ Error fetching forecast:", error.message);
@@ -1649,7 +1649,7 @@ app.get("/api/forecast/:type", async (req, res) => {
       series = await buildUserSeries();
     }
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 180 }),
@@ -2046,7 +2046,16 @@ app.get("/api/admin/user-engagement", async (req, res) => {
 // Provides historical monthly active user counts + retention rate
 app.get("/api/admin/user-engagement-trend", async (req, res) => {
   try {
+    const now = new Date();
+    const startOf2023 = new Date("2023-01-01");
+
+    // ✅ 1. Get monthly active users (within real date range)
     const monthlyActive = await User.aggregate([
+      {
+        $match: {
+          lastActiveAt: { $exists: true, $ne: null, $gte: startOf2023, $lte: now }
+        }
+      },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m", date: "$lastActiveAt" } },
@@ -2056,16 +2065,23 @@ app.get("/api/admin/user-engagement-trend", async (req, res) => {
       { $sort: { "_id": 1 } }
     ]);
 
+    // ✅ 2. Get monthly new users (within real date range)
     const monthlyNewUsers = await User.aggregate([
+      {
+        $match: {
+          createdAt: { $exists: true, $ne: null, $gte: startOf2023, $lte: now }
+        }
+      },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
           newUsers: { $sum: 1 }
         }
-      }
+      },
+      { $sort: { "_id": 1 } }
     ]);
 
-    // Match retention (active / total users)
+    // ✅ 3. Merge monthly data
     const map = {};
     monthlyNewUsers.forEach(n => (map[n._id] = { newUsers: n.newUsers, activeUsers: 0 }));
 
@@ -2074,11 +2090,12 @@ app.get("/api/admin/user-engagement-trend", async (req, res) => {
       map[a._id].activeUsers = a.activeUsers;
     });
 
+    // ✅ 4. Compute trends safely (cap retention ≤ 100)
     const months = Object.keys(map).sort();
     const active = months.map(m => map[m].activeUsers);
     const retention = months.map(m => {
       const { newUsers, activeUsers } = map[m];
-      return newUsers ? (activeUsers / newUsers) * 100 : 0;
+      return newUsers ? Math.min((activeUsers / newUsers) * 100, 100) : 0;
     });
 
     res.json({ months, active, retention });
@@ -2087,6 +2104,7 @@ app.get("/api/admin/user-engagement-trend", async (req, res) => {
     res.status(500).json({ error: "Failed to load engagement trend data" });
   }
 });
+
 app.get("/api/admin/user-activity", async (req, res) => {
   try {
     const now = new Date();
@@ -2215,7 +2233,7 @@ app.get("/api/admin/seasonal-forecast", async (req, res) => {
     });
 
     // 2️⃣ Send this data to your Python API for Prophet forecasting
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2289,7 +2307,7 @@ app.get('/api/analytics/seasonal', async (req, res) => {
     });
 
     // ✅ Send actual data to FastAPI Prophet for prediction
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2476,7 +2494,7 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
 
     let predictions = [];
     try {
-      const response = await fetch("https://fast-api-service-cap1.onrender.com/predict-all");
+      const response = await fetch("http://127.0.0.1:8000/predict-all");
       if (response.ok) predictions = await response.json();
     } catch (err) {
       forecastSheet.addRow(["Error fetching forecast data"]);
@@ -2593,6 +2611,7 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
     res.status(500).send("Failed to export dashboard data");
   }
 });
+
 app.post('/api/admin/forgot-password', async (req, res) => {
     const { email, role } = req.body;
     
@@ -6847,6 +6866,57 @@ app.get('/api/analytics/yearly', checkAdminAuth, async (req, res) => {
         });
     }
 });
+// 📊 Year-to-Year Monthly Comparison API
+app.get('/api/analytics/monthly-comparison', checkAdminAuth, async (req, res) => {
+  try {
+    const { year1, year2 } = req.query;
+
+    if (!year1 || !year2) {
+      return res.status(400).json({ success: false, message: 'Both years are required' });
+    }
+
+    const getMonthlyData = async (year) => {
+      const start = new Date(year, 0, 1);
+      const end = new Date(year, 11, 31, 23, 59, 59);
+
+      const users = await User.aggregate([
+        { $match: { createdAt: { $gte: start, $lte: end } } },
+        { $group: { _id: { $month: "$createdAt" }, count: { $sum: 1 } } },
+        { $sort: { "_id": 1 } }
+      ]);
+
+      const bookings = await Booking.aggregate([
+        { $match: { createdAt: { $gte: start, $lte: end } } },
+        { $group: { _id: { $month: "$createdAt" }, count: { $sum: 1 } } },
+        { $sort: { "_id": 1 } }
+      ]);
+
+      const revenue = await Booking.aggregate([
+        { $match: { createdAt: { $gte: start, $lte: end } } },
+        { $group: { _id: { $month: "$createdAt" }, total: { $sum: "$totalAmount" } } },
+        { $sort: { "_id": 1 } }
+      ]);
+
+      const months = Array.from({ length: 12 }, (_, i) => i + 1);
+
+      return {
+        year,
+        users: months.map(m => users.find(u => u._id === m)?.count || 0),
+        bookings: months.map(m => bookings.find(b => b._id === m)?.count || 0),
+        revenue: months.map(m => revenue.find(r => r._id === m)?.total || 0)
+      };
+    };
+
+    const data1 = await getMonthlyData(Number(year1));
+    const data2 = await getMonthlyData(Number(year2));
+
+    res.json({ success: true, data1, data2 });
+
+  } catch (error) {
+    console.error("❌ Error in monthly comparison:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 const checkManagerAuth = (req, res, next) => {
     if (!req.session || !req.session.admin || req.session.admin.role !== 'manager') {
@@ -7243,7 +7313,7 @@ app.get("/api/insights", async (req, res) => {
     console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
 
     // ✅ Send to FastAPI
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: cleanTours })
