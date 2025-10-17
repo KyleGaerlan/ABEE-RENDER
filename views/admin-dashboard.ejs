@@ -35,20 +35,6 @@
             padding-bottom: 10px;
         }
 
-        .chart-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            grid-column: span 6;
-        }
 
         .chart-container h3 {
             margin-top: 0;
@@ -56,14 +42,6 @@
             font-size: 1.1rem;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
-        }
-
-        .chart-container.full-width {
-            grid-column: span 12;
-        }
-
-        .chart-container.medium-width {
-            grid-column: span 4;
         }
 
         .card-content {
@@ -508,27 +486,6 @@
 }
 /* Update these CSS rules in your existing styles */
 
-.chart-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    margin-bottom: 20px;
-    width: 100%;
-}
-
-.chart-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 20px;
-    position: relative;
-    width: 80%;
-    height: 600px; /* Fixed height for all charts */
-}
-
-.chart-container.full-width {
-    grid-column: 1 / -1; /* Span all columns */
-}
 
 .chart-container canvas {
     width: 100% !important;
@@ -692,26 +649,6 @@
   font-weight: bold;
   color: #d55a1f;
 }
-.chart-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 1.5rem;
-  align-items: start; /* Prevent stretch */
-}
-
-/* 🧱 Ensure chart containers keep natural height */
-.chart-container {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  height: auto;
-  min-height: 360px; /* Enough for charts but not oversized */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
 
 .chart-container canvas {
   flex-grow: 1;
@@ -831,7 +768,273 @@
 }
 
   </style>
-  
+  <style>/* ✅ CLEAN DASHBOARD CHART STYLING FIX */
+
+/* --- Chart Layout Grid --- */
+.chart-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-items: stretch;
+  gap: 2rem;
+  width: 100%;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* --- Chart Containers --- */
+.chart-container {
+  flex: 1 1 400px;
+  max-width: 500px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.chart-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Canvas --- */
+.chart-container canvas {
+  width: 100% !important;
+  height: 320px !important;
+}
+
+/* --- Section Titles --- */
+.analytics-section h3 {
+  font-size: 1.15rem;
+  color: #333;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* --- Selects and Buttons --- */
+.weekly-selector select,
+.monthly-selector select,
+.yearly-selector select,
+.selector-container select {
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+  transition: border-color 0.2s ease;
+}
+
+.weekly-selector select:focus,
+.monthly-selector select:focus,
+.yearly-selector select:focus,
+.selector-container select:focus {
+  outline: none;
+  border-color: #f26523;
+  box-shadow: 0 0 4px rgba(242, 101, 35, 0.3);
+}
+
+.weekly-selector label,
+.monthly-selector label,
+.yearly-selector label {
+  font-weight: 600;
+  color: #333;
+  margin-right: 8px;
+}
+
+.weekly-selector button,
+.monthly-selector button,
+.yearly-selector button {
+  background-color: #f26523;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.weekly-selector button:hover,
+.monthly-selector button:hover,
+.yearly-selector button:hover {
+  background-color: #d55a1f;
+}
+
+.weekly-selector button:active,
+.monthly-selector button:active,
+.yearly-selector button:active {
+  transform: scale(0.97);
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+  .chart-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .chart-container {
+    max-width: 90%;
+    height: auto;
+  }
+}
+</style>
+<style>
+/* 🎯 FINAL FIX — Full-width, balanced chart layout */
+
+/* Reset any Bootstrap flex overrides on chart grids */
+.d-flex.flex-wrap.justify-content-center.gap-4,
+.chart-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)) !important;
+  gap: 2rem !important;
+  justify-content: stretch !important;
+  align-items: stretch !important;
+  width: 90% !important;
+  margin: 2rem 0 !important;
+  padding: 0 !important;
+}
+
+/* Each chart container should expand equally */
+.chart-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-container:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+/* Charts stretch nicely inside container */
+.chart-container canvas {
+  width: 100% !important;
+  height: 400px !important;
+  object-fit: contain;
+}
+
+/* --- Filter Row Controls (Month/Year/Apply) --- */
+.weekly-selector .row,
+.monthly-selector .row,
+.yearly-selector .row {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: flex-end !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.weekly-selector .col-md-4,
+.monthly-selector .col-md-6,
+.yearly-selector .col-md-4 {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 220px !important;
+  max-width: 260px !important;
+}
+
+/* --- Selects --- */
+.form-select,
+.period-selector,
+.destination-select {
+  width: 100% !important;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 14px;
+  color: #333;
+}
+
+/* --- Buttons --- */
+.action-button,
+.export-btn {
+  background-color: #f26523;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  width: auto !important;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.action-button:hover,
+.export-btn:hover {
+  background-color: #d55a1f;
+}
+
+/* --- Responsive behavior --- */
+@media (max-width: 992px) {
+  .chart-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .chart-container canvas {
+    height: 300px !important;
+  }
+  .weekly-selector .row,
+  .monthly-selector .row,
+  .yearly-selector .row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}
+</style>
+<style>
+/* 🎯 Fix select width scoping */
+
+/* Limit full-width selects ONLY inside chart filter sections */
+.weekly-selector select,
+.monthly-selector select,
+.yearly-selector select {
+  width: 90% !important;
+}
+
+/* Other selects (global period, comparison tab, forecast, etc.) stay auto-sized */
+.period-selector,
+.destination-select,
+.selector-container select,
+.global-period-filter select {
+  width: auto !important;
+  min-width: 150px !important;
+  max-width: 220px !important;
+}
+
+/* Optional: make them look consistent */
+.period-selector,
+.destination-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+  transition: border-color 0.2s ease;
+}
+
+.period-selector:focus,
+.destination-select:focus {
+  border-color: #f26523;
+  box-shadow: 0 0 4px rgba(242, 101, 35, 0.4);
+  outline: none;
+}
+</style>
+
 </head>
 <body>
     <button class="menu-toggle" id="menuToggle">
@@ -868,8 +1071,7 @@
     </div>
 <div class="main-content">
   <header class="dashboard-header">
-    <h1>Admin Dashboard</h1>
-    <div class="header-actions">
+    <div class="header-actions" style="margin-left:490px;">
       <div class="export-buttons">
         <button id="printDashboard" class="action-button print-button">
           <i class="fas fa-print"></i> Print Dashboard
@@ -892,8 +1094,8 @@
     <h2>Overview Metrics</h2>
     
   <!-- 🧭 GLOBAL PERIOD FILTER -->
-  <div class="global-period-filter" style="margin-bottom: 10px;">
-    <label for="globalPeriod"><strong>Period:</strong></label>
+  <div class="global-period-filter" style="margin-bottom: 10px; width:20%; display:flex;">
+    <label for="globalPeriod" style="display:flex;"><strong>Period:</strong></label>
     <select id="globalPeriod" class="period-selector">
       <option value="all">All Time</option>
       <option value="year">This Year</option>
@@ -957,86 +1159,82 @@
   </div>
 <!-- 🗓 WEEKLY -->
 <div class="weekly-selector chart-tab-content active">
-  <label for="weekly-month">Select Month:</label>
-  <select id="weekly-month">
-    <option value="0">January</option>
-    <option value="1">February</option>
-    <option value="2">March</option>
-    <option value="3">April</option>
-    <option value="4">May</option>
-    <option value="5">June</option>
-    <option value="6">July</option>
-    <option value="7">August</option>
-    <option value="8">September</option>
-    <option value="9">October</option>
-    <option value="10">November</option>
-    <option value="11">December</option>
-  </select>
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label for="weekly-month">Select Month:</label>
+      <select id="weekly-month" class="form-select">
+        <option value="0">January</option>
+        <option value="1">February</option>
+        <option value="2">March</option>
+        <option value="3">April</option>
+        <option value="4">May</option>
+        <option value="5">June</option>
+        <option value="6">July</option>
+        <option value="7">August</option>
+        <option value="8">September</option>
+        <option value="9">October</option>
+        <option value="10">November</option>
+        <option value="11">December</option>
+      </select>
+    </div>
 
-  <label for="weekly-year">Year:</label>
-  <select id="weekly-year"></select>
+    <div class="col-md-4">
+      <label for="weekly-year">Select Year:</label>
+      <select id="weekly-year" class="form-select"></select>
+    </div>
 
-  <label for="weekly-metric">Metric:</label>
-  <select id="weekly-metric">
-    <option value="users">User Registrations</option>
-    <option value="bookings">Bookings</option>
-    <option value="revenue">Sales</option>
-  </select>
-
-  <button id="weekly-apply" class="action-button" style="background-color:#d55a1f;color:white">
-    Apply
-  </button>
-
-  <div class="chart-container full-width">
-    <h3 id="weekly-title">Weekly Analytics</h3>
-    <canvas id="weeklyChart"></canvas>
+    <div class="col-md-4 d-flex align-items-end">
+      <button id="weekly-apply" class="action-button w-100" style="background-color:#d55a1f;color:white" onclick="fetchWeeklyAnalytics()">
+        Apply
+      </button>
+    </div>
   </div>
+
+  <!-- 🔹 3 charts will render here -->
+  <div class="chart-grid d-flex flex-wrap justify-content-center gap-4"></div>
 </div>
 
 <!-- 📅 MONTHLY -->
 <div class="monthly-selector chart-tab-content">
-  <label for="monthly-year">Select Year:</label>
-  <select id="monthly-year"></select>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label for="monthly-year">Select Year:</label>
+      <select id="monthly-year" class="form-select"></select>
+    </div>
 
-  <label for="monthly-metric">Metric:</label>
-  <select id="monthly-metric">
-    <option value="users">User Registrations</option>
-    <option value="bookings">Bookings</option>
-    <option value="revenue">Sales</option>
-  </select>
-
-  <button id="monthly-apply" class="action-button" style="background-color:#d55a1f;color:white">
-    Apply
-  </button>
-
-  <div class="chart-container full-width">
-    <h3 id="monthly-title">Monthly Analytics</h3>
-    <canvas id="monthlyChart"></canvas>
+    <div class="col-md-6 d-flex align-items-end">
+      <button id="monthly-apply" class="action-button w-100" style="background-color:#d55a1f;color:white" onclick="fetchMonthlyAnalytics()">
+        Apply
+      </button>
+    </div>
   </div>
+
+  <!-- 🔹 3 charts will render here -->
+  <div class="chart-grid d-flex flex-wrap justify-content-center gap-4"></div>
 </div>
+
 <!-- 📆 YEARLY -->
 <div class="yearly-selector chart-tab-content">
-  <label for="yearly-start">From Year:</label>
-  <select id="yearly-start"></select>
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label for="yearly-start">From Year:</label>
+      <select id="yearly-start" class="form-select"></select>
+    </div>
 
-  <label for="yearly-end">To Year:</label>
-  <select id="yearly-end"></select>
+    <div class="col-md-4">
+      <label for="yearly-end">To Year:</label>
+      <select id="yearly-end" class="form-select"></select>
+    </div>
 
-  <label for="yearly-metric">Metric:</label>
-  <select id="yearly-metric">
-    <option value="users">User Registrations</option>
-    <option value="bookings">Bookings</option>
-    <option value="revenue">Sales (₱)</option>
-  </select>
-
-  <button id="yearly-apply" class="action-button" style="background-color:#d55a1f;color:white">
-    Apply
-  </button>
-
-  <div class="chart-container full-width">
-    <h3 id="yearly-title">Yearly Analytics</h3>
-    <canvas id="yearlyChart"></canvas>
+    <div class="col-md-4 d-flex align-items-end">
+      <button id="yearly-apply" class="action-button w-100" style="background-color:#d55a1f;color:white" onclick="fetchYearlyAnalytics()">
+        Apply
+      </button>
+    </div>
   </div>
+
+  <!-- 🔹 3 charts will render here -->
+  <div class="chart-grid d-flex flex-wrap justify-content-center gap-4"></div>
 </div>
 
 <!-- ⚖️ COMPARISON TAB -->
@@ -1067,195 +1265,138 @@
       <canvas id="comparisonChart"></canvas>
     </div>
   </div>
-</div>
-</div>
 
-
-<div class="mt-6 bg-gray-50 border border-gray-200 rounded-2xl p-4 shadow-sm">
-<h1>Admin Forecast Dashboard</h1>
-  <!-- ✅ FORECAST SUMMARY CARDS -->
-<div class="forecast-summary">
-  <div class="forecast-card">
-    <h3>Projected Sales (Next 30 Days)</h3>
-    <p id="projectedSales">₱--</p>
-  </div>
-  <div class="forecast-card">
-    <h3>Projected Bookings</h3>
-    <p id="projectedBookings">--</p>
-  </div>
-</div>
-</div>
-<div class="dashboard">
-
-    <section>
-      <div class="forecast-card">
-        <h3>Sales Forecast</h3>
-        <p id="salesForecastAccuracy">MAPE: -- | RMSE: --</p>
-        <p id="salesForecastNote" class="text-orange-500" style="display: none;">Loading...</p>
-      </div>
-      <canvas id="salesForecastChart" height="120"></canvas>
-    </section>
-
-    <!-- 2️⃣ USER FORECAST -->
-    <section>
-      <div class="forecast-card">
-        <h3>User Forecast</h3>
-        <p id="userForecastAccuracy">MAPE: -- | RMSE: --</p>
-        <p id="userForecastNote" class="text-orange-500" style="display: none;">Loading...</p>
-      </div>
-      <canvas id="userForecastChart" height="120"></canvas>
-    </section>
-
-    <!-- 3️⃣ BOOKING FORECAST -->
-    <section>
-      <div class="forecast-card">
-        <h3>Booking Forecast</h3>
-        <p id="bookingForecastAccuracy">MAPE: -- | RMSE: --</p>
-        <p id="bookingForecastNote" class="text-orange-500" style="display: none;">Loading...</p>
-
-      </div>
-      <canvas id="bookingForecastChart" height="120"></canvas>
-    </section>
-
-<!-- =============================================== -->
-<!-- 🔮 AI-Driven Forecast & Decision Analytics -->
-<!-- =============================================== -->
-<section class="ai-forecast-section">
-  <h2>Predictive Insights Dashboard</h2>
-
-  <!-- 📊 1️⃣ Forecast Insight Cards -->
-  <div class="insight-grid">
-    <div class="insight-card">
-      <h3>Projected Sales</h3>
-      <p id="projectedTotalSales">₱--</p>
-      <small id="salesGrowthNote" class="text-muted">Loading...</small>
+  <!-- 🧩 NEW: Comparison Insight Cards -->
+  <div class="comparison-insights" style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+    <div class="insight-card" style="flex:1; min-width:200px;">
+      <h3>Year-over-Year Growth</h3>
+      <p id="comparisonGrowth">--%</p>
     </div>
-
-    <div class="insight-card">
-      <h3>Expected Bookings</h3>
-      <p id="projectedTotalBookings">--</p>
-      <small id="bookingsTrendNote" class="text-muted">Loading...</small>
+    <div class="insight-card" style="flex:1; min-width:200px;">
+      <h3>Higher Performing Year</h3>
+      <p id="higherYear">--</p>
     </div>
+    <div class="insight-card" style="flex:1; min-width:200px;">
+      <h3>Peak Month</h3>
+      <p id="peakMonth">--</p>
+    </div>
+  </div>
 
-    <div class="insight-card">
+  <!-- 🧠 NEW: AI-style Summary -->
+  <div id="comparisonInsightText" class="recommendations" style="margin-top:1rem;">
+    <p>Select years and metric above to generate insights.</p>
+  </div>
+</div>
+<!-- 🔮 PREDICTIVE ANALYTICS SECTION -->
+<section id="predictiveAnalytics" class="analytics-section predictive-analytics">
+  <h2>Predictive Analytics Dashboard</h2>
+
+
+  <!-- 🔸 Summary Metrics -->
+  <div class="forecast-summary" style="display: none;">
+    <div class="forecast-card">
+      <h3>Projected Sales (Next 30 Days)</h3>
+      <p id="projectedSales">₱--</p>
+    </div>
+    <div class="forecast-card">
+      <h3>Projected Bookings</h3>
+      <p id="projectedBookings">--</p>
+    </div>
+    <div class="forecast-card">
       <h3>New Users Forecast</h3>
-      <p id="projectedTotalUsers">--</p>
-      <small id="userGrowthNote" class="text-muted">Loading...</small>
-    </div>
-
-
-  </div>
-
-  <!-- 🧠 2️⃣ Decision Support Section -->
-  <section class="decision-support mt-6">
-    <h3>Booking Packages</h3>
-    <div id="aiRecommendations" class="recommendations">
-      <p>Analyzing trends and generating packages...</p>
-    </div>
-  </section>
-
-  <!-- 📈 3️⃣ Comparison & Trend Charts -->
-  <section class="trend-comparison mt-6">
-    <h3>Tour Trends</h3>
-    <div class="chart-grid">
-      <div class="chart-container">
-        <h4>Top 5 Tours</h4>
-        <canvas id="topToursChart"></canvas>
-      </div>
-     
-    </div>
-  </section>
-<section class="seasonal-insights mt-6">
-  <h3>Peak Season Predictions</h3>
-
-  <!-- 📍 New Summary Line -->
-  <p id="peakSeasonSummary" class="text-gray-600 text-sm mt-1"></p>
-
-  <!-- Dropdown for destinations -->
-  <select id="destinationSelect" class="mt-2 mb-3 p-2 border rounded"></select>
-
-  <div class="chart-container full-width">
-    <canvas id="seasonalDemandChart"></canvas>
-  </div>
-</section>
-  
-<!-- 👥 USER ENGAGEMENT SUMMARY -->
-<div class="analytics-section user-engagement">
-  <h2>User Engagement Summary</h2>
-  <div class="engagement-grid">
-    <div class="engagement-card">
-      <h3>🟢 Active in Last 7 Days</h3>
-      <p id="activeUsers7">--</p>
-    </div>
-    <div class="engagement-card">
-      <h3>🟠 Active in Last 30 Days</h3>
-      <p id="activeUsers30">--</p>
-    </div>
-    <div class="engagement-card">
-      <h3>Retention Rate</h3>
-      <p id="retentionRate">--%</p>
+      <p id="projectedUsers">--</p>
     </div>
   </div>
-</div>
-<!-- 📊 USER ENGAGEMENT TREND CHART -->
-<section class="user-engagement-trend mt-6">
-  <h3>Active Users & Retention Trend</h3>
-  <div class="chart-container full-width">
-    <canvas id="userEngagementTrendChart"></canvas>
-  </div>
 
-</section>
-<!-- 👥 USER ACTIVITY INSIGHTS -->
-<div class="analytics-section user-activity">
-  <h2>User Activity Insights</h2>
-  <div class="user-activity-summary">
-    <div><strong>Total Users:</strong> <span id="activityTotalUsers">--</span></div>
-    <div><strong>Active (7 days):</strong> <span id="activityActiveCount">--</span></div>
-    <div><strong>Inactive (30+ days):</strong> <span id="activityInactiveCount">--</span></div>
-  </div>
-
-  <div class="user-activity-lists">
-    <div class="activity-card">
-      <h3>Most Active Users</h3>
-      <ul id="mostActiveUsers" class="detailed-list"></ul>
-    </div>
-    <div class="activity-card">
-      <h3>Inactive Users (30+ Days)</h3>
-      <ul id="inactiveUsers" class="detailed-list"></ul>
-    </div>
-  </div>
-</div>
-<!-- 🌤 SEASONAL ANALYTICS (ACTUAL vs PROPHET PREDICTED) -->
-<section class="analytics-section seasonal-analytics mt-8">
-  <h2>Seasonal Analytics (Actual vs Predicted)</h2>
-  <p class="text-gray-600 mb-3">
-    Compare historical booking trends with AI-based Prophet predictions for the selected year.
-  </p>
-
-  <!-- Year Selection -->
-  <div class="analytics-controls mb-4">
-    <label for="seasonal-year" class="font-medium">Select Year:</label>
-    <select id="seasonal-year" class="ml-2 border rounded px-2 py-1"></select>
-    <button id="seasonal-apply" class="action-button ml-2" style="background-color: #d55a1f; color:white;">
-      Apply
-    </button>
-  </div>
-
-  <!-- Chart Grid -->
+  <!-- 📈 Forecast Accuracy & Charts -->
   <div class="chart-grid">
-    <div class="chart-container full-width" style="width: 100%; height: 90%;">
-      <h3> Actual Bookings per Month</h3>
-      <canvas id="seasonalTrendsChart"></canvas>
+    <div class="chart-container">
+      <h3>Sales Forecast</h3>
+      <p id="salesForecastAccuracy">MAPE: -- | RMSE: --</p>
+      <canvas id="salesForecastChart"></canvas>
     </div>
 
-    <div class="chart-container full-width" style="width: 100%; height: 90%;">
-      <h3 id="predictedBookingsTitle">Forecasted Bookings for Next Year</h3>
-      <canvas id="predictedBookingsChart"></canvas>
+    <div class="chart-container">
+      <h3>User Forecast</h3>
+      <p id="userForecastAccuracy">MAPE: -- | RMSE: --</p>
+      <canvas id="userForecastChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>Booking Forecast</h3>
+      <p id="bookingForecastAccuracy">MAPE: -- | RMSE: --</p>
+      <canvas id="bookingForecastChart"></canvas>
+    </div>
+  </div>
+
+  <!-- 🧠 AI Insights & Recommendations -->
+  <div class="ai-forecast-section mt-6">
+    <h3>AI Predictive Insights</h3>
+
+    <div class="insight-grid">
+      <div class="insight-card">
+        <h3>Projected Total Sales</h3>
+        <p id="projectedTotalSales">₱--</p>
+        <small id="salesGrowthNote" class="text-muted">Loading...</small>
+      </div>
+
+      <div class="insight-card">
+        <h3>Expected Bookings</h3>
+        <p id="projectedTotalBookings">--</p>
+        <small id="bookingsTrendNote" class="text-muted">Loading...</small>
+      </div>
+
+      <div class="insight-card">
+        <h3>User Growth</h3>
+        <p id="projectedTotalUsers">--</p>
+        <small id="userGrowthNote" class="text-muted">Loading...</small>
+      </div>
+    </div>
+
+    <div class="decision-support mt-6">
+      <h3>Top Booking Packages</h3>
+      <div id="aiRecommendations" class="recommendations">
+        <p>Analyzing data to generate optimal booking packages...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🌴 Seasonal Trends -->
+  <div class="seasonal-insights mt-6">
+    <h3>Seasonal & Tour Demand Trends</h3>
+    <p id="peakSeasonSummary" class="text-gray-600 text-sm mt-1"></p>
+    <select id="destinationSelect" class="mt-2 mb-3 p-2 border rounded"></select>
+
+    <div class="chart-container full-width">
+      <canvas id="seasonalDemandChart"></canvas>
+    </div>
+  </div>
+  <!-- 📅 Seasonal Analytics -->
+  <div class="seasonal-analytics mt-6">
+    <h3>Seasonal Analytics (Actual vs Predicted)</h3>
+    <p class="text-gray-600 mb-3">
+      Compare historical booking trends with AI-based Prophet predictions.
+    </p>
+
+    <div class="analytics-controls mb-4">
+      <label for="seasonal-year" class="font-medium">Select Year:</label>
+      <select id="seasonal-year" class="ml-2 border rounded px-2 py-1"></select>
+      <button id="seasonal-apply" class="action-button ml-2" style="background-color:#d55a1f;color:white;">Apply</button>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-container full-width">
+        <h4>Actual Bookings per Month</h4>
+        <canvas id="seasonalTrendsChart"></canvas>
+      </div>
+      <div class="chart-container full-width">
+        <h4 id="predictedBookingsTitle">Forecasted Bookings (Next Year)</h4>
+        <canvas id="predictedBookingsChart"></canvas>
+      </div>
     </div>
   </div>
 </section>
 
-        </div>
         
         </div>
         
@@ -2058,13 +2199,11 @@ function calculateMovingAverage(data, windowSize) {
   return averages;
 }
 
-
-// 🔹 WEEKLY
+// 📊 WEEKLY
 async function fetchWeeklyAnalytics() {
   try {
     const month = parseInt(document.getElementById('weekly-month').value);
     const year = parseInt(document.getElementById('weekly-year').value);
-    const metric = document.getElementById('weekly-metric').value;
 
     const startDate = new Date(year, month, 1);
     const endDate = new Date(year, month + 1, 0);
@@ -2074,60 +2213,54 @@ async function fetchWeeklyAnalytics() {
     if (!result.success) throw new Error('Failed to fetch weekly analytics.');
 
     const labels = [];
-    const dataset = [];
+    const users = [];
+    const bookings = [];
+    const revenue = [];
 
     Object.entries(result.data).forEach(([weekStart, values]) => {
       const start = new Date(weekStart);
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
       labels.push(`${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
-      dataset.push(values[metric] || 0);
+      users.push(values.users || 0);
+      bookings.push(values.bookings || 0);
+      revenue.push(values.revenue || 0);
     });
 
-    drawChart('weekly', labels, dataset, metric);
+    drawMultipleCharts('weekly', labels, users, bookings, revenue);
   } catch (err) {
     console.error(err);
   }
 }
 
-
-// 🔹 MONTHLY
+// 📆 MONTHLY
 async function fetchMonthlyAnalytics() {
   try {
     const year = document.getElementById('monthly-year').value;
-    const metric = document.getElementById('monthly-metric').value;
-
     const res = await fetch(`/api/analytics/monthly?year=${year}`);
     const data = await res.json();
     if (!data.success) throw new Error('Failed to fetch monthly analytics.');
 
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const dataset = Array(12).fill(0);
+    const users = Array(12).fill(0);
+    const bookings = Array(12).fill(0);
+    const revenue = Array(12).fill(0);
 
-    if (metric === 'users') {
-      data.monthlyUsers.forEach(item => dataset[item._id.month - 1] = item.count);
-    } else if (metric === 'bookings') {
-      data.monthlyBookings.forEach(item => dataset[item._id.month - 1] = item.count);
-    } else if (metric === 'revenue') {
-      data.monthlyBookings.forEach(item => dataset[item._id.month - 1] = item.revenue);
-    }
+    data.monthlyUsers.forEach(i => users[i._id.month - 1] = i.count);
+    data.monthlyData.forEach(i => bookings[i._id.month - 1] = i.count);
+    data.monthlyData.forEach(i => revenue[i._id.month - 1] = i.revenue);
 
-    drawChart('monthly', months, dataset, metric);
+    drawMultipleCharts('monthly', months, users, bookings, revenue);
   } catch (err) {
     console.error(err);
   }
 }
-// 🔹 YEARLY
+
+// 📅 YEARLY
 async function fetchYearlyAnalytics() {
   try {
     const startYear = parseInt(document.getElementById('yearly-start').value);
     const endYear = parseInt(document.getElementById('yearly-end').value);
-    const metric = document.getElementById('yearly-metric').value;
-
-    if (startYear > endYear) {
-      alert('Start year must be earlier than end year.');
-      return;
-    }
 
     const res = await fetch('/api/analytics/yearly');
     const data = await res.json();
@@ -2136,21 +2269,15 @@ async function fetchYearlyAnalytics() {
     const years = new Set();
     data.yearlyUsers.forEach(i => years.add(i._id.year));
     data.yearlyBookings.forEach(i => years.add(i._id.year));
-    const sortedYears = Array.from(years).sort((a, b) => a - b);
+    const sorted = Array.from(years).sort((a,b)=>a-b).filter(y=>y>=startYear&&y<=endYear);
 
-    // ✅ Filter based on selected range
-    const filteredYears = sortedYears.filter(y => y >= startYear && y <= endYear);
+    const users = sorted.map(y => data.yearlyUsers.find(i=>i._id.year===y)?.count || 0);
+    const bookings = sorted.map(y => data.yearlyBookings.find(i=>i._id.year===y)?.count || 0);
+    const revenue = sorted.map(y => data.yearlyBookings.find(i=>i._id.year===y)?.revenue || 0);
 
-    const dataset = filteredYears.map(y => {
-      if (metric === 'users') return data.yearlyUsers.find(i => i._id.year === y)?.count || 0;
-      if (metric === 'bookings') return data.yearlyBookings.find(i => i._id.year === y)?.count || 0;
-      if (metric === 'revenue') return data.yearlyBookings.find(i => i._id.year === y)?.revenue || 0;
-      return 0;
-    });
-
-    drawChart('yearly', filteredYears.map(String), dataset, metric);
+    drawMultipleCharts('yearly', sorted.map(String), users, bookings, revenue);
   } catch (err) {
-    console.error('Error fetching yearly analytics:', err);
+    console.error(err);
   }
 }
 
@@ -2232,6 +2359,42 @@ function drawChart(period, labels, data, metric) {
         }
       }
     }
+  });
+}
+// 🎨 Draw all 3 metrics side by side
+function drawMultipleCharts(period, labels, users, bookings, revenue) {
+  const chartContainer = document.querySelector(`.${period}-selector .chart-grid`);
+  if (!chartContainer) {
+    console.error(`No chart grid found for ${period}`);
+    return;
+  }
+
+  chartContainer.innerHTML = `
+    <div class="chart-container"><canvas id="${period}UsersChart"></canvas></div>
+    <div class="chart-container"><canvas id="${period}BookingsChart"></canvas></div>
+    <div class="chart-container"><canvas id="${period}RevenueChart"></canvas></div>
+  `;
+
+  const charts = [
+    { id: `${period}UsersChart`, label: 'User Registrations', data: users, color: '#36A2EB' },
+    { id: `${period}BookingsChart`, label: 'Bookings', data: bookings, color: '#FF6384' },
+    { id: `${period}RevenueChart`, label: 'Sales (₱)', data: revenue, color: '#4BC0C0' }
+  ];
+
+  charts.forEach(({ id, label, data, color }) => {
+    const ctx = document.getElementById(id).getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label, data, borderColor: color, fill: false, tension: 0.35, borderWidth: 3 }] },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: label },
+          legend: { display: false }
+        },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
   });
 }
 
@@ -4043,76 +4206,85 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("comparison-year-1").value = now - 1;
   document.getElementById("comparison-year-2").value = now;
 
-  // 🧩 Fixed: load comparison by selected metric
+  // 🧩 Load and render comparison chart
   async function loadComparison(y1, y2, metric) {
-    const res = await fetch(`/api/analytics/monthly-comparison?year1=${y1}&year2=${y2}`);
-    const data = await res.json();
-    if (!data.success) return alert("Failed to load comparison data");
+    try {
+      const res = await fetch(`/api/analytics/monthly-comparison?year1=${y1}&year2=${y2}`);
+      const data = await res.json();
+      if (!data.success) return alert("Failed to load comparison data");
 
-    const { data1, data2 } = data;
-    const ctx = document.getElementById("comparisonChart").getContext("2d");
+      const { data1, data2 } = data;
+      const ctx = document.getElementById("comparisonChart").getContext("2d");
 
-    // 👇 Pick metric dynamically
-    const metricLabel = {
-      revenue: "Sales (₱)",
-      bookings: "Bookings",
-      users: "User Registrations"
-    }[metric];
+      const metricLabel = {
+        revenue: "Sales (₱)",
+        bookings: "Bookings",
+        users: "User Registrations"
+      }[metric];
 
-    const colorMap = {
-      revenue: "#4BC0C0",
-      bookings: "#FF6384",
-      users: "#36A2EB"
-    };
+      const colorMap = {
+        revenue: "#4BC0C0",
+        bookings: "#FF6384",
+        users: "#36A2EB"
+      };
 
-    if (window.comparisonChart && typeof window.comparisonChart.destroy === "function")
-      window.comparisonChart.destroy();
+      // Destroy existing chart if present
+      if (window.comparisonChart && typeof window.comparisonChart.destroy === "function")
+        window.comparisonChart.destroy();
 
-    window.comparisonChart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-        datasets: [
-          {
-            label: `${data1.year} ${metricLabel}`,
-            data: data1[metric],
-            borderColor: colorMap[metric],
-            backgroundColor: "rgba(0,0,0,0)",
-            tension: 0.3,
-            borderWidth: 3,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          },
-          {
-            label: `${data2.year} ${metricLabel}`,
-            data: data2[metric],
-            borderColor: "rgba(255,159,64,1)",
-            backgroundColor: "rgba(0,0,0,0)",
-            tension: 0.3,
-            borderWidth: 3,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          title: {
-            display: true,
-            text: `${metricLabel} Comparison: ${y1} vs ${y2}`,
-            font: { size: 18, weight: "bold" }
-          },
-          legend: { position: "bottom" }
+      window.comparisonChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+          datasets: [
+            {
+              label: `${data1.year} ${metricLabel}`,
+              data: data1[metric],
+              borderColor: colorMap[metric],
+              backgroundColor: "rgba(0,0,0,0)",
+              tension: 0.3,
+              borderWidth: 3,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            },
+            {
+              label: `${data2.year} ${metricLabel}`,
+              data: data2[metric],
+              borderColor: "rgba(255,159,64,1)",
+              backgroundColor: "rgba(0,0,0,0)",
+              tension: 0.3,
+              borderWidth: 3,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            }
+          ]
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: metric === "revenue" ? "Revenue (₱)" : "Count" }
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: `${metricLabel} Comparison: ${y1} vs ${y2}`,
+              font: { size: 18, weight: "bold" }
+            },
+            legend: { position: "bottom" }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: metric === "revenue" ? "Revenue (₱)" : "Count" }
+            }
           }
         }
-      }
-    });
+      });
+
+      // 🧠 Show insights after drawing chart
+      showComparisonInsights(data1[metric], data2[metric], y1, y2, metric);
+
+    } catch (err) {
+      console.error("Error loading comparison data:", err);
+      alert("Failed to fetch comparison data.");
+    }
   }
 
   // 🧠 Compare button click
@@ -4122,9 +4294,278 @@ document.addEventListener("DOMContentLoaded", () => {
     const metric = document.getElementById("comparison-metric").value;
     loadComparison(y1, y2, metric);
   });
+
+  // 🧩 Insight Calculation and Summary
+  function showComparisonInsights(year1Data, year2Data, year1, year2, metric) {
+    const total1 = year1Data.reduce((a,b)=>a+b,0);
+    const total2 = year2Data.reduce((a,b)=>a+b,0);
+    const growth = ((total2 - total1) / total1 * 100).toFixed(1);
+
+    // Update insight cards
+    document.getElementById('comparisonGrowth').textContent = 
+      (growth >= 0 ? '+' : '') + growth + '%';
+    document.getElementById('comparisonGrowth').style.color = 
+      growth >= 0 ? '#28a745' : '#dc3545';
+
+    document.getElementById('higherYear').textContent = 
+      total2 > total1 ? `${year2}` : `${year1}`;
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const peakIdx = (total2 > total1 ? year2Data : year1Data).indexOf(
+      Math.max(...(total2 > total1 ? year2Data : year1Data))
+    );
+    document.getElementById('peakMonth').textContent = months[peakIdx];
+
+    generateInsightSummary(year1, year2, growth, metric);
+  }
+
+  function generateInsightSummary(year1, year2, growth, metric) {
+    const metricLabel = metric === 'revenue' ? 'sales' : metric;
+    let message = '';
+
+    if (growth > 10) {
+      message = `There was a strong ${growth}% increase in ${metricLabel} from ${year1} to ${year2}, indicating higher engagement and business growth.`;
+    } else if (growth < -10) {
+      message = `${metricLabel.charAt(0).toUpperCase()+metricLabel.slice(1)} dropped by ${Math.abs(growth)}% from ${year1} to ${year2}, suggesting a slowdown or off-season.`;
+    } else {
+      message = `${metricLabel.charAt(0).toUpperCase()+metricLabel.slice(1)} remained relatively stable (${growth}%) between ${year1} and ${year2}.`;
+    }
+
+    document.getElementById('comparisonInsightText').innerHTML = `<p>${message}</p>`;
+  }
 });
 </script>
 
+<script>
+document.getElementById('applyForecastMonth').addEventListener('click', async () => {
+  const month = document.getElementById('forecastMonth').value;
+  const year = document.getElementById('forecastYear').value;
+
+  try {
+    const res = await fetch(`/api/forecast-insights?month=${month}&year=${year}`);
+    const data = await res.json();
+
+    console.log("🔮 Forecast API Response:", data);
+
+    if (!data.success) {
+      showNotification('⚠️ Not enough data for this month.', 'error');
+      return;
+    }
+
+    // ✅ Update dashboard cards
+    document.getElementById('projectedTotalSales').textContent =
+      '₱' + Math.round(data.salesForecast).toLocaleString();
+    document.getElementById('salesGrowthNote').textContent = data.trendNotes.sales;
+
+    document.getElementById('projectedTotalBookings').textContent =
+      Math.round(data.bookingsForecast).toLocaleString();
+    document.getElementById('bookingsTrendNote').textContent = data.trendNotes.bookings;
+
+    document.getElementById('projectedTotalUsers').textContent =
+      Math.round(data.usersForecast).toLocaleString();
+    document.getElementById('userGrowthNote').textContent = data.trendNotes.users;
+
+  } catch (error) {
+    console.error('❌ Forecast update error:', error);
+  }
+});
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function fetchWeeklyAnalytics() {
+  try {
+    const month = parseInt(document.getElementById('weekly-month').value);
+    const year = parseInt(document.getElementById('weekly-year').value);
+
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+
+    const res = await fetch(`/api/analytics/weekly?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+    const result = await res.json();
+    if (!result.success) throw new Error('Failed to fetch weekly analytics.');
+
+    const labels = [];
+    const users = [];
+    const bookings = [];
+    const revenue = [];
+
+    Object.entries(result.data).forEach(([weekStart, values]) => {
+      const start = new Date(weekStart);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      labels.push(`${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
+      users.push(values.users || 0);
+      bookings.push(values.bookings || 0);
+      revenue.push(values.revenue || 0);
+    });
+
+    drawMultipleCharts('weekly', labels, users, bookings, revenue);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function fetchMonthlyAnalytics() {
+  try {
+    const year = document.getElementById('monthly-year').value;
+    const res = await fetch(`/api/analytics/monthly?year=${year}`);
+    const data = await res.json();
+    if (!data.success) throw new Error('Failed to fetch monthly analytics.');
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const users = Array(12).fill(0);
+    const bookings = Array(12).fill(0);
+    const revenue = Array(12).fill(0);
+
+    data.monthlyUsers.forEach(i => users[i._id.month - 1] = i.count);
+    data.monthlyBookings.forEach(i => {
+      bookings[i._id.month - 1] = i.count;
+      revenue[i._id.month - 1] = i.revenue;
+    });
+
+    drawMultipleCharts('monthly', months, users, bookings, revenue);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function fetchYearlyAnalytics() {
+  try {
+    const startYear = parseInt(document.getElementById('yearly-start').value);
+    const endYear = parseInt(document.getElementById('yearly-end').value);
+    if (startYear > endYear) {
+      alert('Start year must be earlier than end year.');
+      return;
+    }
+
+    const res = await fetch('/api/analytics/yearly');
+    const data = await res.json();
+    if (!data.success) throw new Error('Failed to fetch yearly analytics.');
+
+    const years = new Set();
+    data.yearlyUsers.forEach(i => years.add(i._id.year));
+    data.yearlyBookings.forEach(i => years.add(i._id.year));
+    const sorted = Array.from(years).sort((a,b)=>a-b).filter(y=>y>=startYear&&y<=endYear);
+
+    const users = sorted.map(y => data.yearlyUsers.find(i=>i._id.year===y)?.count || 0);
+    const bookings = sorted.map(y => data.yearlyBookings.find(i=>i._id.year===y)?.count || 0);
+    const revenue = sorted.map(y => data.yearlyBookings.find(i=>i._id.year===y)?.revenue || 0);
+
+    drawMultipleCharts('yearly', sorted.map(String), users, bookings, revenue);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function drawMultipleCharts(period, labels, users, bookings, revenue) {
+  const grid = document.querySelector(`.${period}-selector .chart-grid`);
+  if (!grid) {
+    console.error(`No chart grid found for ${period}`);
+    return;
+  }
+
+  // Clear previous charts
+  grid.innerHTML = `
+    <div class="chart-container" style="width:400px;height:300px;">
+      <canvas id="${period}-users-chart"></canvas>
+    </div>
+    <div class="chart-container" style="width:400px;height:300px;">
+      <canvas id="${period}-bookings-chart"></canvas>
+    </div>
+    <div class="chart-container" style="width:400px;height:300px;">
+      <canvas id="${period}-revenue-chart"></canvas>
+    </div>
+  `;
+
+  const charts = [
+    { id: `${period}-users-chart`, label: 'User Registrations', data: users, color: '#36A2EB' },
+    { id: `${period}-bookings-chart`, label: 'Bookings', data: bookings, color: '#FF6384' },
+    { id: `${period}-revenue-chart`, label: 'Sales (₱)', data: revenue, color: '#4BC0C0' }
+  ];
+
+  charts.forEach(({ id, label, data, color }) => {
+    const ctx = document.getElementById(id).getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label,
+          data,
+          borderColor: color,
+          backgroundColor: 'rgba(0,0,0,0)',
+          borderWidth: 3,
+          tension: 0.3,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: label },
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true },
+          x: { grid: { color: 'rgba(0,0,0,0.05)' } }
+        }
+      }
+    });
+  });
+}
+</script>
+<script>
+// ==========================
+// 🔮 Predictive Summary Loader
+// ==========================
+async function fetchForecast(url) {
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.success || !data.forecast) return null;
+    return data;
+  } catch (err) {
+    console.error("Error fetching forecast:", err);
+    return null;
+  }
+}
+
+async function loadPredictiveSummaries() {
+  // Projected Sales
+  const salesData = await fetchForecast("/api/predictive/forecast-sales");
+  if (salesData) {
+    const last = salesData.forecast[salesData.forecast.length - 1];
+    const projectedSales = last?.yhat || 0;
+    document.getElementById("projectedSales").textContent = `₱${projectedSales.toLocaleString()}`;
+    document.getElementById("projectedTotalSales").textContent = `₱${projectedSales.toLocaleString()}`;
+    document.getElementById("salesGrowthNote").textContent = salesData.trend_note || "Forecast generated successfully.";
+  }
+
+  // Projected Bookings
+  const bookingData = await fetchForecast("/api/predictive/forecast");
+  if (bookingData) {
+    const last = bookingData.forecast[bookingData.forecast.length - 1];
+    const projectedBookings = last?.yhat || 0;
+    document.getElementById("projectedBookings").textContent = projectedBookings.toFixed(0);
+    document.getElementById("projectedTotalBookings").textContent = projectedBookings.toFixed(0);
+    document.getElementById("bookingsTrendNote").textContent = bookingData.trend_note || "Forecast generated successfully.";
+  }
+
+  // Projected Users
+  const userData = await fetchForecast("/api/predictive/forecast-users");
+  if (userData) {
+    const last = userData.forecast[userData.forecast.length - 1];
+    const projectedUsers = last?.yhat || 0;
+    document.getElementById("projectedUsers").textContent = projectedUsers.toFixed(0);
+    document.getElementById("projectedTotalUsers").textContent = projectedUsers.toFixed(0);
+    document.getElementById("userGrowthNote").textContent = userData.trend_note || "Forecast generated successfully.";
+  }
+}
+
+// Run when dashboard loads
+document.addEventListener("DOMContentLoaded", loadPredictiveSummaries);
+</script>
 
 </body>
 </html>
