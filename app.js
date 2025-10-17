@@ -28,7 +28,7 @@ const Contact = require('./models/Contact');
 const validator = require('validator');
 const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
-const PYTHON_API = "http://localhost:8000";
+const PYTHON_API = "http://127.0.0.1:8000";
 const ExcelJS = require("exceljs");
 
 const app = express();
@@ -1344,7 +1344,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1428,7 +1428,7 @@ app.get('/api/predict/bookings', async (req, res) => {
 
     const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1463,7 +1463,7 @@ app.get('/api/predict/users', async (req, res) => {
     const series = userData.map(u => ({ ds: u._id, y: u.totalUsers }));
 
     // 🔮 Call your FastAPI Prophet forecast service
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30 // Predict next 30 days — you can increase to 180 if needed
     });
@@ -1500,7 +1500,7 @@ app.get('/api/predict/seasonal', async (req, res) => {
       y: d.totalBookings
     }));
 
-    const { data: response } = await axios.post('https://fast-api-service-cap1.onrender.com/predict', {
+    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
       series, horizon: 4
     });
 
@@ -1629,7 +1629,7 @@ async function buildSalesSeries() {
 
 app.get("/api/forecast", async (req, res) => {
   try {
-    const response = await axios.get("https://fast-api-service-cap1.onrender.com/predict");
+    const response = await axios.get("http://127.0.0.1:8000/predict");
     res.json(response.data);
   } catch (error) {
     console.error("❌ Error fetching forecast:", error.message);
@@ -1649,7 +1649,7 @@ app.get("/api/forecast/:type", async (req, res) => {
       series = await buildUserSeries();
     }
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 180 }),
@@ -2233,7 +2233,7 @@ app.get("/api/admin/seasonal-forecast", async (req, res) => {
     });
 
     // 2️⃣ Send this data to your Python API for Prophet forecasting
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2307,7 +2307,7 @@ app.get('/api/analytics/seasonal', async (req, res) => {
     });
 
     // ✅ Send actual data to FastAPI Prophet for prediction
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2494,7 +2494,7 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
 
     let predictions = [];
     try {
-      const response = await fetch("https://fast-api-service-cap1.onrender.com/predict-all");
+      const response = await fetch("http://127.0.0.1:8000/predict-all");
       if (response.ok) predictions = await response.json();
     } catch (err) {
       forecastSheet.addRow(["Error fetching forecast data"]);
@@ -2609,6 +2609,210 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
   } catch (err) {
     console.error("❌ Dashboard export error:", err);
     res.status(500).send("Failed to export dashboard data");
+  }
+});
+// ===============================================
+// 📆 Predictive Insights (Monthly Aggregation)
+// ===============================================
+app.get("/api/forecast-insights", checkAdminAuth, async (req, res) => {
+  try {
+    const { month, year } = req.query;
+
+    // Default to current month if not provided
+    const currentDate = new Date();
+    const selectedMonth = month ? parseInt(month) - 1 : currentDate.getMonth();
+    const selectedYear = year ? parseInt(year) : currentDate.getFullYear();
+
+    const monthStart = new Date(selectedYear, selectedMonth, 1);
+    const monthEnd = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+
+    console.log(`📊 Fetching forecast for ${monthStart.toDateString()} - ${monthEnd.toDateString()}`);
+
+    // 1️⃣ Group data by month
+    const [sales, bookings, users] = await Promise.all([
+      Booking.aggregate([
+        { $match: { createdAt: { $lte: monthEnd }, status: { $ne: "cancelled" } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+            totalSales: { $sum: "$totalAmount" }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]),
+      Booking.aggregate([
+        { $match: { createdAt: { $lte: monthEnd } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+            totalBookings: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]),
+      User.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+            totalUsers: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ])
+    ]);
+
+    // 2️⃣ Format for Prophet
+    const salesSeries = sales.map(s => ({ ds: s._id + "-01", y: s.totalSales }));
+    const bookingSeries = bookings.map(b => ({ ds: b._id + "-01", y: b.totalBookings }));
+    const userSeries = users.map(u => ({ ds: u._id + "-01", y: u.totalUsers }));
+
+    if (salesSeries.length < 5) {
+      return res.json({ success: false, message: "Not enough monthly data for forecast." });
+    }
+
+    // 3️⃣ Send to FastAPI batch forecast
+    const { data } = await axios.post("http://127.0.0.1:8000/batch-predict", {
+      datasets: {
+        sales: { series: salesSeries, horizon: 3 }, // Forecast next 3 months
+        bookings: { series: bookingSeries, horizon: 3 },
+        users: { series: userSeries, horizon: 3 }
+      }
+    });
+
+    res.json({
+  success: true,
+  selectedMonth: `${selectedYear}-${selectedMonth + 1}`,
+  salesForecast: data.sales?.forecast?.[0]?.yhat || 0,
+  bookingsForecast: data.bookings?.forecast?.[0]?.yhat || 0,
+  usersForecast: data.users?.forecast?.[0]?.yhat || 0,
+  trendNotes: {
+    sales: data.sales?.trend_note || "No trend detected",
+    bookings: data.bookings?.trend_note || "No trend detected",
+    users: data.users?.trend_note || "No trend detected"
+  }
+});
+
+  } catch (err) {
+    console.error("❌ Monthly Forecast Insights Error:", err);
+    res.status(500).json({ success: false, message: "Failed to generate monthly forecast insights." });
+  }
+});
+
+apiRouter.get("/predictive/insights", checkAdminAuth, async (req, res) => {
+  try {
+    // 1️⃣ Fetch real booking data
+    const bookings = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$destination",
+          title: { $first: "$tourDetails.title" },
+          totalBookings: { $sum: 1 },
+          totalRevenue: { $sum: "$totalAmount" },
+        },
+      },
+      {
+        $project: {
+          tourId: "$_id",
+          title: { $ifNull: ["$title", "$_id"] },
+          bookings: "$totalBookings",
+          revenue: "$totalRevenue",
+        },
+      },
+    ]);
+
+    if (!bookings.length) {
+      return res.json({
+        success: false,
+        message: "No booking data available for insights",
+      });
+    }
+
+    // 2️⃣ Send data to Python FastAPI service
+    const response = await axios.post(`${PYTHON_API}/insights`, {
+      tours: bookings,
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ Predictive insights error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Optional — Forecast API for trends (total bookings per day)
+apiRouter.get("/predictive/forecast", checkAdminAuth, async (req, res) => {
+  try {
+    const daily = await Booking.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          y: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id": 1 } },
+    ]);
+
+    if (!daily.length) {
+      return res.json({ success: false, message: "No booking data for forecast" });
+    }
+
+    const formattedSeries = daily.map((d) => ({ ds: d._id, y: d.y }));
+
+    const response = await axios.post(`${PYTHON_API}/predict`, {
+      series: formattedSeries,
+      horizon: 30, // next 30 days
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ Forecast generation error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// --- SALES FORECAST ---
+apiRouter.get("/predictive/forecast-sales", checkAdminAuth, async (req, res) => {
+  try {
+    const sales = await Booking.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          y: { $sum: "$totalAmount" },
+        },
+      },
+      { $sort: { "_id": 1 } },
+    ]);
+
+    if (!sales.length) return res.json({ success: false });
+
+    const formattedSeries = sales.map(d => ({ ds: d._id, y: d.y }));
+    const response = await axios.post(`${PYTHON_API}/predict`, { series: formattedSeries, horizon: 30 });
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ Sales forecast error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+apiRouter.get("/predictive/forecast-users", checkAdminAuth, async (req, res) => {
+  try {
+    const users = await User.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          y: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id": 1 } },
+    ]);
+
+    if (!users.length) return res.json({ success: false });
+
+    const formattedSeries = users.map(d => ({ ds: d._id, y: d.y }));
+    const response = await axios.post(`${PYTHON_API}/predict`, { series: formattedSeries, horizon: 30 });
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ User forecast error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -7313,7 +7517,7 @@ app.get("/api/insights", async (req, res) => {
     console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
 
     // ✅ Send to FastAPI
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: cleanTours })
