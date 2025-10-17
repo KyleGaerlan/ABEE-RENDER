@@ -245,7 +245,7 @@ async def insights(request: Request):
 
         # ✅ Step 6: Build recommendations list
         recs = []
-        recs.append("🏆 Top Performing Tours:")
+        recs.append("Tour Packages")
         for _, row in top_tours.iterrows():
             title = row["title"] or row["tourId"]
             recs.append(f" • {title} — ₱{row['revenue']:.2f}, {row['bookings']} bookings")
