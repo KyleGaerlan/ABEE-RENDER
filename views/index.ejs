@@ -1595,6 +1595,10 @@
    transform: translateY(-50%) !important;
    z-index: 10000 !important;
 }
+#usernameAvailabilityMessage {
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
 
 
 </style>
@@ -2369,6 +2373,9 @@
 <script src="/js/tour-carousel.js"></script>
 <script src="/js/bg-slider.js"></script>
 <script src="/js/profiledropdown.js"></script>
+<script src="/js/signup-username-check.js"></script>
+<script src="/js/admin-username-check.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
    // Remove any existing password toggle functionality
@@ -2521,6 +2528,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const signupClose = document.getElementById('signupModalClose');
+    const signupModal = document.getElementById('signupModal');
+    if (signupClose && signupModal) {
+        signupClose.addEventListener('click', () => {
+            signupModal.style.display = 'none';
+            document.body.style.overflow = ''; // restore scroll
+        });
+    }
+});
 </script>
 
 </body>
