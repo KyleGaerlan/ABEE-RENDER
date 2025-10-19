@@ -180,94 +180,91 @@ document.addEventListener('DOMContentLoaded', function() {
             showMessage('Please complete the slider verification first.', true);
         }
     });
-    
     // Function to complete login after CAPTCHA verification
-    async function completeLogin(emailOrUsername, password, isAdmin) {
-        try {
-            const continueBtn = document.getElementById('captchaContinueBtn');
-            const originalText = continueBtn.textContent;
-            continueBtn.disabled = true;
-            continueBtn.textContent = "Logging in...";
-            
-            let loginResponse;
-            
-            if (isAdmin) {
-                // Admin login
-                loginResponse = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        username: emailOrUsername, 
-                        password: password, 
-                        captchaVerified: true
-                    }),
-                    credentials: 'same-origin'
-                });
-            } else {
-                // User login
-                loginResponse = await fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        username: emailOrUsername, 
-                        password: password, 
-                        captchaVerified: true
-                    }),
-                    credentials: 'same-origin'
-                });
-            }
-            
-            const loginData = await loginResponse.json();
-            
-            if (loginData.success) {
-                if (isAdmin) {
-                    // Redirect to admin dashboard
-                    window.location.href = '/admin-dashboard';
-                } else {
-                    localStorage.setItem('isLoggedIn', 'true');
-                    
-                    // Close the modal
-                    if (loginModal) {
-                        closeModal(loginModal);
-                    }
-                    
-                    // Show success message
-                    showMessage('Login successful!', false);
-                    
-                    // Update UI immediately
-                    updateNavbarUI();
-                    
-                    // Clear temporary credentials
-                    window.tempLoginCredentials = {};
-                    
-                    // Redirect or refresh page if needed
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }
-            } else {
-                showMessage(loginData.message || 'Login failed. Please try again.', true);
-                
-                // Go back to first step
-                loginStepTwo.classList.remove('active-step');
-                loginStepOne.classList.add('active-step');
-            }
-        } catch (error) {
-            console.error('Error completing login:', error);
-            showMessage('An error occurred during login. Please try again.', true);
-            
-            // Go back to first step
-            loginStepTwo.classList.remove('active-step');
-            loginStepOne.classList.add('active-step');
-        } finally {
-            // Restore button state if needed
-            const continueBtn = document.getElementById('captchaContinueBtn');
-            if (continueBtn) {
-                continueBtn.disabled = false;
-                continueBtn.textContent = "Continue";
-            }
+async function completeLogin(emailOrUsername, password, isAdmin) {
+    try {
+        const continueBtn = document.getElementById('captchaContinueBtn');
+        const originalText = continueBtn.textContent;
+        continueBtn.disabled = true;
+        continueBtn.textContent = "Logging in...";
+
+        let loginResponse;
+
+        if (isAdmin) {
+            // Admin login
+            loginResponse = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    username: emailOrUsername, 
+                    password: password, 
+                    captchaVerified: true
+                }),
+                credentials: 'same-origin'
+            });
+        } else {
+            // User login
+            loginResponse = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    username: emailOrUsername, 
+                    password: password, 
+                    captchaVerified: true
+                }),
+                credentials: 'same-origin'
+            });
         }
+
+        const loginData = await loginResponse.json();
+
+        if (loginData.success) {
+            if (isAdmin) {
+                // Redirect to admin dashboard
+                window.location.href = '/admin-dashboard';
+            } else {
+                // Save login state
+                localStorage.setItem('isLoggedIn', 'true');
+
+                // Close the modal
+                const loginModal = document.getElementById('loginModal');
+                if (loginModal) {
+                    loginModal.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+
+                // Show success message
+                showMessage('Login successful!', false);
+
+                // Update navbar immediately
+                updateNavbarUI();
+
+                // Clear temporary credentials
+                window.tempLoginCredentials = {};
+
+                // ✅ Conditional page reload (skip for /tours)
+                setTimeout(() => {
+                    const currentPath = window.location.pathname;
+                    if (!currentPath.startsWith('/tours')) {
+                        window.location.reload();
+                    } else {
+                        console.log('✅ Login successful on tours page — skipping reload.');
+                        // Optional: call checkAuthStatus or similar here if needed
+                    }
+                }, 1000);
+            }
+        } else {
+            showMessage(loginData.message || 'Login failed. Please try again.', true);
+        }
+    } catch (error) {
+        console.error('Error completing login:', error);
+        showMessage('An unexpected error occurred. Please try again later.', true);
+    } finally {
+        const continueBtn = document.getElementById('captchaContinueBtn');
+        continueBtn.disabled = false;
+        continueBtn.textContent = "Continue";
     }
+}
 
     // Reset login form
     function resetLoginForm() {
