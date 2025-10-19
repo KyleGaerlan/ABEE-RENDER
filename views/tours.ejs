@@ -491,6 +491,1591 @@
         background-color: #d9531e;
     }
 </style>
+<style>
+     .link-button {
+            background: none;
+            border: none;
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+            font: inherit;
+        }
+        
+        .link-button:hover {
+            text-decoration: none;
+        }
+        
+        .hamburger-menu {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 30px;
+            height: 21px;
+            cursor: pointer;
+            margin-right: 20px;
+            z-index: 1001;
+        }
+
+        .hamburger-menu span {
+            display: block;
+            height: 3px;
+            width: 100%;
+            background-color: #333;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            nav ul {
+                margin-left: 0;
+                padding-right: 20px;
+                justify-content: flex-end;
+            }
+            
+            .back-button-wrapper {
+                margin-right: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger-menu {
+                display: flex;
+                position: absolute;
+                right: 20px;
+                top: 20px;
+            }
+            .hero-content .container{
+                width: 100%;
+                margin-right: auto;
+                padding: 5px;
+                height: 55vh;
+                margin-left: -30px;
+                padding-right: 50px;
+                padding-left: 30px;
+            }
+            
+            nav ul {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 250px;
+                background-color: white;
+                flex-direction: column;
+                padding: 60px 20px 30px; /* Reduced top padding */
+                transition: right 0.3s ease;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                margin-left: 0;
+                align-items: flex-start;
+                gap: 15px; /* Reduced gap between items */
+                overflow-y: auto;
+            }
+            
+            nav ul.active {
+                right: 0;
+            }
+            
+            nav ul li {
+                width: 100%;
+                margin: 0; /* Remove any margin */
+                padding: 0; /* Remove any padding */
+            }
+            
+            nav ul li a, 
+            nav ul li button {
+                display: block;
+                width: 100%;
+                padding: 8px 0; /* Reduced padding */
+                text-align: left;
+                font-size: 16px; /* Slightly smaller font */
+            }
+            
+            #loginBtnWrapper {
+                width: auto;
+                background: none;
+                padding: 0;
+            }
+            
+            #loginBtnWrapper #loginBtn {
+                background-color: #f26523;
+                color: white;
+                padding: 8px 12px;
+                border-radius: 4px;
+                width: 100%;
+                text-align: center;
+            }
+            
+            #profileDropdown,
+            #notificationDropdown {
+                position: static;
+                width: 100%;
+                box-shadow: none;
+                margin-top: 5px;
+                padding: 5px 0;
+                border: 1px solid #eee;
+                border-radius: 4px;
+                background-color: #f9f9f9;
+            }
+            
+            #profileDropdown li,
+            #notificationDropdown li {
+                padding: 0;
+            }
+            
+            #profileDropdown li a,
+            #notificationDropdown li a {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+            
+            .overlay-bg {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+            
+            .overlay-bg.active {
+                display: block;
+            }
+            
+            /* Hamburger menu animation */
+            .hamburger-menu.active span:nth-child(1) {
+                transform: translateY(9px) rotate(45deg);
+            }
+            
+            .hamburger-menu.active span:nth-child(2) {
+                opacity: 0;
+            }
+            
+            .hamburger-menu.active span:nth-child(3) {
+                transform: translateY(-9px) rotate(-45deg);
+            }
+            
+            /* Fix for notification icon */
+            .notification-icon {
+                width: 20px;
+                height: 20px;
+            }
+            
+            /* Fix for profile icon */
+            .profile-icon {
+                width: 24px;
+                height: 24px;
+            }
+            
+            /* Responsive Services Section */
+            .services-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 0 15px;
+            }
+            
+            .service-card {
+                padding: 20px;
+                width: 80%;
+            }
+            
+            .country-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .service-icon {
+                font-size: 2.5rem;
+                margin-bottom: 15px;
+            }
+            
+            .service-card h3 {
+                font-size: 1.3rem;
+            }
+            
+            /* Responsive Footer */
+            .footer-content {
+                flex-direction: column;
+                padding: 0 15px;
+            }
+            
+            .footer-left, .footer-center, .footer-right {
+                width: 100%;
+                padding: 0;
+                margin-bottom: 30px;
+                text-align: center;
+            }
+            
+            .footer-contact-form {
+                max-width: 100%;
+            }
+            
+            .footer-contact-form input,
+            .footer-contact-form select,
+            .footer-contact-form textarea {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .contact-submit-btn {
+                width: 100% !important;
+            }
+            
+            .footer-right {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .social-icon {
+                width: 30px;
+                height: 30px;
+            }
+            .form-group select{
+                width: 90%;
+            }
+            .form-group{
+                margin: auto;
+            }
+        }
+        
+        /* Additional responsive styles for smaller screens */
+        @media (max-width: 480px) {
+            .section-title {
+                font-size: 2rem;
+                margin-bottom: 25px;
+            }
+            
+            .section-title:after {
+                width: 60px;
+                height: 3px;
+                margin: 10px auto 0;
+            }
+            
+            .service-card {
+                padding: 15px;
+            }
+            
+            .service-icon {
+                font-size: 2rem;
+                margin-bottom: 10px;
+            }
+            
+            .service-card h3 {
+                font-size: 1.2rem;
+                margin-bottom: 10px;
+            }
+            
+            .service-card p {
+                font-size: 0.9rem;
+            }
+            
+            .service-link {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .footer-columns {
+                padding: 1.5rem 0;
+            }
+            
+            .footer-left h3, .footer-center h3, .footer-right h3 {
+                font-size: 1.2rem;
+                margin-bottom: 15px;
+            }
+            
+            .footer-left p {
+                font-size: 0.9rem;
+                margin: 8px 0;
+            }
+            
+            .footer-bottom {
+                font-size: 0.8rem;
+                padding: 10px;
+                text-align: center;
+            }
+        }
+
+        /* Fix for fullscreen background on mobile */
+        @media (max-width: 768px) {
+            .fullscreen-bg {
+                height: 80vh;
+                margin-top: 80px;
+            }
+            
+            .overlay h1 {
+                font-size: 2rem;
+                padding: 0 15px;
+            }
+            
+            .overlay p {
+                font-size: 1rem;
+                padding: 0 15px;
+            }
+            
+            .destination-highlight {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .btn-book-tour {
+                font-size: 1rem;
+                padding: 8px 16px;
+            }
+        }
+        
+        /* Fix for profile icon and dropdown */
+        #profileIconWrapper, #notificationIcon {
+            position: relative;
+            cursor: pointer;
+            z-index: 1002;
+            display: inline-block;
+        }
+        
+        #profileIcon, .notification-icon {
+            display: block;
+        }
+        
+        #profileDropdown, #notificationDropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            padding: 10px 0;
+            min-width: 150px;
+            z-index: 1003;
+        }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            #userProfile, #notificationWrapper {
+                width: 100%;
+            }
+            
+            #profileIconWrapper, #notificationIcon {
+                display: flex;
+                align-items: center;
+                width: 100%;
+                padding: 8px 0;
+            }
+            
+            #profileDropdown, #notificationDropdown {
+                position: static;
+                width: 100%;
+                margin-top: 5px;
+                box-shadow: none;
+                border: 1px solid #eee;
+            }
+            
+            /* Make sure the dropdown is visible in mobile menu */
+            nav ul.active #profileDropdown,
+            nav ul.active #notificationDropdown {
+                display: block;
+            }
+        }
+        
+        /* Login steps styling */
+        .login-step {
+            display: none;
+        }
+        
+        .login-step.active-step {
+            display: block;
+        }
+        
+        .verification-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .verification-actions button {
+            flex: 1;
+        }
+        
+        .secondary-btn {
+            background-color: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #e5e5e5;
+        }
+        
+        .error-message {
+            color: #ff4d4d;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        /* Add this CSS to your existing <style> section in the head */
+
+/* Center modals on the screen */
+#signupModal .modal-content,
+#adminSignupModal .modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 90%;
+  max-width: 500px;
+}
+
+/* Make sure the modal itself takes up the full screen */
+#signupModal,
+#adminSignupModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  overflow: auto;
+}
+
+/* Add responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  #signupModal .modal-content,
+  #adminSignupModal .modal-content {
+    width: 95%;
+    max-width: 450px;
+    padding: 15px;
+  }
+}
+/* Add these styles to fix the signup modal */
+#signupModal .modal-content input,
+#signupModal .modal-content .password-container {
+    width: 100% !important;
+    max-width: 350px !important;
+    margin: 0 auto !important;
+}
+
+/* Make the signup modal shorter */
+#signupModal .modal-content {
+    max-height: 80vh !important;
+    padding: 20px !important;
+    width: 400px !important;
+    max-width: 90% !important;
+}
+
+/* Adjust form groups to be more compact */
+#signupModal .form-group {
+    margin-bottom: 12px !important;
+}
+
+/* Make the terms checkbox more compact */
+#signupModal .terms-checkbox {
+    width: 100% !important;
+    max-width: 350px !important;
+    margin: 10px auto !important;
+}
+
+/* Fix the password strength indicator display */
+#signup-passwordMessage {
+    color: red !important;
+    margin-top: 5px !important;
+    font-size: 0.85em !important;
+    text-align: left !important;
+    width: 100% !important;
+    max-width: 350px !important;
+    margin: 5px auto !important;
+}
+
+/* Override for strong password message */
+#signup-passwordMessage:contains("Strong password") {
+    color: green !important;
+}
+
+/* Specific override for the strong password message */
+#signup-form .error-message[style*="color: green"],
+#signup-passwordMessage:contains("✔ Strong password!") {
+    color: green !important;
+}
+#signupModal .modal-content input,
+    #signupModal .modal-content .password-container {
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 0 auto !important;
+    }
+
+    /* Make the signup modal shorter */
+    #signupModal .modal-content {
+        max-height: 80vh !important;
+        padding: 20px !important;
+        width: 400px !important;
+        max-width: 90% !important;
+    }
+
+    /* Adjust form groups to be more compact */
+    #signupModal .form-group {
+        margin-bottom: 12px !important;
+    }
+
+    /* Make the terms checkbox more compact */
+    #signupModal .terms-checkbox {
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 10px auto !important;
+    }
+
+    /* Fix the password strength indicator display */
+    #signup-passwordMessage {
+        margin-top: 5px !important;
+        font-size: 0.85em !important;
+        text-align: left !important;
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 5px auto !important;
+    }
+
+    /* Force green color for strong password message */
+    #signup-passwordMessage.strong-password {
+        color: green !important;
+    }
+    /* Fix for signup modal input fields and password validation */
+    #signupModal .modal-content input,
+    #signupModal .modal-content .password-container {
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 0 auto !important;
+    }
+
+    /* Make the signup modal shorter */
+    #signupModal .modal-content {
+        max-height: 80vh !important;
+        padding: 20px !important;
+        width: 400px !important;
+        max-width: 90% !important;
+    }
+
+    /* Adjust form groups to be more compact */
+    #signupModal .form-group {
+        margin-bottom: 12px !important;
+    }
+
+    /* Make the terms checkbox more compact */
+    #signupModal .terms-checkbox {
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 10px auto !important;
+    }
+
+    /* Remove all background colors from password message */
+    #signup-passwordMessage {
+        background-color: transparent !important;
+        border: none !important;
+        margin-top: 5px !important;
+        font-size: 0.85em !important;
+        text-align: left !important;
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 5px auto !important;
+        padding: 0 !important;
+    }
+
+    /* Specific style for strong password message */
+    #signup-passwordMessage.strong-password {
+        color: green !important;
+        background-color: transparent !important;
+    }#admin-passwordMessage {
+        background-color: transparent !important;
+        border: none !important;
+        margin-top: 5px !important;
+        font-size: 0.85em !important;
+        text-align: left !important;
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 5px auto !important;
+        padding: 0 !important;
+    }
+
+    /* Specific style for strong password message */
+    #admin-passwordMessage.strong-password {
+        color: green !important;
+        background-color: transparent !important;
+    } #adminSignupModal .modal-content {
+        max-height: 80vh !important;
+        padding: 20px !important;
+        width: 400px !important;
+        max-width: 90% !important;
+        overflow-y: auto !important;
+    }
+
+    /* Adjust form groups to be more compact */
+    #adminSignupModal .form-group {
+        margin-bottom: 12px !important;
+    }
+
+    /* Make inputs and containers more compact */
+    #adminSignupModal .modal-content input,
+    #adminSignupModal .modal-content .password-container,
+    #adminSignupModal .modal-content select {
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 0 auto !important;
+    }
+
+    /* Reduce spacing between elements */
+    #adminSignupModal label {
+        margin-bottom: 4px !important;
+        display: block !important;
+    }
+
+    /* Make the terms checkbox more compact */
+    #adminSignupModal .terms-checkbox {
+        width: 100% !important;
+        max-width: 350px !important;
+        margin: 10px auto !important;
+    }
+
+    /* Adjust button spacing */
+    #adminSignupModal button[type="submit"] {
+        margin-top: 10px !important;
+    }
+
+    /* Make modal title more compact */
+    #adminSignupModal h2 {
+        margin-bottom: 15px !important;
+        font-size: 1.5rem !important;
+    }
+
+    /* Make the switch to login link more compact */
+    #adminSignupModal p {
+        margin: 10px 0 !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Fix the email container to be more compact */
+    #adminSignupModal .email-container {
+        display: flex !important;
+        gap: 5px !important;
+    }
+
+    #adminSignupModal .email-container button {
+        padding: 8px 10px !important;
+        font-size: 0.9rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* Adjust the verification section */
+    #admin-verification-section {
+        margin-top: 5px !important;
+        margin-bottom: 5px !important;
+    } /* Make the admin signup modal more compact and fix alignment */
+    #adminSignupModal .modal-content {
+        max-height: 80vh !important;
+        padding: 20px !important;
+        width: 400px !important;
+        max-width: 90% !important;
+        overflow-y: auto !important;
+    }
+
+    /* Fix input alignment by ensuring consistent width and centering */
+    #adminSignupModal input,
+    #adminSignupModal select,
+    #adminSignupModal .password-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    /* Adjust form groups to be more compact */
+    #adminSignupModal .form-group {
+        margin-bottom: 12px !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
+
+    /* Ensure labels are aligned left */
+    #adminSignupModal label {
+        display: block !important;
+        text-align: left !important;
+        margin-bottom: 4px !important;
+        width: 100% !important;
+    }
+
+    /* Fix the email container to be properly aligned */
+    #adminSignupModal .email-container {
+        display: flex !important;
+        width: 100% !important;
+        gap: 5px !important;
+    }
+
+    #adminSignupModal .email-container input {
+        flex: 1 !important;
+    }
+
+    #adminSignupModal .email-container button {
+        white-space: nowrap !important;
+        padding: 8px 10px !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Make the terms checkbox more compact and aligned */
+    #adminSignupModal .terms-checkbox {
+        width: 100% !important;
+        margin: 10px 0 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+    }
+
+    #adminSignupModal .terms-checkbox input {
+        width: auto !important;
+        margin-right: 8px !important;
+        margin-top: 3px !important;
+    }
+
+    /* Adjust button spacing */
+    #adminSignupModal button[type="submit"] {
+        margin-top: 10px !important;
+        width: 100% !important;
+    }
+
+    /* Make modal title more compact */
+    #adminSignupModal h2 {
+        margin-bottom: 15px !important;
+        font-size: 1.5rem !important;
+        text-align: center !important;
+    }
+
+    /* Make the switch to login link more compact */
+    #adminSignupModal p {
+        margin: 10px 0 !important;
+        font-size: 0.9rem !important;
+        text-align: center !important;
+    }
+
+    /* Fix password message alignment */
+    #admin-passwordMessage,
+    #admin-confirmPasswordMessage {
+        text-align: left !important;
+        width: 100% !important;
+        display: block !important;
+        margin-top: 5px !important;
+    }#signupModal .modal-content {
+        max-height: 80vh !important;
+        padding: 20px !important;
+        width: 400px !important;
+        max-width: 90% !important;
+        overflow-y: auto !important;
+    }
+
+    /* Fix input alignment by ensuring consistent width and centering */
+    #signupModal input,
+    #signupModal select,
+    #signupModal .password-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    /* Adjust form groups to be more compact */
+    #signupModal .form-group {
+        margin-bottom: 12px !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
+
+    /* Ensure labels are aligned left */
+    #signupModal label {
+        display: block !important;
+        text-align: left !important;
+        margin-bottom: 4px !important;
+        width: 100% !important;
+    }
+
+    /* Fix the email container to be properly aligned */
+    #signupModal .email-container {
+        display: flex !important;
+        width: 100% !important;
+        gap: 5px !important;
+    }
+
+    #signupModal .email-container input {
+        flex: 1 !important;
+    }
+
+    #signupModal .email-container button {
+        white-space: nowrap !important;
+        padding: 8px 10px !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Make the terms checkbox more compact and aligned */
+    #signupModal .terms-checkbox {
+        width: 100% !important;
+        margin: 10px 0 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+    }
+
+    #signupModal .terms-checkbox input {
+        width: auto !important;
+        margin-right: 8px !important;
+        margin-top: 3px !important;
+    }
+
+    /* Adjust button spacing */
+    #signupModal button[type="submit"] {
+        margin-top: 10px !important;
+        width: 100% !important;
+    }
+
+    /* Make modal title more compact */
+    #signupModal h2 {
+        margin-bottom: 15px !important;
+        font-size: 1.5rem !important;
+        text-align: center !important;
+    }
+
+    /* Make the switch to login link more compact */
+    #signupModal p {
+        margin: 10px 0 !important;
+        font-size: 0.9rem !important;
+        text-align: center !important;
+    }
+
+    /* Fix password message alignment */
+    #signup-passwordMessage,
+    #signup-confirmPasswordMessage {
+        text-align: left !important;
+        width: 100% !important;
+        display: block !important;
+        margin-top: 5px !important;
+    }
+
+    /* Remove all background colors from password message */
+    #signup-passwordMessage {
+        background-color: transparent !important;
+        border: none !important;
+        margin-top: 5px !important;
+        font-size: 0.85em !important;
+        text-align: left !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* Specific style for strong password message */
+    #signup-passwordMessage.strong-password {
+        color: green !important;
+        background-color: transparent !important;
+    }.hidden-link {
+    display: none;
+}
+/* public/css/slider-captcha.css */
+.slider-captcha-container {
+  width: 100%;
+  max-width: 350px;
+  margin: 15px auto;
+  position: relative;
+}
+
+.slider-captcha-bg {
+  height: 40px;
+  background-color: #f5f5f5;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.slider-captcha-puzzle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10%;
+  height: 100%;
+  background: linear-gradient(90deg, #f26523 0%, #f26523 30%, transparent 30%);
+  border-radius: 20px;
+  opacity: 0.2;
+}
+
+.slider-captcha-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  background-color: #f26523;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: background-color 0.3s;
+}
+
+.slider-captcha-handle:hover {
+  background-color: #e55a14;
+}
+
+.slider-captcha-handle i {
+  font-size: 18px;
+}
+
+.slider-captcha-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.slider-captcha-success .slider-captcha-bg {
+  background-color: #e6f7e6;
+}
+
+.slider-captcha-success .slider-captcha-handle {
+  background-color: #4CAF50;
+}
+
+.slider-captcha-success .slider-captcha-text {
+  color: #4CAF50;
+}
+
+.slider-captcha-error .slider-captcha-bg {
+  background-color: #ffebee;
+}
+
+.slider-captcha-error .slider-captcha-handle {
+  background-color: #f44336;
+}
+
+.slider-captcha-error .slider-captcha-text {
+  color: #f44336;
+}
+/* Add this to your existing CSS */
+
+/* Login type selector styling */
+.login-type-selector {
+    display: flex;
+    width: 100%;
+    margin: 0 0 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0;
+    background: #f5f5f5;
+    border-radius: 5px 5px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.login-type-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.login-type-btn:hover {
+    color: #f26523;
+}
+
+.login-type-btn.active {
+    color: #f26523;
+    background-color: #fff;
+}
+
+.login-type-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #f26523;
+}
+
+/* Adjust modal content padding */
+#loginModal .modal-content {
+    padding-top: 0;
+}
+
+/* Login section styling */
+.login-section {
+    padding: 20px;
+}
+
+/* Login title adjustment */
+#loginTitle, #staffLoginTitle {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+/* Make sure the modal content scrolls properly */
+#loginModal .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure the login type selector stays at the top */
+#loginContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+/* Fix for the close button being blocked by the login type selector */
+#loginModal .close,
+#adminLoginModal .close,
+#signupModal .close,
+#adminSignupModal .close,
+#forgotPasswordModal .close,
+#adminVerificationModal .close,
+#accountPendingModal .close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    z-index: 20; /* Higher z-index to ensure it's above other elements */
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 5px;
+    line-height: 1;
+}
+
+/* Adjust the login type selector to leave space for the close button */
+.login-type-selector {
+    display: flex;
+    width: 100%;
+    margin: 0;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0;
+    background: #f5f5f5;
+    border-radius: 5px 5px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding-right: 40px; /* Add padding to make room for the close button */
+}
+
+/* Adjust modal content padding */
+#loginModal .modal-content {
+    padding-top: 0;
+    position: relative; 
+}
+#loginModal .modal-content {
+    width: 400px !important;
+    max-width: 95% !important;
+    padding: 0 !important;
+    position: relative;
+}
+
+/* Update the login section styling with right padding */
+.login-section {
+    padding: 30px 40px 30px 30px !important; /* Added extra padding on the right */
+    width: 100% !important;
+}
+
+#loginModal input,
+#loginModal .password-container {
+    width: 300px !important;
+    max-width: 300px !important;
+    box-sizing: border-box !important;
+    margin-bottom: 15px !important;
+    padding-right: 30px !important;
+}
+
+#loginModal .close {
+    position: absolute !important;
+    right: 20px !important;
+    top: 15px !important;
+    z-index: 1000 !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    color: #666 !important;
+}
+
+.login-type-selector {
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 5px 5px 0 0 !important;
+    padding-right: 100px !important;
+    padding-top: 50px;
+}
+#loginModal .modal-content {
+    width: 400px !important;
+    max-width: 95% !important;
+    padding: 0 !important;
+    position: relative;
+}
+
+.login-section {
+    padding: 30px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#loginModal input,
+#loginModal .password-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 15px !important;
+    padding: 8px 12px !important;
+}
+
+#loginModal form {
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 340px !important;
+}
+
+#loginTitle, #staffLoginTitle {
+    margin: 0 0 20px 0 !important;
+    text-align: center !important;
+}
+
+#loginModal form + p {
+    margin-top: 15px !important;
+    text-align: center !important;
+}
+
+.login-type-selector {
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 5px 5px 0 0 !important;
+    padding: 0 !important;
+}
+
+#loginModal button[type="submit"] {
+    width: 100% !important;
+    margin-top: 10px !important;
+    padding: 10px !important;
+}
+
+/* Add proper spacing to verification section */
+#loginStepTwo {
+    padding: 0 30px !important;
+}
+
+/* Add spacing to verification code input */
+#loginVerificationCode {
+    margin: 15px 0 !important;
+}
+
+/* Add spacing to verification actions */
+.verification-actions {
+    margin-top: 20px !important;
+    gap: 10px !important;
+}
+/* Login Modal Styles - Fixed Version */
+#loginModal .modal-content {
+    width: 400px !important;
+    max-width: 95% !important;
+    padding: 0 !important;
+    position: relative;
+    margin: 50px auto !important;
+    box-sizing: border-box !important;
+}
+
+/* Login Type Selector */
+.login-type-selector {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    border-radius: 5px 5px 0 0 !important;
+    background-color: #f5f5f5 !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+
+.login-type-btn {
+    flex: 1 !important;
+    padding: 12px !important;
+    border: none !important;
+    background: none !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+/* Login Section Container */
+.login-section {
+    padding: 25px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Login Form */
+#loginForm, #adminLoginForm {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+}
+
+/* Form Labels */
+#loginModal label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    text-align: left !important;
+    width: 100% !important;
+}
+
+/* Input Fields */
+#loginModal input,
+#loginModal .password-container {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 15px !important;
+    padding: 10px 12px !important;
+    border-radius: 4px !important;
+}
+
+/* Submit Button */
+#loginModal button[type="submit"] {
+    width: 100% !important;
+    margin-top: 10px !important;
+    padding: 10px !important;
+    background-color: #f26523 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+/* Links below form */
+#loginModal form + p {
+    margin: 15px 0 5px 0 !important;
+    text-align: center !important;
+}
+
+/* Close button */
+#loginModal .close {
+    position: absolute !important;
+    right: 15px !important;
+    top: 15px !important;
+    z-index: 1000 !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    color: #666 !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* Verification section */
+#loginStepTwo {
+    padding: 0 !important;
+}
+
+/* Verification code input */
+#loginVerificationCode {
+    margin: 15px 0 !important;
+    text-align: center !important;
+}
+
+/* Verification actions */
+.verification-actions {
+    display: flex !important;
+    gap: 10px !important;
+    margin-top: 20px !important;
+}
+
+.verification-actions button {
+    flex: 1 !important;
+}
+.feedback-section {
+    padding: 80px 20px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.feedback-section .section-title {
+    margin-bottom: 50px;
+}
+
+.feedback-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+}
+
+.feedback-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.07);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    position: relative;
+    border-top: 4px solid #f26523;
+}
+
+.feedback-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.feedback-quote-icon {
+    font-size: 4rem;
+    color: #f26523;
+    position: absolute;
+    top: 15px;
+    left: 25px;
+    opacity: 0.1;
+    line-height: 1;
+}
+
+.feedback-content {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    flex-grow: 1;
+    font-style: italic;
+    padding-top: 20px;
+}
+.feedback-country {
+    display: block !important;
+    color: #777 !important;
+    font-size: 0.9rem !important;
+    margin-top: 5px !important;
+    font-weight: normal !important;
+    line-height: 1.4 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+
+.feedback-author-info {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.feedback-author {
+    font-weight: 700;
+    color: #333;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.feedback-date {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 10px;
+    text-align: right;
+}
+
+.no-feedback-message {
+    text-align: center;
+    grid-column: 1 / -1;
+    padding: 40px;
+    color: #777;
+    font-style: italic;
+    font-size: 1.1em;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .feedback-container {
+        grid-template-columns: 1fr;
+    }
+}
+.login-links {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.login-links p {
+    margin: 10px 0;
+    font-size: 0.9rem;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: #f26523;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font: inherit;
+    text-decoration: none;
+}
+
+.link-button:hover {
+    text-decoration: none;
+}
+
+
+#loginEmail {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+}
+
+#loginEmail:focus {
+    outline: none;
+    border-color: #f26523;
+    box-shadow: 0 0 0 2px rgba(242, 101, 35, 0.1);
+}
+.password-field-container {
+   position: relative;
+   width: 100%;
+   margin-bottom: 15px;
+}
+
+.password-field-container input[type="password"],
+.password-field-container input[type="text"] {
+   width: 100%;
+   padding: 10px;
+   border: 1px solid #ddd;
+   border-radius: 4px;
+   font-size: 16px;
+   box-sizing: border-box;
+   height: 40px;
+}
+
+.password-toggle-btn {
+   position: absolute;
+   top: 50%;
+   right: 10px;
+   transform: translateY(-50%);
+   background: none;
+   border: none;
+   cursor: pointer;
+   padding: 4px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   width: 24px;
+   height: 24px;
+   z-index: 999; /* Higher z-index for modals */
+}
+
+.password-toggle-btn img {
+   width: 16px;
+   height: 16px;
+   opacity: 0.6;
+   transition: opacity 0.2s ease;
+}
+
+.password-toggle-btn:hover img {
+   opacity: 1;
+}
+
+/* Modal-specific fixes */
+.modal .password-field-container {
+   position: relative;
+   width: 100%;
+   margin-bottom: 15px;
+}
+
+.modal .password-field-container input[type="password"],
+.modal .password-field-container input[type="text"] {
+   width: 100% !important;
+   padding: 10px !important;
+   padding-right: 40px !important; /* Space for the button */
+   border: 1px solid #ddd !important;
+   border-radius: 4px !important;
+   font-size: 16px !important;
+   box-sizing: border-box !important;
+   height: 40px !important;
+}
+
+.modal .password-toggle-btn {
+   position: absolute !important;
+   top: 50% !important;
+   right: 10px !important;
+   transform: translateY(-50%) !important;
+   background: none !important;
+   border: none !important;
+   cursor: pointer !important;
+   padding: 4px !important;
+   display: flex !important;
+   align-items: center !important;
+   justify-content: center !important;
+   width: 24px !important;
+   height: 24px !important;
+   z-index: 9999 !important;
+}
+
+#signupModal .password-field-container,
+#adminLoginModal .password-field-container,
+#loginModal .password-field-container {
+   position: relative !important;
+   width: 100% !important;
+   margin-bottom: 15px !important;
+}
+
+#signupModal .password-toggle-btn,
+#adminLoginModal .password-toggle-btn,
+#loginModal .password-toggle-btn {
+   position: absolute !important;
+   top: 50% !important;
+   right: 10px !important;
+   transform: translateY(-50%) !important;
+   z-index: 10000 !important;
+}
+
+/* Override any existing password container styles */
+.password-container {
+   position: relative !important;
+   display: block !important;
+   width: 100% !important;
+}
+
+.password-container input {
+   width: 100% !important;
+   padding-right: 40px !important;
+}
+
+.password-container .toggle-password,
+.password-container .password-toggle-btn {
+   position: absolute !important;
+   right: 10px !important;
+   top: 50% !important;
+   transform: translateY(-50%) !important;
+   z-index: 10000 !important;
+}
+#usernameAvailabilityMessage {
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+</style>
 </head>
 <body>
     <header>
@@ -510,7 +2095,7 @@
             <ul>
                 <!-- Back button added to navbar -->
                 <li class="back-button-wrapper">
-                    <button id="backButton" class="back-button" style="background: none; color: black;">Home</button>
+                     <li><a href="/">Home</a></li>
                 </li>
                 <li id="loginBtnWrapper">
                     <button id="loginBtn">Login</button>
@@ -555,6 +2140,486 @@
             <button id="loginFromTourBtn" class="btn-primary">Login / Sign Up</button>
         </div>
     </div>
+    
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="loginModalClose">&times;</span>
+        <div id="loginContainer">
+            <div class="login-section">
+                <h2 id="loginTitle">Login</h2>
+                <div id="loginStepOne" class="login-step active-step">
+                    <form id="loginForm">
+                        <label for="loginEmail">Username:</label>
+                        <input type="text" id="loginEmail" name="loginEmail" placeholder="Enter username"  required>
+                        
+                        <label for="loginPassword" style="position: absolute; margin-top: 115px;" >Password:</label>
+                        <div class="password-container">
+                            <input type="password" id="loginPassword" name="password" style="margin-top: 33px;"  required>
+                          
+                        </div>
+                        
+                        <button type="submit" id="loginSubmitButton">Continue</button>
+                    </form>
+                    <div class="login-links">
+                        <p>Forgot your password? <a href="javascript:void(0);" id="forgotPasswordLink">Reset it here</a></p>
+                        <p>Don't have an account? <button id="signupBtn" class="link-button">Sign Up</button></p>
+                        <p>Are you an employee? <button id="requestAccountBtn" class="link-button">Request Account</button></p>
+                    </div>
+                </div>
+                
+                <div id="loginStepTwo" class="login-step">
+                    <h3>Security Verification</h3>
+                    <p>Please slide the handle to verify you're human.</p>
+                    
+                    <div id="loginCaptchaContainer" class="slider-captcha-container"></div>
+                    
+                    <div class="verification-actions">
+                        <button type="button" id="captchaBackBtn" class="btn secondary-btn">Back</button>
+                        <button type="button" id="captchaContinueBtn" class="btn primary-btn" disabled>Continue</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="adminLoginModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="adminLoginModalClose">&times;</span>
+        <div id="adminLoginContainer">
+            <div class="login-section" id="adminLoginSection">
+                <h2 id="adminLoginTitle">Staff Login</h2>
+                <div id="adminLoginStepOne" class="login-step active-step">
+                    <form id="adminLoginForm">
+                        <label for="adminEmail" id="adminInputLabel">Email:</label>
+                        <input type="email" id="adminEmail" name="email" required>
+                        
+                        <label for="adminPassword">Password:</label>
+                        <input type="password" id="adminPassword" name="password" required>
+                        
+                        <button type="submit" id="adminLoginSubmitButton">Continue</button>
+                    </form>
+                    <div class="admin-login-links">
+                        <p>Forgot your password? <a href="javascript:void(0);" id="adminForgotPasswordLink">Reset it here</a></p>
+                        <p>Need an account? <button id="requestAccountBtn" class="link-button">Request access</button></p>
+                    </div>
+                    
+                </div>
+                
+                <div id="adminLoginStepTwo" class="login-step">
+                    <h3>Email Verification</h3>
+                    <p>We've sent a verification code to your email. Please enter it below to complete login.</p>
+                    
+                    <div class="form-group">
+                        <label for="adminVerificationCode">Verification Code:</label>
+                        <input type="text" id="adminVerificationCode" name="verificationCode" 
+                               placeholder="Enter 6-digit code" maxlength="6" 
+                               style="width: 100%; box-sizing: border-box; padding: 10px; text-align: center;">
+                        <div id="adminVerificationError" class="error-message"></div>
+                    </div>
+                    
+                    <div class="verification-actions">
+                        <button type="button" id="verifyAdminCodeBtn" class="btn primary-btn">Verify Code</button>
+                        <button type="button" id="resendAdminCodeBtn" class="btn secondary-btn">Resend Code</button>
+                        <button type="button" id="backToAdminLoginBtn" class="btn secondary-btn">Back</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="adminSignupModal" class="modal">
+    <div class="modal-content signup-modal-content">
+        <span class="close" id="adminSignupModalClose">&times;</span>
+        <h2>Request Staff Account</h2>
+        <form id="admin-signup-form">
+            <div class="form-group">
+                <label for="admin-firstName">First Name:</label>
+                <input type="text" id="admin-firstName" name="firstName" placeholder="Enter your first name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-lastName">Last Name:</label>
+                <input type="text" id="admin-lastName" name="lastName" placeholder="Enter your last name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-username">Username:</label>
+                <input type="text" id="admin-username" name="username" placeholder="Enter your username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-email">Email:</label>
+                <div class="email-container">
+                    <input type="email" id="admin-email" name="email" placeholder="Enter your email" required>
+                    <button type="button" id="sendAdminCodeBtn" class="btn">Send Code</button>
+                </div>
+            </div>
+            
+            <div id="admin-verification-section" class="form-group" style="display: none;">
+                <label for="admin-verification-code">Verification Code:</label>
+                <input type="text" id="admin-verification-code" name="verification-code" placeholder="Enter code" required>
+                <p id="adminCodeMessage" class="error-message" style="display: none;">Incorrect code. Try again.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-phoneNumber">Phone Number:</label>
+                <input type="tel" id="admin-phoneNumber" name="phoneNumber" pattern="[0-9+()\-\s]{7,25}" placeholder="+63 912 345 6789" required>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-role">Role:</label>
+                <select id="admin-role" name="role" required>
+                    <option value="" disabled selected>Select Role</option>
+                    <option value="admin">Admin</option>
+                    <option value="employee">Employee</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-password">Password:</label>
+                <div class="password-container">
+                    <input type="password" id="admin-password" name="password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('admin-password', this)">
+                        <img src="/images/eye.png" alt="Show Password">
+                    </button>
+                </div>                  
+                <p id="admin-passwordMessage" class="error-message"></p>
+            </div>
+            
+            <div class="form-group">
+                <label for="admin-confirm-password">Confirm Password:</label>
+                <div class="password-container">
+                    <input type="password" id="admin-confirm-password" name="confirm-password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('admin-confirm-password', this)">
+                        <img src="/images/eye.png" alt="Show Password">
+                    </button>
+                </div>
+                <span id="admin-confirmPasswordMessage" class="match-message"></span>
+            </div>
+
+            <button type="submit" class="btn">Submit Request</button>
+            <p>Already have an account? <a href="javascript:void(0);" id="switchToAdminLoginLink">Login here</a></p>
+        </form>
+    </div>
+</div>
+
+
+<div id="adminVerificationModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="adminVerificationModalClose">&times;</span>
+        <h2>Email Verification</h2>
+        <p>We've sent a verification code to your email address. Please enter it below to verify your account.</p>
+        
+        <div class="verification-code-container">
+            <div class="form-group">
+                <label for="adminVerificationCode">Verification Code:</label>
+                <input type="text" id="adminVerificationCode" name="verificationCode" 
+                       placeholder="Enter 6-digit code" maxlength="6" 
+                       style="width: 100%; box-sizing: border-box; padding: 10px; text-align: center;">
+                <div id="adminVerificationError" class="error-message"></div>
+            </div>
+            
+            <div class="verification-actions">
+                <button type="button" id="verifyAdminCodeBtn" class="btn primary-btn">Verify Code</button>
+            </div>
+        </div>        
+    </div>
+</div>
+
+<div id="accountPendingModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="accountPendingModalClose">&times;</span>
+        <div class="pending-container">
+            <div class="pending-icon">⏳</div>
+            <h2>Account Pending Approval</h2>
+            <p>Your account request has been submitted and is awaiting approval.</p>
+            <p>You will receive an email notification once your account is approved or declined.</p>
+            <p>If you have any questions, please contact our support team.</p>
+            <button type="button" class="btn primary-btn" id="accountPendingBtn">Return to Login</button>
+        </div>
+    </div>
+</div>
+
+<div id="forgotPasswordModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="forgotPasswordModalClose">&times;</span>
+        <div id="emailSection" class="password-reset-step active-step">
+            <h2>Forgot Password</h2>
+            <p>Enter your email address to receive a verification code.</p>
+            <form id="forgotPasswordForm">
+                <label for="forgotEmail">Email Address:</label>
+                <input type="email" id="forgotEmail" name="email" required>
+                <button type="button" onclick="sendOTP()">Send Verification Code</button>
+            </form>
+        </div>
+        <div id="otpSection" class="password-reset-step">
+            <h2>Verify Your Email</h2>
+            <p>Enter the verification code sent to your email.</p>
+            <div class="form-group">
+                <label for="otpCode">Verification Code:</label>
+                <input type="text" id="otpCode" name="otp" required>
+                <button type="button" onclick="verifyOTP()">Verify Code</button>
+            </div>
+            <p class="back-link"><a href="javascript:void(0);" onclick="showResetStep('emailSection')">← Back to email entry</a></p>
+        </div>
+        <div id="resetPasswordSection" class="password-reset-step">
+            <h2>Create New Password</h2>
+            <p>Please create a strong password for your account.</p>
+            <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" placeholder="Enter new password" required>
+                <div id="passwordMessage" class="validation-message"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password:</label>
+                <input type="password" id="confirmPassword" placeholder="Confirm new password" required>
+                <div id="confirmPasswordMessage" class="validation-message"></div>
+            </div>
+            
+            <button type="button" onclick="resetPassword()">Reset Password</button>
+            <p class="back-link"><a href="javascript:void(0);" onclick="showResetStep('otpSection')">← Back to verification</a></p>
+        </div>
+        <div id="successSection" class="password-reset-step">
+            <div class="success-container">
+                <div class="success-icon">✓</div>
+                <h2>Password Reset Successful!</h2>
+                <p>Your password has been reset successfully.</p>
+                <p>You will be redirected to the home page shortly.</p>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="signupModal" class="modal">
+    <div class="modal-content signup-modal-content">
+        <span class="close" id="signupModalClose">&times;</span>
+        <h2>Sign Up</h2>
+
+        <!-- ✅ FIXED ID -->
+        <form id="signupForm" method="POST">
+            <div class="form-group">
+                <label for="signup-username">Username:</label>
+                <input type="text" id="signup-username" name="username" placeholder="Enter your username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="signup-email">Email:</label>
+                <div class="email-container">
+                    <input type="email" id="signup-email" name="email" placeholder="Enter your email" required>
+                    <button type="button" id="sendCodeBtn" class="btn">Send Code</button>
+                </div>
+            </div>
+            
+            <div id="verification-section" class="form-group" style="display: none;">
+                <label for="verification-code">Verification Code:</label>
+                <input type="text" id="verification-code" name="verification-code" placeholder="Enter code" required>
+                <p id="codeMessage" class="error-message" style="display: none;">Incorrect code. Try again.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="signup-phonenumber">Phone Number:</label>
+                <input type="tel" id="signup-phonenumber" name="phoneNumber" pattern="[0-9+()\-\s]{7,25}" placeholder="+63 912 345 6789" required>
+            </div>
+
+            <div class="form-group">
+                <label for="signup-password">Password:</label>
+                <div class="password-container">
+                    <input type="password" id="signup-password" name="password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('signup-password', this)">
+                        <img src="/images/eye.png" alt="Show Password">
+                    </button>
+                </div>                  
+                <p id="signup-passwordMessage" class="error-message"></p>
+            </div>
+            
+            <div class="form-group">
+                <label for="signup-confirm-password">Confirm Password:</label>
+                <div class="password-container">
+                    <input type="password" id="signup-confirm-password" name="confirm-password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('signup-confirm-password', this)">
+                        <img src="/images/eye.png" alt="Show Password">
+                    </button>
+                </div>
+                <span id="signup-confirmPasswordMessage" class="match-message"></span>
+            </div>
+
+            <div class="form-group">
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms-checkbox" name="terms" required>
+                    <label for="terms-checkbox">
+                        I agree to the <a href="javascript:void(0);" id="termsLink">Terms and Conditions</a> and 
+                        <a href="javascript:void(0);" id="privacyLink">Privacy Policy</a>
+                    </label>
+                </div>
+                <p id="terms-error" class="error-message" style="display: none;">You must agree to the Terms and Conditions to continue.</p>
+            </div>
+
+            <button type="submit" class="btn">Sign Up</button>
+            <p>Already have an account? <a href="javascript:void(0);" id="switchToLoginLink">Login here</a></p>
+        </form>
+    </div>
+</div>
+
+<div id="termsModal" class="modal">
+    <div class="modal-content terms-modal-content">
+        <span class="close" id="termsModalClose">&times;</span>
+        <div class="terms-header">
+            <h2>Terms and Conditions</h2>
+        </div>
+        <div class="terms-body">
+            <div class="terms-section">
+                <h3>1. Acceptance of Terms</h3>
+                <p>By accessing and using the services provided by A.BEE Travel and Tours, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our services.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>2. Service Description</h3>
+                <p>A.BEE Travel and Tours provides travel arrangement services including but not limited to:</p>
+                <ul>
+                    <li>Tour packages (domestic and international)</li>
+                    <li>Visa application assistance</li>
+                    <li>Travel insurance</li>
+                    <li>Flight and hotel bookings</li>
+                </ul>
+                <p>We reserve the right to modify, suspend, or discontinue any aspect of our services at any time.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>3. User Accounts</h3>
+                <p>When you create an account with us, you must provide accurate and complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.</p>
+                <p>We reserve the right to suspend or terminate accounts that violate these terms or engage in fraudulent activity.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>4. Booking and Payments</h3>
+                <p>All bookings are subject to availability and confirmation. Prices are subject to change without notice until payment is received in full.</p>
+                <p>Payment methods accepted include credit/debit cards, bank transfers, and other methods as specified during the booking process.</p>
+                <p>A non-refundable deposit may be required to secure bookings.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>5. Cancellations and Refunds</h3>
+                <p>Cancellation policies vary depending on the service booked and the timing of cancellation:</p>
+                <ul>
+                    <li>Cancellations made 30+ days before departure may be eligible for partial refunds</li>
+                    <li>Cancellations made less than 30 days before departure may not be eligible for refunds</li>
+                    <li>No-shows are non-refundable</li>
+                </ul>
+                <p>Specific cancellation terms will be provided at the time of booking.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>6. Travel Documents</h3>
+                <p>Travelers are responsible for ensuring they have valid travel documents (passports, visas, etc.) required for their journey. A.BEE Travel and Tours is not liable for any issues arising from inadequate documentation.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>7. Limitation of Liability</h3>
+                <p>A.BEE Travel and Tours acts as an intermediary between travelers and service providers (airlines, hotels, tour operators, etc.). We are not liable for any injury, damage, loss, accident, delay, or irregularity that may occur during any tour or travel arrangement.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>8. Changes to Terms</h3>
+                <p>We reserve the right to update these Terms and Conditions at any time. Changes will be effective immediately upon posting to our website.</p>
+            </div>
+        </div>
+        <div class="terms-footer">
+            <button id="declineTermsBtn" class="secondary-btn">Decline</button>
+            <button id="acceptTermsBtn" class="primary-btn">Accept</button>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div id="privacyModal" class="modal">
+    <div class="modal-content terms-modal-content">
+        <span class="close" id="privacyModalClose">&times;</span>
+        <div class="terms-header">
+            <h2>Privacy Policy</h2>
+        </div>
+        <div class="terms-body">
+            <div class="terms-section">
+                <h3>1. Information We Collect</h3>
+                <p>A.BEE Travel and Tours collects the following types of information:</p>
+                <ul>
+                    <li><strong>Personal Information:</strong> Name, email address, phone number, billing address, passport details, and other information necessary for travel arrangements.</li>
+                    <li><strong>Account Information:</strong> Login credentials and account preferences.</li>
+                    <li><strong>Transaction Information:</strong> Details about bookings, payments, and service usage.</li>
+                    <li><strong>Technical Information:</strong> IP address, browser type, device information, and cookies.</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h3>2. How We Use Your Information</h3>
+                <p>We use your information for the following purposes:</p>
+                <ul>
+                    <li>Processing and fulfilling your travel bookings and requests</li>
+                    <li>Managing your account and providing customer support</li>
+                    <li>Communicating with you about your bookings, account, and our services</li>
+                    <li>Improving our services and website functionality</li>
+                    <li>Complying with legal obligations</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h3>3. Information Sharing</h3>
+                <p>We may share your information with:</p>
+                <ul>
+                    <li>Travel service providers (airlines, hotels, tour operators) necessary to fulfill your bookings</li>
+                    <li>Payment processors to handle transactions</li>
+                    <li>Government authorities for visa processing or as required by law</li>
+                    <li>Third-party service providers who assist in our operations</li>
+                </ul>
+                <p>We do not sell your personal information to third parties.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>4. Data Security</h3>
+                <p>We implement appropriate security measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the Internet or electronic storage is 100% secure.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>5. Your Rights</h3>
+                <p>You have the right to:</p>
+                <ul>
+                    <li>Access the personal information we hold about you</li>
+                    <li>Request correction of inaccurate information</li>
+                    <li>Request deletion of your information (subject to legal requirements)</li>
+                    <li>Opt-out of marketing communications</li>
+                </ul>
+            </div>
+            
+            <div class="terms-section">
+                <h3>6. Cookies</h3>
+                <p>Our website uses cookies to enhance your browsing experience. You can adjust your browser settings to refuse cookies, but this may limit some functionality of our website.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>7. Changes to Privacy Policy</h3>
+                <p>We may update this Privacy Policy periodically. We will notify you of significant changes by posting a notice on our website or sending you an email.</p>
+            </div>
+            
+            <div class="terms-section">
+                <h3>8. Contact Us</h3>
+                <p>If you have questions about this Privacy Policy, please contact us at:</p>
+                <p>Email: abeetravelandtours@gmail.com<br>
+                Phone: (044) 604 7273 or 09361055665</p>
+            </div>
+        </div>
+        <div class="terms-footer">
+            <button id="declinePrivacyBtn" class="secondary-btn">Decline</button>
+            <button id="acceptPrivacyBtn" class="primary-btn">Accept</button>
+        </div>
+    </div>
+</div>
     <footer class="footer-columns">
         <div class="footer-content">
             <div class="footer-left">
@@ -600,14 +2665,19 @@
                 profileDropdown.style.display = 'none';
             }
         });
-        
-        // Login button functionality
         const loginBtn = document.getElementById('loginBtn');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', function() {
-                window.location.href = '/';
-            });
+if (loginBtn) {
+    loginBtn.addEventListener('click', function() {
+        const loginModal = document.getElementById('loginModal');
+        if (loginModal) {
+            loginModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        } else {
+            console.warn('Login modal not found on this page.');
         }
+    });
+}
+
         
         // Back button functionality
         const backButton = document.getElementById('backButton');
@@ -643,13 +2713,19 @@
                 loginRequiredModal.style.display = 'none';
             });
         }
+loginFromTourBtn.addEventListener('click', function() {
+    const loginRequiredModal = document.getElementById('loginRequiredModal');
+    const loginModal = document.getElementById('loginModal');
+    
+    if (loginRequiredModal) loginRequiredModal.style.display = 'none';
+    if (loginModal) {
+        loginModal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    } else {
+        console.warn('Login modal not found on this page.');
+    }
+});
 
-        if (loginFromTourBtn) {
-            loginFromTourBtn.addEventListener('click', function() {
-                sessionStorage.setItem('openLoginModal', 'true');
-                window.location.href = '/'; // Redirect to home page to open login modal
-            });
-        }
 
         // Close modal if user clicks outside of it
         window.addEventListener('click', function(event) {
@@ -658,37 +2734,67 @@
             }
         });
     });
-    
     function fetchTours() {
-        return fetch('/api/tours')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('loading').style.display = 'none';
-                
-                if (data.success && data.tours && data.tours.length > 0) {
-                    const toursGrid = document.getElementById('toursGrid');
-                    toursGrid.style.display = 'grid';
-                    
-                    data.tours.forEach(tour => {
-                        const tourCard = createTourCard(tour);
-                        toursGrid.appendChild(tourCard);
-                    });
-                    
-                    // Start countdowns after all cards are created
-                    setTimeout(() => {
-                        startCountdowns();
-                    }, 100);
-                } else {
-                    document.getElementById('noTours').style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching tours:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('noTours').style.display = 'block';
+    console.log('🔍 Fetching tours from /api/tours...');
+
+    return fetch('/api/tours', {
+        method: 'GET',
+        credentials: 'same-origin' // Send cookies for session-based auth
+    })
+    .then(async response => {
+        console.log('🧾 Response status:', response.status);
+        console.log('🧭 Response URL:', response.url);
+
+        // Try to log what came back even if it's not JSON
+        const contentType = response.headers.get('content-type') || '';
+        console.log('📦 Content-Type:', contentType);
+
+        // Handle HTML error (like redirect to /login page)
+        if (contentType.includes('text/html')) {
+            const text = await response.text();
+            console.error('⚠️ Received HTML instead of JSON. Likely redirected to login:');
+            console.error(text.slice(0, 300) + '...'); // print snippet
+            throw new Error('Received HTML instead of JSON. Are you being redirected?');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Failed to fetch tours. Status:', response.status);
+            console.error('Response body:', errorText);
+            throw new Error(`Fetch failed: ${response.status}`);
+        }
+
+        // Parse as JSON
+        const data = await response.json();
+        console.log('✅ Tours data received:', data);
+        return data;
+    })
+    .then(data => {
+        document.getElementById('loading').style.display = 'none';
+
+        if (data.success && data.tours && data.tours.length > 0) {
+            const toursGrid = document.getElementById('toursGrid');
+            toursGrid.style.display = 'grid';
+            toursGrid.innerHTML = ''; // clear old content
+
+            data.tours.forEach(tour => {
+                const tourCard = createTourCard(tour);
+                toursGrid.appendChild(tourCard);
             });
-    }
-    
+
+            setTimeout(startCountdowns, 100);
+        } else {
+            console.warn('⚠️ No tours found:', data);
+            document.getElementById('noTours').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('💥 Error fetching tours:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('noTours').style.display = 'block';
+    });
+}
+
     // Replace the existing createTourCard function in tours.ejs
     function createTourCard(tour) {
         const card = document.createElement('div');
@@ -926,6 +3032,181 @@
             });
         }
     }
+</script>
+
+<script src="/js/unified-login.js"></script>
+<script src="/js/admin-signup.js"></script>
+<script src="/js/contact-form.js"></script>
+<script src="/js/slider-captcha.js"></script>
+<script src="/js/profiledropdown.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+   // Remove any existing password toggle functionality
+   const existingToggles = document.querySelectorAll('.toggle-password, .password-toggle-btn');
+   existingToggles.forEach(toggle => {
+       if (!toggle.closest('.password-field-container')) {
+           toggle.remove();
+       }
+   });
+   
+   function createPasswordToggle(passwordField) {
+       // Skip if already has toggle
+       if (passwordField.parentElement.classList.contains('password-field-container')) {
+           return;
+       }
+       
+       // Remove any existing password containers that might interfere
+       if (passwordField.parentElement.classList.contains('password-container')) {
+           const oldContainer = passwordField.parentElement;
+           const parent = oldContainer.parentElement;
+           parent.insertBefore(passwordField, oldContainer);
+           oldContainer.remove();
+       }
+       
+       // Create container
+       const container = document.createElement('div');
+       container.className = 'password-field-container';
+       
+       // Insert container before the password field
+       passwordField.parentNode.insertBefore(container, passwordField);
+       
+       // Move password field into container
+       container.appendChild(passwordField);
+       
+       // Create toggle button
+       const toggleBtn = document.createElement('button');
+       toggleBtn.type = 'button';
+       toggleBtn.className = 'password-toggle-btn';
+       toggleBtn.setAttribute('aria-label', 'Toggle password visibility');
+       toggleBtn.title = 'Show/Hide password';
+       
+       // Create image element
+       const toggleImg = document.createElement('img');
+       toggleImg.src = '/images/eye.png';
+       toggleImg.alt = 'Show password';
+       toggleImg.style.pointerEvents = 'none';
+       
+       toggleBtn.appendChild(toggleImg);
+       container.appendChild(toggleBtn);
+       
+       // Add click event listener
+       toggleBtn.addEventListener('click', function(e) {
+           e.preventDefault();
+           e.stopPropagation();
+           
+           const isPassword = passwordField.type === 'password';
+           
+           if (isPassword) {
+               passwordField.type = 'text';
+               toggleImg.src = '/images/hidden.png';
+               toggleImg.alt = 'Hide password';
+               toggleBtn.title = 'Hide password';
+           } else {
+               passwordField.type = 'password';
+               toggleImg.src = '/images/eye.png';
+               toggleImg.alt = 'Show password';
+               toggleBtn.title = 'Show password';
+           }
+       });
+       
+       console.log('Password toggle created for:', passwordField.id || passwordField.name);
+   }
+   
+   // Initialize all password toggles
+   function initializePasswordToggles() {
+       const passwordFields = document.querySelectorAll('input[type="password"]');
+       passwordFields.forEach(field => {
+           if (field.style.display === 'none' || field.disabled) {
+               return;
+           }
+           createPasswordToggle(field);
+       });
+       console.log(`Initialized ${passwordFields.length} password toggles`);
+   }
+   
+   // Initialize password toggles immediately
+   initializePasswordToggles();
+   
+   // Re-initialize when modals are opened with a longer delay
+   const modals = document.querySelectorAll('.modal');
+   modals.forEach(modal => {
+       const observer = new MutationObserver(function(mutations) {
+           mutations.forEach(function(mutation) {
+               if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                   if (modal.style.display === 'flex' || modal.style.display === 'block') {
+                       setTimeout(() => {
+                           console.log('Modal opened, reinitializing toggles');
+                           initializePasswordToggles();
+                       }, 200); // Longer delay for modal content to load
+                   }
+               }
+           });
+       });
+       
+       observer.observe(modal, { attributes: true });
+   });
+   
+   // Also listen for modal open events
+   document.addEventListener('click', function(e) {
+       if (e.target.id === 'signupBtn' || e.target.id === 'loginBtn' || e.target.id === 'adminLoginBtn') {
+           setTimeout(initializePasswordToggles, 300);
+       }
+   });
+});
+
+</script>
+<script src="/js/java.js"></script>
+<script src="/js/signup-username-check.js"></script>
+<script src="/js/admin-username-check.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we need to open the login modal (set from another page)
+    if (sessionStorage.getItem('openLoginModal') === 'true') {
+        const loginModal = document.getElementById('loginModal');
+        if (loginModal) {
+            loginModal.style.display = 'block';
+        }
+        // Clear the flag so it only opens once
+        sessionStorage.removeItem('openLoginModal');
+    }
+});
+document.addEventListener('DOMContentLoaded', () => {
+  const contactForm = document.getElementById('contactForm');
+  const status = document.getElementById('contactFormStatus');
+
+  if (!contactForm) return;
+
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const subject = document.getElementById('contactSubject').value;
+    const message = document.getElementById('contactMessage').value;
+
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, message })
+    });
+
+    const data = await response.json();
+    status.textContent = data.message;
+    status.className = data.success ? 'form-status success' : 'form-status error';
+    if (data.success) contactForm.reset();
+  });
+});
+
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const signupClose = document.getElementById('signupModalClose');
+    const signupModal = document.getElementById('signupModal');
+    if (signupClose && signupModal) {
+        signupClose.addEventListener('click', () => {
+            signupModal.style.display = 'none';
+            document.body.style.overflow = ''; // restore scroll
+        });
+    }
+});
 </script>
 
 </body>
