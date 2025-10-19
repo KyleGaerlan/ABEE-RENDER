@@ -28,7 +28,7 @@ const Contact = require('./models/Contact');
 const validator = require('validator');
 const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
-const PYTHON_API = "https://fast-api-service-cap1.onrender.com";
+const PYTHON_API = "http://127.0.0.1:8000";
 const ExcelJS = require("exceljs");
 
 const app = express();
@@ -1344,7 +1344,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1428,7 +1428,7 @@ app.get('/api/predict/bookings', async (req, res) => {
 
     const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1463,7 +1463,7 @@ app.get('/api/predict/users', async (req, res) => {
     const series = userData.map(u => ({ ds: u._id, y: u.totalUsers }));
 
     // 🔮 Call your FastAPI Prophet forecast service
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30 // Predict next 30 days — you can increase to 180 if needed
     });
@@ -1500,7 +1500,7 @@ app.get('/api/predict/seasonal', async (req, res) => {
       y: d.totalBookings
     }));
 
-    const { data: response } = await axios.post('https://fast-api-service-cap1.onrender.com/predict', {
+    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
       series, horizon: 4
     });
 
@@ -1629,7 +1629,7 @@ async function buildSalesSeries() {
 
 app.get("/api/forecast", async (req, res) => {
   try {
-    const response = await axios.get("https://fast-api-service-cap1.onrender.com/predict");
+    const response = await axios.get("http://127.0.0.1:8000/predict");
     res.json(response.data);
   } catch (error) {
     console.error("❌ Error fetching forecast:", error.message);
@@ -1649,7 +1649,7 @@ app.get("/api/forecast/:type", async (req, res) => {
       series = await buildUserSeries();
     }
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 180 }),
@@ -2233,7 +2233,7 @@ app.get("/api/admin/seasonal-forecast", async (req, res) => {
     });
 
     // 2️⃣ Send this data to your Python API for Prophet forecasting
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2307,7 +2307,7 @@ app.get('/api/analytics/seasonal', async (req, res) => {
     });
 
     // ✅ Send actual data to FastAPI Prophet for prediction
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2494,7 +2494,7 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
 
     let predictions = [];
     try {
-      const response = await fetch("https://fast-api-service-cap1.onrender.com/predict-all");
+      const response = await fetch("http://127.0.0.1:8000/predict-all");
       if (response.ok) predictions = await response.json();
     } catch (err) {
       forecastSheet.addRow(["Error fetching forecast data"]);
@@ -2671,7 +2671,7 @@ app.get("/api/forecast-insights", checkAdminAuth, async (req, res) => {
     }
 
     // 3️⃣ Send to FastAPI batch forecast
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/batch-predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/batch-predict", {
       datasets: {
         sales: { series: salesSeries, horizon: 3 }, // Forecast next 3 months
         bookings: { series: bookingSeries, horizon: 3 },
@@ -2814,6 +2814,39 @@ apiRouter.get("/predictive/forecast-users", checkAdminAuth, async (req, res) => 
     console.error("❌ User forecast error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
+});
+// Check username availability
+app.get('/check-username', async (req, res) => {
+    try {
+        const username = req.query.username?.trim();
+        if (!username) return res.json({ available: false, message: 'No username provided' });
+
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.json({ available: false, message: 'Username already taken' });
+        }
+        res.json({ available: true, message: 'Username available' });
+    } catch (err) {
+        console.error('Error checking username:', err);
+        res.status(500).json({ available: false, message: 'Server error' });
+    }
+});
+// Check admin/staff username availability
+app.get('/check-admin-username', async (req, res) => {
+    try {
+        const username = req.query.username?.trim();
+        if (!username) return res.json({ available: false, message: 'No username provided' });
+
+        const existingAdmin = await Admin.findOne({ username }); // or your staff model
+        if (existingAdmin) {
+            return res.json({ available: false, message: 'Username already taken' });
+        }
+
+        res.json({ available: true, message: 'Username available' });
+    } catch (err) {
+        console.error('Error checking admin username:', err);
+        res.status(500).json({ available: false, message: 'Server error' });
+    }
 });
 
 app.post('/api/admin/forgot-password', async (req, res) => {
@@ -7517,7 +7550,7 @@ app.get("/api/insights", async (req, res) => {
     console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
 
     // ✅ Send to FastAPI
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: cleanTours })
