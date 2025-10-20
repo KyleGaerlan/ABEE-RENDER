@@ -8,7 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.30/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         .dashboard-grid {
             display: grid;
@@ -1033,6 +1035,84 @@
   box-shadow: 0 0 4px rgba(242, 101, 35, 0.4);
   outline: none;
 }
+.growth-badge {
+  font-size: 14px;
+  margin: 5px 0;
+  font-weight: 600;
+}
+
+.trend-summary-card {
+  background: #f9fafb;
+  border-left: 5px solid #f26523;
+  padding: 15px 20px;
+  border-radius: 6px;
+  margin-top: 15px;
+  color: #333;
+  font-size: 15px;
+}
+/* 🧠 General layout for insight cards */
+.trend-summary-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 25px;
+  margin-top: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  font-family: "Inter", sans-serif;
+  max-width: 100%;
+}
+
+.trend-summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* 🏷 Header style (optional if you add titles) */
+.trend-summary-card h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #d55a1f;
+  margin-bottom: 12px;
+}
+
+/* ✍️ Each insight line */
+.trend-summary-card p {
+  font-size: 0.95rem;
+  margin: 6px 0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 🎨 Emoji / icon style */
+.trend-summary-card p::before {
+  font-size: 1.2rem;
+}
+
+/* 💡 Positive/Negative highlights */
+.trend-summary-card p strong {
+  color: #1a73e8;
+}
+
+.trend-summary-card p.positive strong {
+  color: #16a34a; /* green */
+}
+
+.trend-summary-card p.negative strong {
+  color: #dc2626; /* red */
+}
+
+/* 💥 Responsive tweak */
+@media (max-width: 768px) {
+  .trend-summary-card {
+    padding: 16px;
+  }
+  .trend-summary-card p {
+    font-size: 0.9rem;
+  }
+}
+
 </style>
 
 </head>
@@ -1082,6 +1162,7 @@
         <button id="exportDashboardExcel" class="export-btn">
           Export Dashboard Report
         </button>
+
       </div>
       <div class="last-updated">
         Last updated: <span id="lastUpdated">Never</span>
@@ -1184,15 +1265,26 @@
     </div>
 
     <div class="col-md-4 d-flex align-items-end">
-      <button id="weekly-apply" class="action-button w-100" style="background-color:#d55a1f;color:white" onclick="fetchWeeklyAnalytics()">
-        Apply
-      </button>
+      <button 
+  id="weekly-apply" 
+  class="action-button w-100" 
+  style="background-color:#d55a1f;color:white" 
+  onclick="fetchWeeklyAnalytics(); loadWeeklyInsights();">
+  Apply
+</button>
+
     </div>
   </div>
 
   <!-- 🔹 3 charts will render here -->
   <div class="chart-grid d-flex flex-wrap justify-content-center gap-4"></div>
+
+  <!-- 🧠 Insights -->
+  <div id="weeklyInsights" class="trend-summary-card">
+    <p>Loading weekly insights...</p>
+  </div>
 </div>
+
 
 <!-- 📅 MONTHLY -->
 <div class="monthly-selector chart-tab-content">
@@ -1203,15 +1295,26 @@
     </div>
 
     <div class="col-md-6 d-flex align-items-end">
-      <button id="monthly-apply" class="action-button w-100" style="background-color:#d55a1f;color:white" onclick="fetchMonthlyAnalytics()">
-        Apply
-      </button>
+      <button 
+  id="monthly-apply" 
+  class="action-button w-100" 
+  style="background-color:#d55a1f;color:white" 
+  onclick="fetchMonthlyAnalytics(); loadMonthlyInsights();">
+  Apply
+</button>
+
     </div>
   </div>
 
   <!-- 🔹 3 charts will render here -->
   <div class="chart-grid d-flex flex-wrap justify-content-center gap-4"></div>
+
+  <!-- 🧠 Insights -->
+  <div id="monthlyInsights" class="trend-summary-card">
+    <p>Loading monthly insights...</p>
+  </div>
 </div>
+
 
 <!-- 📆 YEARLY -->
 <div class="yearly-selector chart-tab-content">
@@ -1227,14 +1330,24 @@
     </div>
 
     <div class="col-md-4 d-flex align-items-end">
-      <button id="yearly-apply" class="action-button w-100" style="background-color:#d55a1f;color:white" onclick="fetchYearlyAnalytics()">
-        Apply
-      </button>
+     <button 
+  id="yearly-apply" 
+  class="action-button w-100" 
+  style="background-color:#d55a1f;color:white" 
+  onclick="fetchYearlyAnalytics(); loadYearlyInsights();">
+  Apply
+</button>
+
     </div>
   </div>
 
   <!-- 🔹 3 charts will render here -->
   <div class="chart-grid d-flex flex-wrap justify-content-center gap-4"></div>
+
+  <!-- 🧠 Insights -->
+  <div id="yearlyInsights" class="trend-summary-card">
+    <p>Loading yearly insights...</p>
+  </div>
 </div>
 
 <!-- ⚖️ COMPARISON TAB -->
@@ -1266,7 +1379,6 @@
     </div>
   </div>
 
-  <!-- 🧩 NEW: Comparison Insight Cards -->
   <div class="comparison-insights" style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
     <div class="insight-card" style="flex:1; min-width:200px;">
       <h3>Year-over-Year Growth</h3>
@@ -1311,19 +1423,19 @@
   <!-- 📈 Forecast Accuracy & Charts -->
   <div class="chart-grid">
     <div class="chart-container">
-      <h3>Sales Forecast</h3>
+      <h3>Sales Forecast (30 Days)</h3>
       <p id="salesForecastAccuracy">MAPE: -- | RMSE: --</p>
       <canvas id="salesForecastChart"></canvas>
     </div>
 
     <div class="chart-container">
-      <h3>User Forecast</h3>
+      <h3>User Forecast (30 Days)</h3>
       <p id="userForecastAccuracy">MAPE: -- | RMSE: --</p>
       <canvas id="userForecastChart"></canvas>
     </div>
 
     <div class="chart-container">
-      <h3>Booking Forecast</h3>
+      <h3>Booking Forecast (30 Days)</h3>
       <p id="bookingForecastAccuracy">MAPE: -- | RMSE: --</p>
       <canvas id="bookingForecastChart"></canvas>
     </div>
@@ -1331,23 +1443,23 @@
 
   <!-- 🧠 AI Insights & Recommendations -->
   <div class="ai-forecast-section mt-6">
-    <h3>AI Predictive Insights</h3>
+    <h3>Predictive Insights</h3>
 
     <div class="insight-grid">
       <div class="insight-card">
-        <h3>Projected Total Sales</h3>
+        <h3>Projected Total Sales (30 Days)</h3>
         <p id="projectedTotalSales">₱--</p>
         <small id="salesGrowthNote" class="text-muted">Loading...</small>
       </div>
 
       <div class="insight-card">
-        <h3>Expected Bookings</h3>
+        <h3>Expected Bookings (30 Days)</h3>
         <p id="projectedTotalBookings">--</p>
         <small id="bookingsTrendNote" class="text-muted">Loading...</small>
       </div>
 
       <div class="insight-card">
-        <h3>User Growth</h3>
+        <h3>User Growth (30 Days)</h3>
         <p id="projectedTotalUsers">--</p>
         <small id="userGrowthNote" class="text-muted">Loading...</small>
       </div>
@@ -3351,7 +3463,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 async function loadForecast(metric, chartId, accuracyId, noteId, horizon) {
   try {
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3467,7 +3579,7 @@ async function loadAIInsights() {
     const res = await fetch("/api/admin/tours-performance");
     const tourData = await res.json();
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: tourData })
@@ -3629,7 +3741,7 @@ async function buildSeasonalForecast() {
 
     async function updateChart(destination) {
       const series = data.datasets[destination];
-      const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+      const response = await fetch("http://127.0.0.1:8000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ series, horizon: 365 })
@@ -3747,7 +3859,7 @@ async function buildUserGrowthChart() {
       y: data.counts[i]
     }));
 
-    const forecastRes = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const forecastRes = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 90 })
@@ -4131,7 +4243,7 @@ function renderSeasonalCharts(data) {
       plugins: {
         title: {
           display: true,
-          text: `Forecasted Bookings (Next Year) | MAPE: ${data.mape.toFixed(2)}% | RMSE: ${data.rmse.toFixed(2)}`,
+         
         },
       },
       scales: { y: { beginAtZero: true } },
@@ -4565,6 +4677,72 @@ async function loadPredictiveSummaries() {
 
 // Run when dashboard loads
 document.addEventListener("DOMContentLoaded", loadPredictiveSummaries);
+
+</script>
+<script>
+async function loadWeeklyInsights() {
+  try {
+    const month = parseInt(document.getElementById("weekly-month").value);
+    const year = parseInt(document.getElementById("weekly-year").value);
+
+    const res = await fetch(`/api/insights/weekly?month=${month}&year=${year}`);
+    const data = await res.json();
+
+    document.getElementById("weeklyInsights").innerHTML = `
+      <p><strong>Total Bookings:</strong> ${data.total ?? 0}</p>
+      <p>📈 Growth: ${data.growth ?? 0}% vs previous month</p>
+      <p>🌍 Top Destination: ${data.topDestination ?? "N/A"}</p>
+      <p>👥 New Users: ${data.newUsers ?? 0}</p>
+    `;
+  } catch (err) {
+    console.error("Weekly Insights Error:", err);
+    document.getElementById("weeklyInsights").innerHTML = "<p>❌ Failed to load weekly insights.</p>";
+  }
+}
+async function loadMonthlyInsights() {
+  try {
+    const year = parseInt(document.getElementById("monthly-year").value);
+    const res = await fetch(`/api/insights/monthly?year=${year}`);
+    const data = await res.json();
+
+    document.getElementById("monthlyInsights").innerHTML = `
+      <p><strong>Total Bookings:</strong> ${data.totalBookings ?? 0}</p>
+      <p>💰 Revenue: ₱${data.totalRevenue ?? 0}</p>
+      <p>📈 Growth: ${data.revenueGrowth ?? 0}% vs last year</p>
+      <p>💳 Most Used Payment: ${data.topPayment ?? "N/A"}</p>
+    `;
+  } catch (err) {
+    console.error("Monthly Insights Error:", err);
+    document.getElementById("monthlyInsights").innerHTML = "<p>❌ Failed to load monthly insights.</p>";
+  }
+}
+async function loadYearlyInsights() {
+  try {
+    const startYear = parseInt(document.getElementById("yearly-start").value);
+    const endYear = parseInt(document.getElementById("yearly-end").value);
+
+    const res = await fetch(`/api/insights/yearly?startYear=${startYear}&endYear=${endYear}`);
+    const data = await res.json();
+
+    document.getElementById("yearlyInsights").innerHTML = `
+      <p><strong>Total Bookings:</strong> ${data.totalBookings ?? 0}</p>
+      <p>💰 Revenue: ₱${data.totalRevenue ?? 0}</p>
+      <p>📊 Range: ${startYear} - ${endYear}</p>
+      <p>🌍 Top Destinations: ${data.topDestinations?.join(", ") || "N/A"}</p>
+    `;
+  } catch (err) {
+    console.error("Yearly Insights Error:", err);
+    document.getElementById("yearlyInsights").innerHTML = "<p>❌ Failed to load yearly insights.</p>";
+  }
+}
+
+
+// 🧠 Load all insights when dashboard opens
+document.addEventListener("DOMContentLoaded", () => {
+  loadWeeklyInsights();
+  loadMonthlyInsights();
+  loadYearlyInsights();
+});
 </script>
 
 </body>
