@@ -30,8 +30,7 @@ const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
 const PYTHON_API = "http://127.0.0.1:8000";
 const ExcelJS = require("exceljs");
-const { jsPDF } = require("jspdf");
-require("jspdf-autotable");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
