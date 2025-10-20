@@ -28,7 +28,7 @@ const Contact = require('./models/Contact');
 const validator = require('validator');
 const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
-const PYTHON_API = "http://127.0.0.1:8000";
+const PYTHON_API = "https://fast-api-service-cap1.onrender.com";
 const ExcelJS = require("exceljs");
 
 
@@ -1346,7 +1346,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
+    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
       series,
       horizon: 30
     });
@@ -1430,7 +1430,7 @@ app.get('/api/predict/bookings', async (req, res) => {
 
     const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
-    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
+    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
       series,
       horizon: 30
     });
@@ -1465,7 +1465,7 @@ app.get('/api/predict/users', async (req, res) => {
     const series = userData.map(u => ({ ds: u._id, y: u.totalUsers }));
 
     // 🔮 Call your FastAPI Prophet forecast service
-    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
+    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
       series,
       horizon: 30 // Predict next 30 days — you can increase to 180 if needed
     });
@@ -1502,7 +1502,7 @@ app.get('/api/predict/seasonal', async (req, res) => {
       y: d.totalBookings
     }));
 
-    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
+    const { data: response } = await axios.post('https://fast-api-service-cap1.onrender.com/predict', {
       series, horizon: 4
     });
 
@@ -1631,7 +1631,7 @@ async function buildSalesSeries() {
 
 app.get("/api/forecast", async (req, res) => {
   try {
-    const response = await axios.get("http://127.0.0.1:8000/predict");
+    const response = await axios.get("https://fast-api-service-cap1.onrender.com/predict");
     res.json(response.data);
   } catch (error) {
     console.error("❌ Error fetching forecast:", error.message);
@@ -1651,7 +1651,7 @@ app.get("/api/forecast/:type", async (req, res) => {
       series = await buildUserSeries();
     }
 
-    const response = await fetch("http://127.0.0.1:8000/predict", {
+    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 180 }),
@@ -2235,7 +2235,7 @@ app.get("/api/admin/seasonal-forecast", async (req, res) => {
     });
 
     // 2️⃣ Send this data to your Python API for Prophet forecasting
-    const response = await fetch("http://127.0.0.1:8000/predict", {
+    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2309,7 +2309,7 @@ app.get('/api/analytics/seasonal', async (req, res) => {
     });
 
     // ✅ Send actual data to FastAPI Prophet for prediction
-    const response = await fetch("http://127.0.0.1:8000/predict", {
+    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2703,7 +2703,7 @@ app.get("/api/forecast-insights", checkAdminAuth, async (req, res) => {
     }
 
     // 3️⃣ Send to FastAPI batch forecast
-    const { data } = await axios.post("http://127.0.0.1:8000/batch-predict", {
+    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/batch-predict", {
       datasets: {
         sales: { series: salesSeries, horizon: 3 }, // Forecast next 3 months
         bookings: { series: bookingSeries, horizon: 3 },
@@ -2829,7 +2829,7 @@ app.get("/api/predictive/forecast-sales", async (req, res) => {
   try {
     const horizon = parseInt(req.query.horizon) || 30; // 30 days default
 
-    const response = await fetch(`http://127.0.0.1:8000/predict?horizon=${horizon}`, {
+    const response = await fetch(`https://fast-api-service-cap1.onrender.com/predict?horizon=${horizon}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -7604,7 +7604,7 @@ app.get("/api/insights", async (req, res) => {
     console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
 
     // ✅ Send to FastAPI
-    const response = await fetch("http://127.0.0.1:8000/insights", {
+    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: cleanTours })
