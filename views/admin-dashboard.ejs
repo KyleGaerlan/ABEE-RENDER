@@ -4709,7 +4709,6 @@ async function loadMonthlyInsights() {
       <p><strong>Total Bookings:</strong> ${data.totalBookings ?? 0}</p>
       <p>💰 Revenue: ₱${data.totalRevenue ?? 0}</p>
       <p>📈 Growth: ${data.revenueGrowth ?? 0}% vs last year</p>
-      <p>💳 Most Used Payment: ${data.topPayment ?? "N/A"}</p>
     `;
   } catch (err) {
     console.error("Monthly Insights Error:", err);
