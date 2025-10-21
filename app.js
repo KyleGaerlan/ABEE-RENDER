@@ -28,7 +28,7 @@ const Contact = require('./models/Contact');
 const validator = require('validator');
 const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
-const PYTHON_API = "https://fast-api-service-cap1.onrender.com";
+const PYTHON_API = "http://127.0.0.1:8000";
 const ExcelJS = require("exceljs");
 
 
@@ -1346,7 +1346,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1430,7 +1430,7 @@ app.get('/api/predict/bookings', async (req, res) => {
 
     const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1465,7 +1465,7 @@ app.get('/api/predict/users', async (req, res) => {
     const series = userData.map(u => ({ ds: u._id, y: u.totalUsers }));
 
     // 🔮 Call your FastAPI Prophet forecast service
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30 // Predict next 30 days — you can increase to 180 if needed
     });
@@ -1502,7 +1502,7 @@ app.get('/api/predict/seasonal', async (req, res) => {
       y: d.totalBookings
     }));
 
-    const { data: response } = await axios.post('https://fast-api-service-cap1.onrender.com/predict', {
+    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
       series, horizon: 4
     });
 
@@ -1631,7 +1631,7 @@ async function buildSalesSeries() {
 
 app.get("/api/forecast", async (req, res) => {
   try {
-    const response = await axios.get("https://fast-api-service-cap1.onrender.com/predict");
+    const response = await axios.get("http://127.0.0.1:8000/predict");
     res.json(response.data);
   } catch (error) {
     console.error("❌ Error fetching forecast:", error.message);
@@ -1651,7 +1651,7 @@ app.get("/api/forecast/:type", async (req, res) => {
       series = await buildUserSeries();
     }
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 180 }),
@@ -2235,7 +2235,7 @@ app.get("/api/admin/seasonal-forecast", async (req, res) => {
     });
 
     // 2️⃣ Send this data to your Python API for Prophet forecasting
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2309,7 +2309,7 @@ app.get('/api/analytics/seasonal', async (req, res) => {
     });
 
     // ✅ Send actual data to FastAPI Prophet for prediction
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2703,7 +2703,7 @@ app.get("/api/forecast-insights", checkAdminAuth, async (req, res) => {
     }
 
     // 3️⃣ Send to FastAPI batch forecast
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/batch-predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/batch-predict", {
       datasets: {
         sales: { series: salesSeries, horizon: 3 }, // Forecast next 3 months
         bookings: { series: bookingSeries, horizon: 3 },
@@ -2829,7 +2829,7 @@ app.get("/api/predictive/forecast-sales", async (req, res) => {
   try {
     const horizon = parseInt(req.query.horizon) || 30; // 30 days default
 
-    const response = await fetch(`https://fast-api-service-cap1.onrender.com/predict?horizon=${horizon}`, {
+    const response = await fetch(`http://127.0.0.1:8000/predict?horizon=${horizon}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2902,6 +2902,204 @@ app.get('/check-admin-username', async (req, res) => {
         res.status(500).json({ available: false, message: 'Server error' });
     }
 });
+app.get('/api/analytics/filtered', checkAdminAuth, async (req, res) => {
+  try {
+    const { country, destination, season, payment, age } = req.query;
+
+    const matchStage = {};
+    if (country && country !== 'all') matchStage['tourDetails.country'] = country;
+    if (destination && destination !== 'all') matchStage['tourDetails.destination'] = destination;
+    if (season && season !== 'all') matchStage.season = season;
+    if (payment && payment !== 'all') matchStage.paymentMethod = payment;
+    if (age && age !== 'all') {
+      const [min, max] = age.replace('+','').split('-').map(Number);
+      const now = new Date();
+      const minDOB = new Date(now.getFullYear() - (max || 100));
+      const maxDOB = new Date(now.getFullYear() - min);
+      matchStage['user.birthdate'] = { $gte: minDOB, $lte: maxDOB };
+    }
+
+    const [userData, bookingData] = await Promise.all([
+      User.aggregate([
+        { $match: matchStage },
+        {
+          $group: {
+            _id: { $month: "$createdAt" },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ]),
+      Booking.aggregate([
+        { $match: matchStage },
+        {
+          $group: {
+            _id: { $month: "$createdAt" },
+            count: { $sum: 1 },
+            revenue: { $sum: "$totalAmount" }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ])
+    ]);
+
+    const labels = bookingData.map(b => `Month ${b._id}`);
+    const users = userData.map(u => u.count);
+    const bookings = bookingData.map(b => b.count);
+    const revenue = bookingData.map(b => b.revenue);
+
+    res.json({ labels, users, bookings, revenue });
+  } catch (err) {
+    console.error('❌ Filtered analytics error:', err);
+    res.status(500).json({ message: 'Failed to fetch filtered analytics' });
+  }
+});
+// ✅ Load dynamic filter options
+app.get('/api/filters/dynamic-options', checkAdminAuth, async (req, res) => {
+  try {
+    const countries = await User.distinct("country", { country: { $ne: null } });
+    const destinations = await Tour.distinct("destination", { destination: { $ne: null } });
+    const payments = await Booking.distinct("paymentMethod", { paymentMethod: { $ne: null } });
+    res.json({ countries, destinations, payments });
+  } catch (err) {
+    console.error("❌ Filter option error:", err);
+    res.status(500).json({ message: "Failed to fetch filter options" });
+  }
+});
+// ✅ Load dynamic filter options
+app.get('/api/filters/dynamic-options', checkAdminAuth, async (req, res) => {
+  try {
+    const destinations = await Tour.distinct("destination", { destination: { $ne: null } });
+    const payments = await Booking.distinct("paymentMethod", { paymentMethod: { $ne: null } });
+    res.json({ destinations, payments });
+  } catch (err) {
+    console.error("❌ Filter option error:", err);
+    res.status(500).json({ message: "Failed to fetch filter options" });
+  }
+});
+app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) => {
+  try {
+    const { year, destination, payment, age, sex } = req.query;
+    const selectedYear = parseInt(year) || new Date().getFullYear();
+    const startDate = new Date(selectedYear, 0, 1);
+    const endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
+    const now = new Date();
+
+    const datasets = [];
+    const labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const insightParts = [];
+
+    // 🟠 Destination — bookings trend
+    if (destination && destination !== "all") {
+      const result = await Booking.aggregate([
+        { $match: { destination, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: { month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
+        { $sort: { "_id.month": 1 } }
+      ]);
+      const monthly = Array(12).fill(0);
+      result.forEach(r => monthly[r._id.month - 1] = r.count);
+
+      datasets.push({
+        label: `Bookings – ${destination}`,
+        data: monthly,
+        borderColor: "rgba(255,165,0,1)",
+        backgroundColor: "rgba(255,165,0,0.2)",
+        fill: true
+      });
+      insightParts.push(`Bookings to ${destination}`);
+    }
+
+    // 🔵 Payment — revenue trend
+    if (payment && payment !== "all") {
+      const result = await Booking.aggregate([
+        { $match: { paymentMethod: payment, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: { month: { $month: "$createdAt" } }, total: { $sum: "$totalAmount" } } },
+        { $sort: { "_id.month": 1 } }
+      ]);
+      const monthly = Array(12).fill(0);
+      result.forEach(r => monthly[r._id.month - 1] = r.total);
+
+      datasets.push({
+        label: `Revenue – ${payment}`,
+        data: monthly,
+        borderColor: "rgba(54,162,235,1)",
+        backgroundColor: "rgba(54,162,235,0.2)",
+        fill: true
+      });
+      insightParts.push(`Sales via ${payment}`);
+    }
+
+    // 🟢 Age / Sex — traveler demographics from Booking.travelerDetails
+    if ((age && age !== "all") || (sex && sex !== "all")) {
+      const [min, max] = (age && age !== "all")
+        ? age.replace('+','').split('-').map(Number)
+        : [0, 120];
+      const minDOB = new Date(now.getFullYear() - (max || 100), 0, 1);
+      const maxDOB = new Date(now.getFullYear() - min, 11, 31);
+
+      const matchStage = {
+        createdAt: { $gte: startDate, $lte: endDate },
+      };
+
+      if (destination && destination !== "all") matchStage.destination = destination;
+
+      const result = await Booking.aggregate([
+        { $unwind: "$travelerDetails" },
+        { 
+          $match: { 
+            ...matchStage,
+            ...(sex && sex !== "all" ? { "travelerDetails.sex": sex } : {}),
+            ...(age && age !== "all" ? { "travelerDetails.birthdate": { $gte: minDOB, $lte: maxDOB } } : {})
+          } 
+        },
+        { 
+          $group: { 
+            _id: { month: { $month: "$createdAt" } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { "_id.month": 1 } }
+      ]);
+
+      const monthly = Array(12).fill(0);
+      result.forEach(r => monthly[r._id.month - 1] = r.count);
+
+      // 🧩 Improved labeling
+      const labelParts = [];
+      if (sex && sex !== "all") labelParts.push(sex);
+      if (age && age !== "all") {
+        labelParts.push(age === "0-17" ? "Below 18" : `Age ${age}`);
+      }
+      const labelText = labelParts.length ? `${labelParts.join(" – ")} Travelers` : "Traveler Demographics";
+
+      datasets.push({
+        label: labelText,
+        data: monthly,
+        borderColor: "rgba(213,90,31,1)",
+        backgroundColor: "rgba(213,90,31,0.2)",
+        fill: true
+      });
+
+      insightParts.push(`${labelText} trends`);
+    }
+
+    // 🧠 Final Insight Text
+    const insightText = insightParts.length
+      ? `Combined trends for ${insightParts.join(", ")} in ${selectedYear}.`
+      : "Select a filter to view data.";
+
+    res.json({
+      chartType: "line",
+      labels,
+      datasets,
+      insight: insightText
+    });
+  } catch (err) {
+    console.error("❌ Dynamic performance error:", err);
+    res.status(500).json({ message: "Failed to fetch dynamic performance data" });
+  }
+});
+
 
 app.post('/api/admin/forgot-password', async (req, res) => {
     const { email, role } = req.body;
@@ -7604,7 +7802,7 @@ app.get("/api/insights", async (req, res) => {
     console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
 
     // ✅ Send to FastAPI
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: cleanTours })
