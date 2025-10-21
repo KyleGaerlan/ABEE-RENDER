@@ -1399,6 +1399,68 @@
     <p>Select years and metric above to generate insights.</p>
   </div>
 </div>
+<!-- 📊 DYNAMIC PERFORMANCE ANALYSIS -->
+<section id="dynamicPerformance" class="analytics-section">
+  <h2>Filtered Performance Analysis</h2>
+
+  <div class="filter-grid" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+    <div>
+      <label><strong>Year:</strong></label>
+      <select id="filterYear" class="form-select"></select>
+    </div>
+
+    <div>
+      <label><strong>Destination:</strong></label>
+      <select id="filterDestination" class="form-select">
+        <option value="all">None</option>
+      </select>
+    </div>
+
+    <div>
+      <label><strong>Payment:</strong></label>
+      <select id="filterPayment" class="form-select">
+        <option value="all">None</option>
+      </select>
+    </div>
+
+    <div>
+      <label><strong>Age Range:</strong></label>
+      <select id="filterAge" class="form-select">
+        <option value="all">None</option>
+        <option value="0-17">Below 18</option>
+        <option value="18-25">18–25</option>
+        <option value="26-35">26–35</option>
+        <option value="36-50">36–50</option>
+        <option value="50+">50+</option>
+      </select>
+    </div>
+
+    <div>
+  <label><strong>Sex:</strong></label>
+  <select id="filterSex" class="form-select">
+    <option value="all">None</option>
+    <option value="Male">Male</option>
+    <option value="Female">Female</option>
+  </select>
+</div>
+
+    <button id="applyDynamicFilters" class="action-button" style="background-color:#d55a1f;color:white;">
+      Apply Filters
+    </button>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-container full-width" style="margin-top:20px;">
+    <canvas id="dynamicPerformanceChart"></canvas>
+  </div>
+
+  <!-- Insights -->
+  <div id="dynamicPerformanceInsights" class="trend-summary-card" style="margin-top:1rem;">
+    <p>Apply filters to see yearly trends.</p>
+  </div>
+</section>
+
+
 <!-- 🔮 PREDICTIVE ANALYTICS SECTION -->
 <section id="predictiveAnalytics" class="analytics-section predictive-analytics">
   <h2>Predictive Analytics Dashboard</h2>
@@ -3463,7 +3525,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 async function loadForecast(metric, chartId, accuracyId, noteId, horizon) {
   try {
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3579,7 +3641,7 @@ async function loadAIInsights() {
     const res = await fetch("/api/admin/tours-performance");
     const tourData = await res.json();
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: tourData })
@@ -3741,7 +3803,7 @@ async function buildSeasonalForecast() {
 
     async function updateChart(destination) {
       const series = data.datasets[destination];
-      const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+      const response = await fetch("http://127.0.0.1:8000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ series, horizon: 365 })
@@ -3859,7 +3921,7 @@ async function buildUserGrowthChart() {
       y: data.counts[i]
     }));
 
-    const forecastRes = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const forecastRes = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 90 })
@@ -4743,6 +4805,193 @@ document.addEventListener("DOMContentLoaded", () => {
   loadYearlyInsights();
 });
 </script>
+<script>
+  let filteredChart = null;
 
+// 🧭 Load destination list
+async function loadFilterDestinations() {
+  try {
+    const res = await fetch('/api/tours/list');
+    const tours = await res.json();
+    const uniqueDestinations = [...new Set(tours.map(t => t.destination))];
+    const select = document.getElementById('filterDestination');
+    uniqueDestinations.forEach(dest => {
+      const opt = document.createElement('option');
+      opt.value = dest;
+      opt.textContent = dest;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('Error loading destinations:', err);
+  }
+}
+
+// 🎯 Fetch Filtered Analytics
+async function fetchFilteredPerformance() {
+  const filters = {
+    country: document.getElementById('filterCountry').value,
+    destination: document.getElementById('filterDestination').value,
+    season: document.getElementById('filterSeason').value,
+    payment: document.getElementById('filterPayment').value,
+    age: document.getElementById('filterAge').value
+  };
+
+  const query = new URLSearchParams(filters).toString();
+
+  try {
+    const res = await fetch(`/api/analytics/filtered?${query}`);
+    const data = await res.json();
+    renderFilteredPerformanceChart(data);
+  } catch (error) {
+    console.error("Error loading filtered performance:", error);
+  }
+}
+
+// 📊 Render Chart
+function renderFilteredPerformanceChart(data) {
+  const ctx = document.getElementById('filteredPerformanceChart').getContext('2d');
+
+  if (filteredChart) filteredChart.destroy();
+
+  const labels = data.labels || [];
+  const users = data.users || [];
+  const bookings = data.bookings || [];
+  const revenue = data.revenue || [];
+
+  filteredChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Users',
+          data: users,
+          borderWidth: 2,
+          fill: false
+        },
+        {
+          label: 'Bookings',
+          data: bookings,
+          borderWidth: 2,
+          fill: false
+        },
+        {
+          label: 'Revenue (₱)',
+          data: revenue,
+          borderWidth: 2,
+          fill: false,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Users / Bookings' } },
+        y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Revenue (₱)' } }
+      },
+      plugins: {
+        legend: { position: 'top' }
+      }
+    }
+  });
+}
+
+// 🖱 Apply filters on button click
+document.getElementById('applyFilterPerformance').addEventListener('click', fetchFilteredPerformance);
+document.addEventListener('DOMContentLoaded', loadFilterDestinations);
+
+</script>
+<script>
+let dynamicChart = null;
+
+async function loadDynamicFilterOptions() {
+  const yearSelect = document.getElementById('filterYear');
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= currentYear - 5; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
+  }
+
+  try {
+    const res = await fetch('/api/filters/dynamic-options');
+    const data = await res.json();
+
+    const destinationSelect = document.getElementById('filterDestination');
+    const paymentSelect = document.getElementById('filterPayment');
+
+    data.destinations.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      destinationSelect.appendChild(opt);
+    });
+
+    data.payments.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      paymentSelect.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('❌ Error loading filter options:', err);
+  }
+}
+
+async function fetchDynamicPerformance() {
+ const filters = {
+  year: document.getElementById('filterYear').value,
+  destination: document.getElementById('filterDestination').value,
+  payment: document.getElementById('filterPayment').value,
+  age: document.getElementById('filterAge').value,
+  sex: document.getElementById('filterSex').value
+};
+
+  const query = new URLSearchParams(filters).toString();
+  try {
+    const res = await fetch(`/api/analytics/dynamic-performance?${query}`);
+    const data = await res.json();
+    renderDynamicPerformanceChart(data);
+  } catch (error) {
+    console.error("Error fetching dynamic performance data:", error);
+  }
+}
+
+function renderDynamicPerformanceChart(data) {
+  const ctx = document.getElementById('dynamicPerformanceChart').getContext('2d');
+  if (dynamicChart) dynamicChart.destroy();
+
+  dynamicChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: data.datasets
+    },
+    options: {
+      responsive: true,
+      tension: 0.3,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Value' }
+        }
+      },
+      plugins: { legend: { position: 'top' } }
+    }
+  });
+
+  document.getElementById('dynamicPerformanceInsights').innerHTML =
+    `<p>${data.insight || "No insights generated for this filter combination."}</p>`;
+}
+
+document.getElementById('applyDynamicFilters').addEventListener('click', fetchDynamicPerformance);
+document.addEventListener('DOMContentLoaded', () => {
+  loadDynamicFilterOptions();
+});
+
+
+</script>
 </body>
 </html>
