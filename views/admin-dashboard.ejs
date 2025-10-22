@@ -759,7 +759,7 @@
   background-color: #f26523;
   color: white;
   border: none;
-  padding: 10px 16px;
+  padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
@@ -1164,7 +1164,7 @@
     </div>
 <div class="main-content">
   <header class="dashboard-header">
-    <div class="header-actions" style="margin-left:490px;">
+    <div class="header-actions" style="margin-left:350px;">
       <div class="export-buttons">
         <button id="printDashboard" class="action-button print-button">
           <i class="fas fa-print"></i> Print Dashboard
@@ -1176,6 +1176,10 @@
           Export Dashboard Report
         </button>
 
+        
+  <button id="exportDashboardCSV" class="export-btn" style="margin-left: 10px;">
+    Export Raw CSV
+  </button>
       </div>
       <div class="last-updated">
         Last updated: <span id="lastUpdated">Never</span>
@@ -1613,8 +1617,60 @@
         <div class="print-footer">
             <p>© A.BEE Travel and Tours - Confidential Admin Report</p>
         </div>
-        
-    </div>
+        <!-- ✅ Toast Container -->
+<div id="toast" class="toast"></div>
+
+<style>
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #16a34a; /* green */
+    color: white;
+    padding: 12px 18px;
+    border-radius: 6px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+    z-index: 9999;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+document.getElementById("exportDashboardCSV").addEventListener("click", async () => {
+  try {
+    const res = await fetch("/api/admin/export-dashboard-raw");
+    if (!res.ok) throw new Error("Export failed");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Abee_Raw_Booking_Data.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast("✅ CSV exported successfully!");
+  } catch (err) {
+    console.error("Export error:", err);
+    showToast("⚠️ Failed to export CSV.", true);
+  }
+});
+
+function showToast(message, isError = false) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.style.backgroundColor = isError ? "#dc2626" : "#16a34a"; // red or green
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 3000);
+}
+</script>
 
     <script>
         let userChart = null;
@@ -4394,6 +4450,30 @@ document.getElementById("exportDashboardExcel").addEventListener("click", async 
   }
 });
 </script>
+<script>
+document.getElementById("exportDashboardCSV").addEventListener("click", async () => {
+  try {
+    const res = await fetch("/api/admin/export-dashboard-raw");
+    if (!res.ok) throw new Error("Export failed");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Abee_Raw_Booking_Data.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+
+    alert("✅ CSV exported successfully!");
+  } catch (err) {
+  console.error("Export error:", err);
+  showToast("⚠️ Failed to export CSV.", true);
+}
+
+});
+</script>
+
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   // Tab switching
