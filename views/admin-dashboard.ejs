@@ -1113,6 +1113,19 @@
   }
 }
 
+#activeFilterSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#activeFilterSummary span {
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #333;
+}
+
 </style>
 
 </head>
@@ -1404,29 +1417,37 @@
   <h2>Filtered Performance Analysis</h2>
 
   <div class="filter-grid" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+
+    <!-- YEAR -->
     <div>
       <label><strong>Year:</strong></label>
       <select id="filterYear" class="form-select"></select>
     </div>
 
+    <!-- DESTINATION -->
     <div>
       <label><strong>Destination:</strong></label>
       <select id="filterDestination" class="form-select">
-        <option value="all">None</option>
+        <option value="">None</option> <!-- ✅ None = don’t include filter -->
+        <option value="all">All</option> <!-- ✅ All = include every destination -->
       </select>
     </div>
 
+    <!-- PAYMENT -->
     <div>
       <label><strong>Payment:</strong></label>
       <select id="filterPayment" class="form-select">
-        <option value="all">None</option>
+        <option value="">None</option>
+        <option value="all">All</option>
       </select>
     </div>
 
+    <!-- AGE RANGE -->
     <div>
       <label><strong>Age Range:</strong></label>
       <select id="filterAge" class="form-select">
-        <option value="all">None</option>
+        <option value="">None</option>
+        <option value="all">All</option>
         <option value="0-17">Below 18</option>
         <option value="18-25">18–25</option>
         <option value="26-35">26–35</option>
@@ -1435,19 +1456,33 @@
       </select>
     </div>
 
+    <!-- SEX -->
     <div>
-  <label><strong>Sex:</strong></label>
-  <select id="filterSex" class="form-select">
-    <option value="all">None</option>
-    <option value="Male">Male</option>
-    <option value="Female">Female</option>
-  </select>
-</div>
+      <label><strong>Gender</strong></label>
+      <select id="filterSex" class="form-select">
+        <option value="">None</option>
+        <option value="all">All</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+      </select>
+    </div>
 
+    
     <button id="applyDynamicFilters" class="action-button" style="background-color:#d55a1f;color:white;">
       Apply Filters
     </button>
   </div>
+
+  <!-- 🔍 Active Filter Summary -->
+  <div id="activeFilterSummary" style="
+    margin-top: 10px;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #333;
+    display: none;
+  "></div>
 
   <!-- Chart -->
   <div class="chart-container full-width" style="margin-top:20px;">
@@ -1459,6 +1494,7 @@
     <p>Apply filters to see yearly trends.</p>
   </div>
 </section>
+
 
 
 <!-- 🔮 PREDICTIVE ANALYTICS SECTION -->
@@ -1527,12 +1563,7 @@
       </div>
     </div>
 
-    <div class="decision-support mt-6">
-      <h3>Top Booking Packages</h3>
-      <div id="aiRecommendations" class="recommendations">
-        <p>Analyzing data to generate optimal booking packages...</p>
-      </div>
-    </div>
+    
   </div>
 
   <!-- 🌴 Seasonal Trends -->
@@ -1562,10 +1593,6 @@
       <div class="chart-container full-width">
         <h4>Actual Bookings per Month</h4>
         <canvas id="seasonalTrendsChart"></canvas>
-      </div>
-      <div class="chart-container full-width">
-        <h4 id="predictedBookingsTitle">Forecasted Bookings (Next Year)</h4>
-        <canvas id="predictedBookingsChart"></canvas>
       </div>
     </div>
   </div>
@@ -4237,94 +4264,110 @@ document.addEventListener("DOMContentLoaded", loadAllForecasts);
 </script>
 <script>
 async function loadSeasonalForecast() {
-  const year = document.getElementById("seasonal-year").value;
-  try {
-    const res = await fetch(`/api/analytics/seasonal?year=${year}`);
-    const data = await res.json();
+  const select = document.getElementById("seasonal-year");
+  const [yearStart, yearEnd] = select.value.split("-").map(Number);
 
+  try {
+    const res = await fetch(`/api/analytics/seasonal?year=${yearStart}`);
+    const data = await res.json();
     if (!data.success) throw new Error(data.message);
-    renderSeasonalCharts(data);
+
+    // Update header text (optional)
+    const titleEl = document.getElementById("predictedBookingsTitle");
+    if (titleEl)
+      titleEl.textContent = `Seasonal Forecast: ${yearStart} → ${yearEnd}`;
+
+    // Render chart
+    renderSeasonalCharts(data, yearStart);
   } catch (err) {
     console.error("❌ Failed to load seasonal forecast:", err);
-    document.getElementById("predictedBookingsTitle").textContent =
-      "❌ Failed to load seasonal forecast.";
+    if (document.getElementById("predictedBookingsTitle"))
+      document.getElementById("predictedBookingsTitle").textContent =
+        "❌ Failed to load seasonal forecast.";
   }
 }
 
-function renderSeasonalCharts(data) {
-  // 🧹 Destroy old charts if reloading
-  if (window.seasonalActualChart) window.seasonalActualChart.destroy();
-  if (window.seasonalPredictedChart) window.seasonalPredictedChart.destroy();
+function renderSeasonalCharts(data, selectedYear) {
+  if (window.seasonalCombinedChart) window.seasonalCombinedChart.destroy();
 
-  // 📊 Chart 1: Actual Bookings
-  const ctxActual = document.getElementById("seasonalTrendsChart").getContext("2d");
-  window.seasonalActualChart = new Chart(ctxActual, {
-    type: "bar",
+  const ctx = document.getElementById("seasonalTrendsChart").getContext("2d");
+  const actualYear = selectedYear || new Date().getFullYear();
+  const predictedYear = actualYear + 1;
+
+  window.seasonalCombinedChart = new Chart(ctx, {
+    type: "line",
     data: {
       labels: data.months,
       datasets: [
         {
-          label: "Actual Bookings",
+          label: `Actual Bookings (${actualYear})`,
           data: data.actual,
-          backgroundColor: "rgba(37, 99, 235, 0.6)",
           borderColor: "#2563eb",
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      plugins: {
-        title: {
-          display: true,
-          text: `Actual Bookings (${document.getElementById("seasonal-year").value})`,
-        },
-        legend: { display: false },
-      },
-      scales: { y: { beginAtZero: true } },
-    },
-  });
-
-  // 📈 Chart 2: Prophet Forecasted Bookings
-  const ctxPredicted = document.getElementById("predictedBookingsChart").getContext("2d");
-  window.seasonalPredictedChart = new Chart(ctxPredicted, {
-    type: "line",
-    data: {
-      labels: data.predictedMonths,
-      datasets: [
-        {
-          label: "Predicted Bookings",
-          data: data.predicted,
-          borderColor: "#f26523",
-          backgroundColor: "rgba(242, 101, 35, 0.15)",
+          backgroundColor: "rgba(37, 99, 235, 0.15)",
+          borderWidth: 2,
           tension: 0.3,
           fill: true,
         },
+        {
+          label: `Predicted Bookings (${predictedYear})`,
+          data: data.predicted,
+          borderColor: "#f26523",
+          backgroundColor: "rgba(242, 101, 35, 0.15)",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          borderDash: [5, 5],
+        },
       ],
     },
     options: {
+      responsive: true,
       plugins: {
         title: {
           display: true,
-         
+          text: `Actual vs Predicted Seasonal Bookings (${actualYear} → ${predictedYear})`,
+          font: { size: 16, weight: "bold" },
+        },
+        legend: {
+          position: "top",
+        },
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.formattedValue} bookings`,
+          },
         },
       },
-      scales: { y: { beginAtZero: true } },
+      interaction: {
+        mode: "nearest",
+        axis: "x",
+        intersect: false,
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "Number of Bookings" },
+        },
+      },
     },
   });
 }
 
 // ⚙️ Setup year dropdown & auto-load
 window.addEventListener("DOMContentLoaded", () => {
-  const currentYear = new Date().getFullYear();
-  const select = document.getElementById("seasonal-year");
+ const startYear = currentYear - 3; // go back 3 years
+const endYear = currentYear + 1;   // go 1 year ahead
+const select = document.getElementById("seasonal-year");
+select.innerHTML = ""; // clear old options
 
-  for (let y = currentYear - 2; y <= currentYear; y++) {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = y;
-    if (y === currentYear) opt.selected = true;
-    select.appendChild(opt);
-  }
+for (let y = startYear; y <= endYear; y++) {
+  const opt = document.createElement("option");
+  opt.value = `${y}-${y + 1}`; // e.g. "2023-2024"
+  opt.textContent = `${y} → ${y + 1}`; // displayed text
+  if (y === currentYear) opt.selected = true;
+  select.appendChild(opt);
+}
 
   // Load default data on load
   loadSeasonalForecast();
@@ -4905,6 +4948,7 @@ document.addEventListener('DOMContentLoaded', loadFilterDestinations);
 <script>
 let dynamicChart = null;
 
+// 🧭 Load filter options (Year, Destination, Payment)
 async function loadDynamicFilterOptions() {
   const yearSelect = document.getElementById('filterYear');
   const currentYear = new Date().getFullYear();
@@ -4912,6 +4956,7 @@ async function loadDynamicFilterOptions() {
     const opt = document.createElement('option');
     opt.value = y;
     opt.textContent = y;
+    if (y === currentYear) opt.selected = true;
     yearSelect.appendChild(opt);
   }
 
@@ -4921,6 +4966,10 @@ async function loadDynamicFilterOptions() {
 
     const destinationSelect = document.getElementById('filterDestination');
     const paymentSelect = document.getElementById('filterPayment');
+
+    // Clear existing
+    destinationSelect.innerHTML = '<option value="">None</option><option value="all">All</option>';
+    paymentSelect.innerHTML = '<option value="">None</option><option value="all">All</option>';
 
     data.destinations.forEach(d => {
       const opt = document.createElement('option');
@@ -4940,58 +4989,104 @@ async function loadDynamicFilterOptions() {
   }
 }
 
-async function fetchDynamicPerformance() {
- const filters = {
-  year: document.getElementById('filterYear').value,
-  destination: document.getElementById('filterDestination').value,
-  payment: document.getElementById('filterPayment').value,
-  age: document.getElementById('filterAge').value,
-  sex: document.getElementById('filterSex').value
-};
+// 🧩 Get active filters (skip “None”)
+function getActiveFilters() {
+  const filters = {};
+  const year = document.getElementById('filterYear').value;
+  const destination = document.getElementById('filterDestination').value;
+  const payment = document.getElementById('filterPayment').value;
+  const age = document.getElementById('filterAge').value;
+  const sex = document.getElementById('filterSex').value;
 
+  if (year) filters.year = year;
+  if (destination !== "") filters.destination = destination;
+  if (payment !== "") filters.payment = payment;
+  if (age !== "") filters.age = age;
+  if (sex !== "") filters.sex = sex;
+
+  return filters;
+}
+
+// 📊 Fetch and render performance data
+async function fetchDynamicPerformance() {
+  const filters = getActiveFilters();
   const query = new URLSearchParams(filters).toString();
+
   try {
     const res = await fetch(`/api/analytics/dynamic-performance?${query}`);
     const data = await res.json();
-    renderDynamicPerformanceChart(data);
+    renderDynamicPerformanceChart(data, filters);
   } catch (error) {
-    console.error("Error fetching dynamic performance data:", error);
+    console.error("❌ Error fetching dynamic performance data:", error);
   }
 }
 
-function renderDynamicPerformanceChart(data) {
+// 📈 Render chart
+function renderDynamicPerformanceChart(data, filters) {
   const ctx = document.getElementById('dynamicPerformanceChart').getContext('2d');
   if (dynamicChart) dynamicChart.destroy();
 
   dynamicChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: data.labels,
-      datasets: data.datasets
-    },
+    data: { labels: data.labels, datasets: data.datasets },
     options: {
       responsive: true,
       tension: 0.3,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: 'Value' }
-        }
-      },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Value' } } },
       plugins: { legend: { position: 'top' } }
     }
   });
 
-  document.getElementById('dynamicPerformanceInsights').innerHTML =
-    `<p>${data.insight || "No insights generated for this filter combination."}</p>`;
+  document.getElementById('dynamicPerformanceInsights').innerHTML = generateDynamicInsights(data, filters);
 }
 
+// 🧠 Generate smart insights
+function generateDynamicInsights(data, filters) {
+  const { year, destination, payment, age, sex } = filters;
+  const total = Math.round(data.total || 0);
+  const datasets = data.datasets || [];
+  const insights = [];
+  const context = [];
+
+  // Context setup
+  if (destination && destination !== "all") context.push(`for ${destination}`);
+  if (year) context.push(`in ${year}`);
+  const contextStr = context.length ? context.join(" ") : "overall";
+
+  // Basic overview
+  if (datasets.length === 0)
+    return `<p>Apply filters to see yearly trends and insights.</p>`;
+
+  // Total bookings info
+  if (total > 0) {
+    const formatted = total >= 1_000_000 ? `${(total / 1_000_000).toFixed(2)}M` :
+                      total >= 1_000 ? `${(total / 1_000).toFixed(1)}K` : total;
+    insights.push(`📈 Strong performance ${contextStr}, totaling approximately ${formatted} bookings.`);
+  }
+
+  // Payment insights
+  if (payment === "all") insights.push(`💳 Comparison across all payment methods (e.g. GCash, PayPal, Store).`);
+  else if (payment && payment !== "") insights.push(`💳 Travelers using ${payment} show distinct revenue behavior.`);
+
+  // Age insights
+  if (age === "all") insights.push(`👥 Shows patterns across all age groups.`);
+  else if (age && age !== "") insights.push(`👥 Age group ${age} displays unique booking trends.`);
+
+  // Sex insights
+  if (sex === "all") insights.push(`🚻 Includes both male and female traveler trends.`);
+  else if (sex && sex !== "") insights.push(`🚻 ${sex} travelers show notable booking activity.`);
+
+  // Trend strength (optional)
+  if (datasets.length > 2)
+    insights.push(`🌦️ Multiple overlapping patterns detected — suggesting seasonal and behavioral differences.`);
+
+  return insights.map(i => `<p>${i}</p>`).join("");
+}
+
+// ⚙️ Initialize
 document.getElementById('applyDynamicFilters').addEventListener('click', fetchDynamicPerformance);
-document.addEventListener('DOMContentLoaded', () => {
-  loadDynamicFilterOptions();
-});
-
-
+document.addEventListener('DOMContentLoaded', loadDynamicFilterOptions);
 </script>
+
 </body>
 </html>
