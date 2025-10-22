@@ -4430,6 +4430,99 @@ for (let y = startYear; y <= endYear; y++) {
 });
 
 document.getElementById("seasonal-apply").addEventListener("click", loadSeasonalForecast);
+function renderSeasonalCharts(data, selectedYear) {
+  if (window.seasonalCombinedChart) window.seasonalCombinedChart.destroy();
+
+  const ctx = document.getElementById("seasonalTrendsChart").getContext("2d");
+  const actualYear = selectedYear || new Date().getFullYear();
+  const predictedYear = actualYear + 1;
+
+  window.seasonalCombinedChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.months,
+      datasets: [
+        {
+          label: `Actual Bookings (${actualYear})`,
+          data: data.actual,
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.15)",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+        },
+        {
+          label: `Predicted Bookings (${predictedYear})`,
+          data: data.predicted,
+          borderColor: "#f26523",
+          backgroundColor: "rgba(242, 101, 35, 0.15)",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          borderDash: [5, 5],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: `Actual vs Predicted Seasonal Bookings (${actualYear} → ${predictedYear})`,
+          font: { size: 16, weight: "bold" },
+        },
+        legend: { position: "top" },
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.formattedValue} bookings`,
+          },
+        },
+      },
+      interaction: { mode: "nearest", axis: "x", intersect: false },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "Number of Bookings" },
+        },
+      },
+    },
+  });
+
+  // 🧠 Add insights summary
+  const insightContainer = document.getElementById("seasonal-insights") || (() => {
+    const div = document.createElement("div");
+    div.id = "seasonal-insights";
+    div.className = "trend-summary-card";
+    ctx.canvas.parentNode.appendChild(div);
+    return div;
+  })();
+
+  const actualTotal = data.actual.reduce((a, b) => a + b, 0);
+  const predictedTotal = data.predicted.reduce((a, b) => a + b, 0);
+  const difference = actualTotal - predictedTotal;
+  const diffPercent = ((difference / (predictedTotal || 1)) * 100).toFixed(1);
+  const trend =
+    difference > 0 ? "📈 Higher than predicted" :
+    difference < 0 ? "📉 Lower than predicted" :
+    "⚖️ Matching prediction";
+
+  // Detect strongest and weakest months
+  const maxMonth = data.months[data.actual.indexOf(Math.max(...data.actual))];
+  const minMonth = data.months[data.actual.indexOf(Math.min(...data.actual))];
+
+  insightContainer.innerHTML = `
+    <h4>Seasonal Insights</h4>
+    <p><strong>Total Actual Bookings:</strong> ${actualTotal}</p>
+    <p><strong>Total Predicted Bookings:</strong> ${predictedTotal}</p>
+    <p class="${difference >= 0 ? 'positive' : 'negative'}">${trend} (${diffPercent}% difference)</p>
+    <p>🌟 Peak Month: <strong>${maxMonth}</strong> — highest booking activity observed.</p>
+    <p>📉 Slow Month: <strong>${minMonth}</strong> — lowest booking volume detected.</p>
+    <p class="text-muted">These insights help identify off-peak periods and adjust marketing or pricing strategies accordingly.</p>
+  `;
+}
+
 </script>
 <script>
 document.getElementById("exportDashboardExcel").addEventListener("click", async () => {
