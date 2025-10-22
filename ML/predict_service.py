@@ -12,7 +12,7 @@ import hashlib
 import json
 
 
-app = FastAPI(title="Forecast & Insights API", version="3.1")
+app = FastAPI(title="Forecast & Insights API", version="3.2")
 
 # ------------------------
 # 🌐 CORS Configuration
@@ -58,10 +58,11 @@ class InsightsRequest(BaseModel):
 cache_store = {}
 CACHE_EXPIRY_MINUTES = 60  # 1 hour
 
+
 def make_cache_key(series, horizon):
-    """Create a unique hash for the input dataset"""
     key_str = str(series) + str(horizon)
     return hashlib.md5(key_str.encode()).hexdigest()
+
 
 def get_cached_forecast(series, horizon):
     key = make_cache_key(series, horizon)
@@ -72,13 +73,14 @@ def get_cached_forecast(series, horizon):
             return entry["data"]
     return None
 
+
 def set_cached_forecast(series, horizon, data):
     key = make_cache_key(series, horizon)
     cache_store[key] = {"timestamp": datetime.now(), "data": data}
 
 
 # ------------------------
-# 🔮 Forecast Function
+# 🔮 Forecast Function (Improved)
 # ------------------------
 def run_forecast(data: Series) -> dict:
     df = pd.DataFrame(data.series)
@@ -95,57 +97,75 @@ def run_forecast(data: Series) -> dict:
     if len(df) < 5:
         raise ValueError("Not enough valid points (need at least 5).")
 
-    # ✅ Add regressors for seasonal patterns
+    # ✅ Auto-detect frequency
+    if len(df) > 100:
+        freq = "D"
+    else:
+        freq = "M"
+        df = df.resample(freq, on="ds").sum().reset_index()
+
+    # ✅ Add regressors
     df["month"] = df["ds"].dt.month
     df["day_of_week"] = df["ds"].dt.dayofweek
 
-   # ✅ Build Prophet model (simpler and more flexible)
+    # ✅ Prophet model (smoothed)
     model = Prophet(
         yearly_seasonality=True,
-        weekly_seasonality=True,
-        daily_seasonality=False,  # fewer data points benefit from simpler models
-        changepoint_prior_scale=0.3,  # allow more flexible trend shifts
+        weekly_seasonality=False,
+        daily_seasonality=False,
+        changepoint_prior_scale=0.05,  # smoother trend, prevents spikes
         seasonality_mode='additive'
     )
-
-    # ✅ Include month and day_of_week as regressors to help capture seasonal effects
     model.add_regressor("month")
     model.add_regressor("day_of_week")
-
-
     model.fit(df)
 
-    # ✅ Build future frame
-    future = model.make_future_dataframe(periods=data.horizon)
+    # ✅ Build future dataframe
+    future = model.make_future_dataframe(periods=data.horizon, freq=freq)
     future["month"] = future["ds"].dt.month
     future["day_of_week"] = future["ds"].dt.dayofweek
 
     forecast = model.predict(future)
+
+    # 🛑 Cap unrealistic growth
+    upper_limit = df["y"].max() * 1.5
+    forecast["yhat"] = forecast["yhat"].clip(lower=0, upper=upper_limit)
 
     # ✅ Metrics
     merged = pd.merge(df, forecast[["ds", "yhat"]], on="ds", how="inner")
     mape = float(np.mean(np.abs((merged["y"] - merged["yhat"]) / (merged["y"] + 1e-9))) * 100)
     rmse = float(np.sqrt(np.mean((merged["y"] - merged["yhat"]) ** 2)))
 
-    # ✅ Seasonality
+    # ✅ Seasonality insights
     seasonal_strength = np.std(forecast["yhat"]) / (np.mean(df["y"]) + 1e-9)
     if seasonal_strength > 0.4:
-        seasonality_note = "🌋 Strong seasonality — clear recurring highs/lows each cycle."
+        seasonality_note = "🌋 Strong seasonality — recurring highs/lows detected."
     elif seasonal_strength > 0.2:
-        seasonality_note = "🌦 Moderate seasonality — some predictable patterns."
+        seasonality_note = "🌦 Moderate seasonality — some predictable cycles."
     else:
-        seasonality_note = "🌤 Weak seasonality — stable performance."
+        seasonality_note = "🌤 Weak seasonality — stable booking trends."
+        
+    # ✅ Improved Trend Detection (Smoothed & Realistic)
+    window = min(30, len(forecast) // 4)  # use ~last 25% of data
+    recent_avg = float(np.mean(forecast["yhat"].tail(window)))
+    past_avg = float(np.mean(df["y"].tail(window))) if len(df) >= window else float(np.mean(df["y"]))
 
-    # ✅ Trend detection
-    start_val = float(df["y"].iloc[0])
-    end_val = float(forecast["yhat"].iloc[-1])
-    growth_rate = ((end_val - start_val) / (abs(start_val) + 1e-9)) * 100
-    if growth_rate > 15:
+    # avoid divide-by-zero and unrealistic inflation
+    if past_avg < 5:  
+        past_avg = max(past_avg, 5)
+
+    growth_rate = ((recent_avg - past_avg) / past_avg) * 100
+
+    # limit to ±100% for readability
+    growth_rate = max(min(growth_rate, 100), -100)
+
+    if growth_rate > 10:
         trend_note = f"📈 Upward trend (+{growth_rate:.1f}%) — demand is increasing."
     elif growth_rate < -10:
         trend_note = f"📉 Downward trend ({growth_rate:.1f}%) — decline detected."
     else:
         trend_note = f"➡️ Stable trend ({growth_rate:.1f}%) — steady performance."
+
 
     # ✅ Forecast output
     output = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(data.horizon)
@@ -209,7 +229,6 @@ async def batch_predict(batch: BatchForecast):
             if cached:
                 results[key] = cached
                 continue
-
             forecast = run_forecast(series)
             set_cached_forecast(series.series, series.horizon, forecast)
             results[key] = forecast
@@ -217,69 +236,59 @@ async def batch_predict(batch: BatchForecast):
             results[key] = {"success": False, "error": str(e)}
     return results
 
+
+# ------------------------
+# 💡 Insights Endpoint
+# ------------------------
 @app.post("/insights")
 async def insights(request: Request):
     try:
-        # ✅ Step 1: Safely get raw JSON
         data = await request.json()
-        print("📥 Raw insights payload received:")
-        print(json.dumps(data, indent=2))
-
-        # ✅ Step 2: Validate and extract tours
         tours = data.get("tours", [])
         if not tours:
             raise HTTPException(status_code=400, detail="No tours provided")
 
-        # ✅ Step 3: Convert to DataFrame
         df = pd.DataFrame(tours)
-        print("✅ DataFrame head:", df.head().to_dict(orient="records"))
-
-        # ✅ Step 4: Compute composite score (popularity metric)
         df["score"] = (df["bookings"] * 0.6) + (df["revenue"] / df["revenue"].max() * 40)
         top_tours = df.sort_values("score", ascending=False).head(5)
 
-        # ✅ Step 5: Emerging vs Declining tours
         median_bookings = df["bookings"].median()
         emerging = df[df["bookings"] > median_bookings * 1.3]
         declining = df[df["bookings"] < median_bookings * 0.6]
 
-        # ✅ Step 6: Build recommendations list
-        recs = []
-        recs.append("Tour Packages")
+        recs = ["🏆 Top Performing Tours:"]
         for _, row in top_tours.iterrows():
             title = row["title"] or row["tourId"]
             recs.append(f" • {title} — ₱{row['revenue']:.2f}, {row['bookings']} bookings")
 
         if not emerging.empty:
-            recs.append("\n🌱 Emerging Tours (rapid growth): " + ", ".join(emerging["title"].fillna(emerging["tourId"])))
+            recs.append("\n🌱 Emerging Tours: " + ", ".join(emerging["title"].fillna(emerging["tourId"])))
         if not declining.empty:
             recs.append("\n⚠️ Underperforming Tours: " + ", ".join(declining["title"].fillna(declining["tourId"])))
 
-        # ✅ Step 7: Summary for admin dashboard
         summary = {
             "total_tours": len(df),
             "median_bookings": float(median_bookings),
             "top_revenue_tours": top_tours[["tourId", "title", "revenue"]].to_dict(orient="records")
         }
 
-        print("✅ Insights generated successfully.")
         return {"success": True, "recommendations": recs, "summary": summary}
 
     except Exception as e:
         print("❌ Insight error:", str(e))
-        import traceback; traceback.print_exc()
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # ------------------------
-# 💡 Health Check
+# 💚 Health Check
 # ------------------------
 @app.get("/health")
 async def health():
     return {
         "status": "ok",
         "library": "Prophet",
-        "version": "3.1",
+        "version": "3.2",
         "cache_items": len(cache_store),
         "cache_expiry_minutes": CACHE_EXPIRY_MINUTES,
         "endpoints": ["/predict", "/batch-predict", "/insights"]
