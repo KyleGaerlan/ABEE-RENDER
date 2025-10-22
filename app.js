@@ -30,6 +30,7 @@ const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
 const PYTHON_API = "http://127.0.0.1:8000";
 const ExcelJS = require("exceljs");
+const { Parser } = require("json2csv");
 
 
 const app = express();
@@ -2396,7 +2397,8 @@ async function getTopDestinations(limit = 10) {
   ]);
   return result;
 }
-/* === Executive Excel Export (Updated 2025 Dashboard Layout) === */
+
+// ✅ Excel Export (Dashboard Summary + Insights)
 app.get("/api/admin/export-dashboard", async (req, res) => {
   try {
     const workbook = new ExcelJS.Workbook();
@@ -2448,7 +2450,13 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
     ];
 
     const topDestinations = await Booking.aggregate([
-      { $group: { _id: "$destination", count: { $sum: 1 }, totalRevenue: { $sum: "$totalAmount" } } },
+      {
+        $group: {
+          _id: "$destination",
+          count: { $sum: 1 },
+          totalRevenue: { $sum: "$totalAmount" },
+        },
+      },
       { $sort: { count: -1 } },
       { $limit: 5 },
     ]);
@@ -2460,64 +2468,51 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
       })
     );
 
-    /* === 3️⃣ Predictive Analytics === */
-    const forecastSheet = workbook.addWorksheet("Predictive Insights");
-    addHeaderStyle(forecastSheet, "AI Forecast (Next 30 Days)");
+    /* === 3️⃣ Traveler Demographics === */
+    const demoSheet = workbook.addWorksheet("Traveler Demographics");
+    addHeaderStyle(demoSheet, "Traveler Demographics Overview");
 
-    forecastSheet.columns = [
-      { header: "Metric", key: "metric", width: 30 },
-      { header: "Predicted Value", key: "value", width: 25 },
-      { header: "Trend", key: "trend", width: 25 },
-    ];
-
-    const forecastData = [
-      {
-        metric: "Projected Total Sales",
-        value: "₱1,335,478.38",
-        trend: "📈 +545.2% (increasing)",
-      },
-      {
-        metric: "Expected Bookings",
-        value: "17",
-        trend: "📈 +757.0% (increasing)",
-      },
-      {
-        metric: "User Growth",
-        value: "2",
-        trend: "📈 +94.1% (increasing)",
-      },
-    ];
-    forecastData.forEach((f) => forecastSheet.addRow(f));
-
-    /* === 4️⃣ Seasonal Insights === */
-    const seasonSheet = workbook.addWorksheet("Seasonal Insights");
-    addHeaderStyle(seasonSheet, "Predicted Peak Season");
-
-    seasonSheet.columns = [
+    demoSheet.columns = [
+      { header: "Traveler Name", key: "fullName", width: 25 },
+      { header: "Sex", key: "sex", width: 10 },
+      { header: "Birthdate", key: "birthdate", width: 15 },
       { header: "Destination", key: "destination", width: 25 },
-      { header: "Peak Date", key: "date", width: 25 },
-      { header: "Predicted Demand", key: "demand", width: 25 },
+      { header: "Payment Method", key: "paymentMethod", width: 20 },
     ];
-    seasonSheet.addRow({
-      destination: "Taiwan",
-      date: "Dec 27, 2026",
-      demand: "555,766 bookings",
+
+    const recentBookings = await Booking.find()
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+
+    recentBookings.forEach((b) => {
+      (b.travelerDetails || []).forEach((t) => {
+        demoSheet.addRow({
+          fullName: t.fullName,
+          sex: t.sex || "N/A",
+          birthdate: t.birthdate
+            ? new Date(t.birthdate).toLocaleDateString()
+            : "N/A",
+          destination: b.destination,
+          paymentMethod: b.paymentMethod,
+        });
+      });
     });
 
-    /* === 5️⃣ Strategic Recommendations === */
+    /* === 4️⃣ Strategic Recommendations === */
     const recSheet = workbook.addWorksheet("Strategic Recommendations");
     addHeaderStyle(recSheet, "AI-Generated Business Recommendations");
 
     const recs = [
-      "Increase marketing during November–December (peak demand).",
-      "Prioritize promotions for Bali and Taiwan.",
-      "Launch loyalty discounts to boost returning user rate.",
-      "Bundle top destinations into premium packages.",
-      "Use AI forecast data for staffing and logistics planning.",
+      "📈 Focus marketing on November–December peak seasons.",
+      "🎯 Strengthen GCash and Store payment offers (PayPal phase-out).",
+      "🧍 Optimize age-based packages for 18–35 travelers.",
+      "💡 Introduce gender-targeted travel promos.",
+      "🤖 Use AI insights for destination pricing optimization.",
     ];
     recs.forEach((r) => recSheet.addRow(["•", r]));
 
-    /* === Finalize Export === */
+    // ✅ Send Excel file
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -2534,6 +2529,55 @@ app.get("/api/admin/export-dashboard", async (req, res) => {
     res.status(500).send("Failed to export dashboard summary");
   }
 });
+// CSV Export (Raw Booking Data) - robust for Parser or AsyncParser
+const { Parser: Json2csvParser, AsyncParser } = require("json2csv");
+
+app.get("/api/admin/export-dashboard-raw", async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .select("bookingId fullName destination paymentMethod totalAmount startDate createdAt travelerDetails")
+      .lean();
+
+    const flattened = [];
+    bookings.forEach((b) => {
+      (b.travelerDetails || []).forEach((t) => {
+        flattened.push({
+          BookingID: b.bookingId,
+          TravelerName: t.fullName,
+          Sex: t.sex || "N/A",
+          Birthdate: t.birthdate ? new Date(t.birthdate).toISOString().split("T")[0] : "N/A",
+          Destination: b.destination,
+          PaymentMethod: b.paymentMethod,
+          TotalAmount: b.totalAmount,
+          StartDate: b.startDate ? new Date(b.startDate).toISOString().split("T")[0] : "N/A",
+          CreatedAt: b.createdAt ? new Date(b.createdAt).toISOString().split("T")[0] : "N/A",
+        });
+      });
+    });
+
+    let csv;
+    // Prefer sync Parser if available (common), otherwise use AsyncParser
+    if (typeof Json2csvParser === "function") {
+      const parser = new Json2csvParser();
+      csv = parser.parse(flattened);
+    } else if (typeof AsyncParser === "function") {
+      const asyncParser = new AsyncParser();
+      // `.parse()` returns a stream when used in Node style; use promise() to get string
+      csv = await asyncParser.parse(flattened).promise();
+    } else {
+      throw new Error("No json2csv parser found (install json2csv).");
+    }
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", 'attachment; filename="Abee_Raw_Booking_Data.csv"');
+    res.send(csv);
+  } catch (err) {
+    console.error("❌ CSV Export Error:", err.message);
+    console.error(err.stack);
+    res.status(500).json({ error: "Failed to export raw CSV data", detail: err.message });
+  }
+});
+
 
 app.get("/api/admin/export-summary", async (req, res) => {
   try {
