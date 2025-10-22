@@ -2954,19 +2954,7 @@ app.get('/api/analytics/filtered', checkAdminAuth, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch filtered analytics' });
   }
 });
-// ✅ Load dynamic filter options
-app.get('/api/filters/dynamic-options', checkAdminAuth, async (req, res) => {
-  try {
-    const countries = await User.distinct("country", { country: { $ne: null } });
-    const destinations = await Tour.distinct("destination", { destination: { $ne: null } });
-    const payments = await Booking.distinct("paymentMethod", { paymentMethod: { $ne: null } });
-    res.json({ countries, destinations, payments });
-  } catch (err) {
-    console.error("❌ Filter option error:", err);
-    res.status(500).json({ message: "Failed to fetch filter options" });
-  }
-});
-// ✅ Load dynamic filter options
+// ✅ Load dynamic filter options (final version)
 app.get('/api/filters/dynamic-options', checkAdminAuth, async (req, res) => {
   try {
     const destinations = await Tour.distinct("destination", { destination: { $ne: null } });
@@ -2977,6 +2965,9 @@ app.get('/api/filters/dynamic-options', checkAdminAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch filter options" });
   }
 });
+
+
+// ✅ Dynamic Performance Analytics (with "None" + "All" support)
 app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) => {
   try {
     const { year, destination, payment, age, sex } = req.query;
@@ -2988,110 +2979,144 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
     const datasets = [];
     const labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const insightParts = [];
+    let totalBookings = 0;
 
-    // 🟠 Destination — bookings trend
-    if (destination && destination !== "all") {
+    // 🟠 DESTINATION FILTER
+    if (destination && destination !== "") {
+      const match = { createdAt: { $gte: startDate, $lte: endDate } };
+      if (destination !== "all") match.destination = destination;
+
       const result = await Booking.aggregate([
-        { $match: { destination, createdAt: { $gte: startDate, $lte: endDate } } },
-        { $group: { _id: { month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
+        { $match: match },
+        { $group: { _id: { month: { $month: "$createdAt" }, dest: "$destination" }, count: { $sum: 1 } } },
         { $sort: { "_id.month": 1 } }
       ]);
-      const monthly = Array(12).fill(0);
-      result.forEach(r => monthly[r._id.month - 1] = r.count);
 
-      datasets.push({
-        label: `Bookings – ${destination}`,
-        data: monthly,
-        borderColor: "rgba(255,165,0,1)",
-        backgroundColor: "rgba(255,165,0,0.2)",
-        fill: true
+      const grouped = {};
+      result.forEach(r => {
+        const month = r._id.month - 1;
+        const dest = r._id.dest || "Unknown";
+        if (!grouped[dest]) grouped[dest] = Array(12).fill(0);
+        grouped[dest][month] = r.count;
+        totalBookings += r.count;
       });
-      insightParts.push(`Bookings to ${destination}`);
+
+      Object.keys(grouped).forEach((d, i) => {
+        datasets.push({
+          label: `Bookings – ${d}`,
+          data: grouped[d],
+          borderColor: ["#2563eb", "#f26523", "#22c55e", "#d55a1f"][i % 4],
+          backgroundColor: "rgba(37,99,235,0.1)",
+          fill: true
+        });
+      });
+
+      insightParts.push(destination === "all" ? "across all destinations" : `for ${destination}`);
     }
 
-    // 🔵 Payment — revenue trend
-    if (payment && payment !== "all") {
+    // 🔵 PAYMENT FILTER
+    if (payment && payment !== "") {
+      const match = { createdAt: { $gte: startDate, $lte: endDate } };
+      if (payment !== "all") match.paymentMethod = payment;
+
       const result = await Booking.aggregate([
-        { $match: { paymentMethod: payment, createdAt: { $gte: startDate, $lte: endDate } } },
-        { $group: { _id: { month: { $month: "$createdAt" } }, total: { $sum: "$totalAmount" } } },
+        { $match: match },
+        { $group: { _id: { month: { $month: "$createdAt" }, method: "$paymentMethod" }, total: { $sum: "$totalAmount" } } },
         { $sort: { "_id.month": 1 } }
       ]);
-      const monthly = Array(12).fill(0);
-      result.forEach(r => monthly[r._id.month - 1] = r.total);
 
-      datasets.push({
-        label: `Revenue – ${payment}`,
-        data: monthly,
-        borderColor: "rgba(54,162,235,1)",
-        backgroundColor: "rgba(54,162,235,0.2)",
-        fill: true
+      const grouped = {};
+      result.forEach(r => {
+        const month = r._id.month - 1;
+        const method = r._id.method || "Unknown";
+        if (!grouped[method]) grouped[method] = Array(12).fill(0);
+        grouped[method][month] = r.total;
       });
-      insightParts.push(`Sales via ${payment}`);
+
+      Object.keys(grouped).forEach((m, i) => {
+        datasets.push({
+          label: `Revenue – ${m}`,
+          data: grouped[m],
+          borderColor: ["#f59e0b", "#10b981", "#8b5cf6"][i % 3],
+          backgroundColor: "rgba(245,158,11,0.15)",
+          fill: true
+        });
+      });
+
+      insightParts.push(payment === "all" ? "across all payment methods" : `via ${payment}`);
     }
 
-    // 🟢 Age / Sex — traveler demographics from Booking.travelerDetails
-    if ((age && age !== "all") || (sex && sex !== "all")) {
-      const [min, max] = (age && age !== "all")
-        ? age.replace('+','').split('-').map(Number)
-        : [0, 120];
-      const minDOB = new Date(now.getFullYear() - (max || 100), 0, 1);
-      const maxDOB = new Date(now.getFullYear() - min, 11, 31);
+    // 🟢 AGE + SEX FILTER (improved logic)
+    if ((age && age !== "") || (sex && sex !== "")) {
+      const matchStage = { createdAt: { $gte: startDate, $lte: endDate } };
 
-      const matchStage = {
-        createdAt: { $gte: startDate, $lte: endDate },
-      };
+      if (destination && destination !== "all" && destination !== "")
+        matchStage.destination = destination;
 
-      if (destination && destination !== "all") matchStage.destination = destination;
+      if (sex && sex !== "all" && sex !== "")
+        matchStage["travelerDetails.sex"] = sex;
 
-      const result = await Booking.aggregate([
+      let minDOB, maxDOB;
+      if (age && age !== "all" && age !== "") {
+        const [min, max] = age.replace("+", "").split("-").map(Number);
+        minDOB = new Date(now.getFullYear() - (max || 100), 0, 1);
+        maxDOB = new Date(now.getFullYear() - min, 11, 31);
+        matchStage["travelerDetails.birthdate"] = { $gte: minDOB, $lte: maxDOB };
+      }
+
+      const pipeline = [
         { $unwind: "$travelerDetails" },
-        { 
-          $match: { 
-            ...matchStage,
-            ...(sex && sex !== "all" ? { "travelerDetails.sex": sex } : {}),
-            ...(age && age !== "all" ? { "travelerDetails.birthdate": { $gte: minDOB, $lte: maxDOB } } : {})
-          } 
-        },
-        { 
-          $group: { 
-            _id: { month: { $month: "$createdAt" } },
+        { $match: matchStage },
+        {
+          $group: {
+            _id: {
+              month: { $month: "$createdAt" },
+              ...(sex === "all" ? { sex: "$travelerDetails.sex" } : {}),
+              ...(age === "all" ? { age: "$travelerDetails.ageRange" } : {})
+            },
             count: { $sum: 1 }
           }
         },
         { $sort: { "_id.month": 1 } }
-      ]);
+      ];
 
-      const monthly = Array(12).fill(0);
-      result.forEach(r => monthly[r._id.month - 1] = r.count);
+      const result = await Booking.aggregate(pipeline);
+      const grouped = {};
 
-      // 🧩 Improved labeling
-      const labelParts = [];
-      if (sex && sex !== "all") labelParts.push(sex);
-      if (age && age !== "all") {
-        labelParts.push(age === "0-17" ? "Below 18" : `Age ${age}`);
-      }
-      const labelText = labelParts.length ? `${labelParts.join(" – ")} Travelers` : "Traveler Demographics";
+      result.forEach(r => {
+        const month = r._id.month - 1;
+        const label =
+          (r._id.sex ? r._id.sex : "") +
+          (r._id.age ? ` Age ${r._id.age}` : "") ||
+          (sex && sex !== "all" ? sex : "Demographics");
 
-      datasets.push({
-        label: labelText,
-        data: monthly,
-        borderColor: "rgba(213,90,31,1)",
-        backgroundColor: "rgba(213,90,31,0.2)",
-        fill: true
+        if (!grouped[label]) grouped[label] = Array(12).fill(0);
+        grouped[label][month] = r.count;
       });
 
-      insightParts.push(`${labelText} trends`);
+      Object.keys(grouped).forEach((label, i) => {
+        datasets.push({
+          label,
+          data: grouped[label],
+          borderColor: ["#ef4444", "#3b82f6", "#16a34a", "#a855f7"][i % 4],
+          backgroundColor: "rgba(239,68,68,0.15)",
+          fill: true
+        });
+      });
+
+      insightParts.push("traveler demographics");
     }
 
-    // 🧠 Final Insight Text
+    // 🧠 Insight summary
     const insightText = insightParts.length
-      ? `Combined trends for ${insightParts.join(", ")} in ${selectedYear}.`
-      : "Select a filter to view data.";
+      ? `Combined performance analysis ${insightParts.join(", ")} in ${selectedYear}.`
+      : "Select filters to generate insights.";
 
     res.json({
       chartType: "line",
       labels,
       datasets,
+      total: totalBookings,
       insight: insightText
     });
   } catch (err) {
