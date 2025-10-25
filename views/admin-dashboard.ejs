@@ -5237,7 +5237,7 @@ function generateDynamicInsights(data, filters) {
   }
 
   // Payment insights
-  if (payment === "all") insights.push(`💳 Comparison across all payment methods (e.g. GCash, PayPal, Store).`);
+  if (payment === "all") insights.push(`💳 Comparison across all payment methods (e.g. GCash, Store).`);
   else if (payment && payment !== "") insights.push(`💳 Travelers using ${payment} show distinct revenue behavior.`);
 
   // Age insights
