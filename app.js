@@ -28,7 +28,7 @@ const Contact = require('./models/Contact');
 const validator = require('validator');
 const axios = require('axios');
 const updateLastActive = require("./middleware/updateLastActive");
-const PYTHON_API = "https://fast-api-service-cap1.onrender.com";
+const PYTHON_API = "http://127.0.0.1:8000";
 const ExcelJS = require("exceljs");
 const { Parser } = require("json2csv");
 
@@ -1347,7 +1347,7 @@ app.get('/api/predict/sales', async (req, res) => {
 
     const series = salesData.map(s => ({ ds: s._id, y: s.totalSales }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1431,7 +1431,7 @@ app.get('/api/predict/bookings', async (req, res) => {
 
     const series = bookings.map(b => ({ ds: b._id, y: b.count }));
 
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30
     });
@@ -1466,7 +1466,7 @@ app.get('/api/predict/users', async (req, res) => {
     const series = userData.map(u => ({ ds: u._id, y: u.totalUsers }));
 
     // 🔮 Call your FastAPI Prophet forecast service
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/predict", {
       series,
       horizon: 30 // Predict next 30 days — you can increase to 180 if needed
     });
@@ -1503,7 +1503,7 @@ app.get('/api/predict/seasonal', async (req, res) => {
       y: d.totalBookings
     }));
 
-    const { data: response } = await axios.post('https://fast-api-service-cap1.onrender.com/predict', {
+    const { data: response } = await axios.post('http://127.0.0.1:8000/predict', {
       series, horizon: 4
     });
 
@@ -1632,7 +1632,7 @@ async function buildSalesSeries() {
 
 app.get("/api/forecast", async (req, res) => {
   try {
-    const response = await axios.get("https://fast-api-service-cap1.onrender.com/predict");
+    const response = await axios.get("http://127.0.0.1:8000/predict");
     res.json(response.data);
   } catch (error) {
     console.error("❌ Error fetching forecast:", error.message);
@@ -1652,7 +1652,7 @@ app.get("/api/forecast/:type", async (req, res) => {
       series = await buildUserSeries();
     }
 
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ series, horizon: 180 }),
@@ -2236,7 +2236,7 @@ app.get("/api/admin/seasonal-forecast", async (req, res) => {
     });
 
     // 2️⃣ Send this data to your Python API for Prophet forecasting
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2310,7 +2310,7 @@ app.get('/api/analytics/seasonal', async (req, res) => {
     });
 
     // ✅ Send actual data to FastAPI Prophet for prediction
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/predict", {
+    const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2747,7 +2747,7 @@ app.get("/api/forecast-insights", checkAdminAuth, async (req, res) => {
     }
 
     // 3️⃣ Send to FastAPI batch forecast
-    const { data } = await axios.post("https://fast-api-service-cap1.onrender.com/batch-predict", {
+    const { data } = await axios.post("http://127.0.0.1:8000/batch-predict", {
       datasets: {
         sales: { series: salesSeries, horizon: 3 }, // Forecast next 3 months
         bookings: { series: bookingSeries, horizon: 3 },
@@ -2873,7 +2873,7 @@ app.get("/api/predictive/forecast-sales", async (req, res) => {
   try {
     const horizon = parseInt(req.query.horizon) || 30; // 30 days default
 
-    const response = await fetch(`https://fast-api-service-cap1.onrender.com/predict?horizon=${horizon}`, {
+    const response = await fetch(`http://127.0.0.1:8000/predict?horizon=${horizon}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3009,166 +3009,233 @@ app.get('/api/filters/dynamic-options', checkAdminAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch filter options" });
   }
 });
-
-
-// ✅ Dynamic Performance Analytics (with "None" + "All" support)
+// ✅ Dynamic Performance Analytics (enhanced with detailed traveler info)
 app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) => {
   try {
-    const { year, destination, payment, age, sex } = req.query;
-    const selectedYear = parseInt(year) || new Date().getFullYear();
-    const startDate = new Date(selectedYear, 0, 1);
-    const endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
+    const { destination, payment, age, sex, timePeriod, year, month } = req.query;
     const now = new Date();
+    const selectedYear = parseInt(year) || now.getFullYear();
+    const selectedMonth = month ? parseInt(month) : now.getMonth();
 
-    const datasets = [];
-    const labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const insightParts = [];
-    let totalBookings = 0;
+    let start, end, groupStage, labels;
 
-    // 🟠 DESTINATION FILTER
-    if (destination && destination !== "") {
-      const match = { createdAt: { $gte: startDate, $lte: endDate } };
-      if (destination !== "all") match.destination = destination;
-
-      const result = await Booking.aggregate([
-        { $match: match },
-        { $group: { _id: { month: { $month: "$createdAt" }, dest: "$destination" }, count: { $sum: 1 } } },
-        { $sort: { "_id.month": 1 } }
-      ]);
-
-      const grouped = {};
-      result.forEach(r => {
-        const month = r._id.month - 1;
-        const dest = r._id.dest || "Unknown";
-        if (!grouped[dest]) grouped[dest] = Array(12).fill(0);
-        grouped[dest][month] = r.count;
-        totalBookings += r.count;
-      });
-
-      Object.keys(grouped).forEach((d, i) => {
-        datasets.push({
-          label: `Bookings – ${d}`,
-          data: grouped[d],
-          borderColor: ["#2563eb", "#f26523", "#22c55e", "#d55a1f"][i % 4],
-          backgroundColor: "rgba(37,99,235,0.1)",
-          fill: true
-        });
-      });
-
-      insightParts.push(destination === "all" ? "across all destinations" : `for ${destination}`);
+    // 🗓️ Time range setup
+    if (timePeriod === "weekly") {
+      start = new Date(selectedYear, selectedMonth, 1);
+      end = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+      const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+      const weekCount = Math.ceil(totalDays / 7);
+      groupStage = { $ceil: { $divide: [{ $dayOfMonth: "$createdAt" }, 7] } };
+      labels = Array.from({ length: weekCount }, (_, i) => `Week ${i + 1}`);
+    } else if (timePeriod === "monthly") {
+      start = new Date(selectedYear, 0, 1);
+      end = new Date(selectedYear, 11, 31, 23, 59, 59);
+      groupStage = { $month: "$createdAt" };
+      labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    } else {
+      const currentYear = now.getFullYear();
+      start = new Date(currentYear - 5, 0, 1);
+      end = new Date(currentYear, 11, 31, 23, 59, 59);
+      groupStage = { $year: "$createdAt" };
+      labels = Array.from({ length: 6 }, (_, i) => (currentYear - 5 + i).toString());
     }
 
-    // 🔵 PAYMENT FILTER
-    if (payment && payment !== "") {
-      const match = { createdAt: { $gte: startDate, $lte: endDate } };
-      if (payment !== "all") match.paymentMethod = payment;
+    // 🧩 Base filter
+    const match = { createdAt: { $gte: start, $lte: end } };
+    if (destination && destination !== "" && destination !== "all") match.destination = destination;
+    if (payment && payment !== "" && payment !== "all") match.paymentMethod = payment;
+    if (sex && sex !== "" && sex !== "all") match["travelerDetails.sex"] = sex;
 
-      const result = await Booking.aggregate([
-        { $match: match },
-        { $group: { _id: { month: { $month: "$createdAt" }, method: "$paymentMethod" }, total: { $sum: "$totalAmount" } } },
-        { $sort: { "_id.month": 1 } }
-      ]);
-
-      const grouped = {};
-      result.forEach(r => {
-        const month = r._id.month - 1;
-        const method = r._id.method || "Unknown";
-        if (!grouped[method]) grouped[method] = Array(12).fill(0);
-        grouped[method][month] = r.total;
-      });
-
-      Object.keys(grouped).forEach((m, i) => {
-        datasets.push({
-          label: `Revenue – ${m}`,
-          data: grouped[m],
-          borderColor: ["#f59e0b", "#10b981", "#8b5cf6"][i % 3],
-          backgroundColor: "rgba(245,158,11,0.15)",
-          fill: true
-        });
-      });
-
-      insightParts.push(payment === "all" ? "across all payment methods" : `via ${payment}`);
+    // 🧮 Age filtering
+    if (age && age !== "" && age !== "all") {
+      const [min, max] = age.replace("+", "").split("-").map(Number);
+      const minDOB = new Date(now.getFullYear() - (max || 100), 0, 1);
+      const maxDOB = new Date(now.getFullYear() - min, 11, 31);
+      match["travelerDetails.birthdate"] = { $gte: minDOB, $lte: maxDOB };
     }
 
-    // 🟢 AGE + SEX FILTER (improved logic)
-    if ((age && age !== "") || (sex && sex !== "")) {
-      const matchStage = { createdAt: { $gte: startDate, $lte: endDate } };
+    // 🧠 Aggregation pipeline
+    const pipeline = [
+      { $unwind: { path: "$travelerDetails", preserveNullAndEmptyArrays: true } },
+      { $match: match },
+      {
+        $group: {
+          _id: {
+            period: groupStage,
+            destination: destination === "all" ? "$destination" : destination || "$destination",
+            payment: payment === "all" ? "$paymentMethod" : payment || "$paymentMethod",
+            sex: sex === "all" ? "$travelerDetails.sex" : sex || "$travelerDetails.sex",
+            ageRange: age === "all" ? "$travelerDetails.ageRange" : age || "$travelerDetails.ageRange"
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id.period": 1 } }
+    ];
 
-      if (destination && destination !== "all" && destination !== "")
-        matchStage.destination = destination;
+    const result = await Booking.aggregate(pipeline);
+    const dataMap = {};
 
-      if (sex && sex !== "all" && sex !== "")
-        matchStage["travelerDetails.sex"] = sex;
+    // 🧾 Map results to datasets
+    result.forEach(r => {
+      const { period, destination, payment, sex, ageRange } = r._id;
+      const parts = [];
+      if (destination && destination !== "null") parts.push(destination);
+      if (payment && payment !== "null") parts.push(payment);
+      if (sex && sex !== "null") parts.push(sex);
+      if (ageRange && ageRange !== "null") parts.push(ageRange);
+      const label = parts.join(" / ") || "Overall";
+      if (!dataMap[label]) dataMap[label] = {};
+      dataMap[label][period] = (dataMap[label][period] || 0) + r.count;
+    });
 
-      let minDOB, maxDOB;
-      if (age && age !== "all" && age !== "") {
-        const [min, max] = age.replace("+", "").split("-").map(Number);
-        minDOB = new Date(now.getFullYear() - (max || 100), 0, 1);
-        maxDOB = new Date(now.getFullYear() - min, 11, 31);
-        matchStage["travelerDetails.birthdate"] = { $gte: minDOB, $lte: maxDOB };
-      }
+    // 🎨 Chart datasets
+    const colors = ["#f26523","#2563eb","#10b981","#f59e0b","#8b5cf6","#ef4444","#14b8a6","#ec4899","#0ea5e9","#eab308"];
+    const datasets = Object.keys(dataMap).map((label, i) => ({
+      label,
+      data: labels.map((_, idx) => {
+        const key =
+          timePeriod === "monthly"
+            ? idx + 1
+            : timePeriod === "yearly"
+            ? parseInt(labels[idx])
+            : idx + 1;
+        return dataMap[label][key] || 0;
+      }),
+      borderColor: colors[i % colors.length],
+      backgroundColor: `${colors[i % colors.length]}33`,
+      fill: true,
+      tension: 0.3
+    }));
 
-      const pipeline = [
-        { $unwind: "$travelerDetails" },
-        { $match: matchStage },
-        {
-          $group: {
-            _id: {
-              month: { $month: "$createdAt" },
-              ...(sex === "all" ? { sex: "$travelerDetails.sex" } : {}),
-              ...(age === "all" ? { age: "$travelerDetails.ageRange" } : {})
-            },
-            count: { $sum: 1 }
+    // 🧮 Total Bookings
+    const total = datasets.reduce((sum, d) => sum + d.data.reduce((a, b) => a + b, 0), 0);
+
+    // 👥 Collect traveler info (with age, sex, destination, payment)
+    const bookings = await Booking.find(match)
+      .select('destination paymentMethod travelerDetails')
+      .lean();
+
+    const bookedBy = [];
+    bookings.forEach(b => {
+      if (Array.isArray(b.travelerDetails)) {
+        b.travelerDetails.forEach(t => {
+          if (t.fullName && t.fullName.trim() !== "") {
+            // 🧮 Compute age from birthdate
+            let ageValue = "N/A";
+            if (t.birthdate) {
+              const birth = new Date(t.birthdate);
+              const ageNow = now.getFullYear() - birth.getFullYear();
+              ageValue = ageNow >= 0 ? ageNow : "N/A";
+            }
+
+            bookedBy.push({
+              name: t.fullName,
+              age: ageValue,
+              sex: t.sex || "N/A",
+              destination: b.destination || "N/A",
+              payment: b.paymentMethod || "N/A",
+            });
           }
-        },
-        { $sort: { "_id.month": 1 } }
-      ];
-
-      const result = await Booking.aggregate(pipeline);
-      const grouped = {};
-
-      result.forEach(r => {
-        const month = r._id.month - 1;
-        const label =
-          (r._id.sex ? r._id.sex : "") +
-          (r._id.age ? ` Age ${r._id.age}` : "") ||
-          (sex && sex !== "all" ? sex : "Demographics");
-
-        if (!grouped[label]) grouped[label] = Array(12).fill(0);
-        grouped[label][month] = r.count;
-      });
-
-      Object.keys(grouped).forEach((label, i) => {
-        datasets.push({
-          label,
-          data: grouped[label],
-          borderColor: ["#ef4444", "#3b82f6", "#16a34a", "#a855f7"][i % 4],
-          backgroundColor: "rgba(239,68,68,0.15)",
-          fill: true
         });
-      });
+      }
+    });
 
-      insightParts.push("traveler demographics");
-    }
+    // 📋 Active filters text
+    const activeFilters = [];
+    if (destination && destination !== "all") activeFilters.push(destination);
+    if (payment && payment !== "all") activeFilters.push(payment);
+    if (age && age !== "all") activeFilters.push(age);
+    if (sex && sex !== "all") activeFilters.push(sex);
 
-    // 🧠 Insight summary
-    const insightText = insightParts.length
-      ? `Combined performance analysis ${insightParts.join(", ")} in ${selectedYear}.`
-      : "Select filters to generate insights.";
+    const whoBookedSummary =
+      activeFilters.length > 0
+        ? `🧾 Booked primarily by: ${activeFilters.join(", ")} travelers.`
+        : "";
 
+    // ✅ Send Response
     res.json({
-      chartType: "line",
       labels,
       datasets,
-      total: totalBookings,
-      insight: insightText
+      total,
+      bookedBy,
+      insight: `📊 Showing ${timePeriod || "overall"} performance data. ${whoBookedSummary}`
     });
+
   } catch (err) {
     console.error("❌ Dynamic performance error:", err);
-    res.status(500).json({ message: "Failed to fetch dynamic performance data" });
+    res.status(500).json({ message: "Failed to fetch performance data" });
   }
 });
+// ✅ Grouped travelers by transaction for analytics
+app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin','employee']), async (req, res) => {
+  try {
+    const { destination, paymentMethod, gender, ageRange, period, month, year } = req.query;
 
+    // 🧩 Build filters
+    const filter = {};
+    if (destination && destination !== "all") filter.destination = destination;
+    if (paymentMethod && paymentMethod !== "all") filter.paymentMethod = paymentMethod;
+    if (gender && gender !== "all") filter["travelerDetails.sex"] = gender;
+
+    // 🗓️ Optional: filter by year/month
+    if (year) {
+      const start = new Date(year, month ? month - 1 : 0, 1);
+      const end = month
+        ? new Date(year, month, 0, 23, 59, 59)
+        : new Date(year, 11, 31, 23, 59, 59);
+      filter.createdAt = { $gte: start, $lte: end };
+    }
+
+    // 📦 Fetch bookings
+    const bookings = await Booking.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // 👥 Build grouped traveler list per booking
+    const grouped = bookings.map(b => {
+      // travelerDetails is always an array (even if empty)
+      const peopleArray = Array.isArray(b.travelerDetails) ? b.travelerDetails : [];
+
+      const travelers = peopleArray.map(t => {
+        // calculate age if birthdate exists
+        let computedAge = "N/A";
+        if (t.birthdate) {
+          const birth = new Date(t.birthdate);
+          const today = new Date();
+          computedAge = today.getFullYear() - birth.getFullYear();
+          const m = today.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) computedAge--;
+        }
+
+        return {
+          name: t.fullName || "Unknown",
+          age: computedAge,
+          gender: t.sex || "N/A"
+        };
+      });
+
+      return {
+        bookingId: b.bookingId || b._id.toString(),
+        destination: b.destination,
+        paymentMethod: b.paymentMethod,
+        bookedAt: b.createdAt,
+        travelers
+      };
+    });
+
+    res.json({
+      success: true,
+      totalBookings: bookings.length,
+      totalPeople: grouped.reduce((sum, g) => sum + g.travelers.length, 0),
+      grouped
+    });
+
+  } catch (err) {
+    console.error("❌ Error loading grouped bookings:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 app.post('/api/admin/forgot-password', async (req, res) => {
     const { email, role } = req.body;
@@ -7871,7 +7938,7 @@ app.get("/api/insights", async (req, res) => {
     console.log("📤 Cleaned tours sent to FastAPI:", cleanTours);
 
     // ✅ Send to FastAPI
-    const response = await fetch("https://fast-api-service-cap1.onrender.com/insights", {
+    const response = await fetch("http://127.0.0.1:8000/insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tours: cleanTours })
