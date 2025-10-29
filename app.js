@@ -3009,7 +3009,7 @@ app.get('/api/filters/dynamic-options', checkAdminAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch filter options" });
   }
 });
-// ✅ Dynamic Performance Analytics (enhanced with detailed traveler info)
+// ✅ Dynamic Performance Analytics (aligned with traveler filters)
 app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) => {
   try {
     const { destination, payment, age, sex, timePeriod, year, month } = req.query;
@@ -3044,34 +3044,80 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
     const match = { createdAt: { $gte: start, $lte: end } };
     if (destination && destination !== "" && destination !== "all") match.destination = destination;
     if (payment && payment !== "" && payment !== "all") match.paymentMethod = payment;
-    if (sex && sex !== "" && sex !== "all") match["travelerDetails.sex"] = sex;
-
-    // 🧮 Age filtering
-    if (age && age !== "" && age !== "all") {
-      const [min, max] = age.replace("+", "").split("-").map(Number);
-      const minDOB = new Date(now.getFullYear() - (max || 100), 0, 1);
-      const maxDOB = new Date(now.getFullYear() - min, 11, 31);
-      match["travelerDetails.birthdate"] = { $gte: minDOB, $lte: maxDOB };
-    }
-
-    // 🧠 Aggregation pipeline
-    const pipeline = [
-      { $unwind: { path: "$travelerDetails", preserveNullAndEmptyArrays: true } },
-      { $match: match },
-      {
-        $group: {
-          _id: {
-            period: groupStage,
-            destination: destination === "all" ? "$destination" : destination || "$destination",
-            payment: payment === "all" ? "$paymentMethod" : payment || "$paymentMethod",
-            sex: sex === "all" ? "$travelerDetails.sex" : sex || "$travelerDetails.sex",
-            ageRange: age === "all" ? "$travelerDetails.ageRange" : age || "$travelerDetails.ageRange"
+const pipeline = [
+  { $match: match },
+  {
+    $addFields: {
+      hasMatchingTraveler: {
+        $gt: [
+          {
+            $size: {
+              $filter: {
+                input: "$travelerDetails",
+                as: "t",
+                cond: {
+                  $and: [
+                    // 🚻 Gender filter
+                    ...(sex && sex !== "all"
+                      ? [{ $eq: ["$$t.sex", sex] }]
+                      : []),
+                    // 👥 Age range filter
+                    ...(age && age !== "all"
+                      ? [
+                          {
+                            $let: {
+                              vars: {
+                                ageValue: {
+                                  $subtract: [
+                                    { $year: new Date() },
+                                    { $year: "$$t.birthdate" }
+                                  ]
+                                }
+                              },
+                              in: {
+                                $and: [
+                                  { $gte: ["$$ageValue", parseInt(age.split("-")[0])] },
+                                  ...(age.includes("-")
+                                    ? [{ $lte: ["$$ageValue", parseInt(age.split("-")[1])] }]
+                                    : [])
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      : [])
+                  ]
+                }
+              }
+            }
           },
-          count: { $sum: 1 }
-        }
+          0
+        ]
+      }
+    }
+  },
+  { $match: { hasMatchingTraveler: true } },
+  {
+    $group: {
+      _id: {
+        period: groupStage,
+        destination: destination === "all" ? "$destination" : destination || "$destination",
+        payment: payment === "all" ? "$paymentMethod" : payment || "$paymentMethod",
+        sex: sex === "all" ? "All" : sex,
+        ageRange: age === "all" ? "All" : age
       },
-      { $sort: { "_id.period": 1 } }
-    ];
+      bookings: { $addToSet: "$_id" } // Unique bookings per group
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      count: { $size: "$bookings" }
+    }
+  },
+  { $sort: { "_id.period": 1 } }
+];
+
 
     const result = await Booking.aggregate(pipeline);
     const dataMap = {};
@@ -3108,37 +3154,67 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
       tension: 0.3
     }));
 
-    // 🧮 Total Bookings
-    const total = datasets.reduce((sum, d) => sum + d.data.reduce((a, b) => a + b, 0), 0);
-
-    // 👥 Collect traveler info (with age, sex, destination, payment)
-    const bookings = await Booking.find(match)
-      .select('destination paymentMethod travelerDetails')
+    // 📦 Fetch and filter bookings for traveler-based totals
+    const bookingsRaw = await Booking.find(match)
+      .select("bookingId destination paymentMethod travelerDetails createdAt")
       .lean();
 
-    const bookedBy = [];
-    bookings.forEach(b => {
-      if (Array.isArray(b.travelerDetails)) {
-        b.travelerDetails.forEach(t => {
-          if (t.fullName && t.fullName.trim() !== "") {
-            // 🧮 Compute age from birthdate
-            let ageValue = "N/A";
-            if (t.birthdate) {
-              const birth = new Date(t.birthdate);
-              const ageNow = now.getFullYear() - birth.getFullYear();
-              ageValue = ageNow >= 0 ? ageNow : "N/A";
-            }
+    // Filter travelers first before counting
+    const filteredBookings = bookingsRaw.map(b => {
+      let travelers = Array.isArray(b.travelerDetails) ? b.travelerDetails : [];
 
-            bookedBy.push({
-              name: t.fullName,
-              age: ageValue,
-              sex: t.sex || "N/A",
-              destination: b.destination || "N/A",
-              payment: b.paymentMethod || "N/A",
-            });
-          }
+      travelers = travelers.filter(t => {
+        let genderMatch = true;
+        let ageMatch = true;
+
+        // 🚻 Gender filter
+        if (sex && sex !== "all") genderMatch = t.sex === sex;
+
+        // 👥 Age filter
+        if (age && age !== "all" && t.birthdate) {
+          const [min, max] = age.replace("+", "").split("-").map(Number);
+          const travelerAge = now.getFullYear() - new Date(t.birthdate).getFullYear();
+          ageMatch = travelerAge >= min && (max ? travelerAge <= max : true);
+        }
+
+        return genderMatch && ageMatch;
+      });
+
+      if (travelers.length === 0) return null;
+
+      return {
+        bookingId: b.bookingId,
+        destination: b.destination,
+        paymentMethod: b.paymentMethod,
+        bookedAt: b.createdAt,
+        travelers
+      };
+    }).filter(b => b !== null && b.travelers.length > 0);
+
+    // 🧮 Compute correct totals
+    const totalBookings = filteredBookings.length;
+    const totalPeople = filteredBookings.reduce((sum, b) => sum + b.travelers.length, 0);
+
+    // 👥 Collect traveler info
+    const bookedBy = [];
+    filteredBookings.forEach(b => {
+      b.travelers.forEach(t => {
+        let ageValue = "N/A";
+        if (t.birthdate) {
+          const birth = new Date(t.birthdate);
+          const ageNow = now.getFullYear() - birth.getFullYear();
+          ageValue = ageNow >= 0 ? ageNow : "N/A";
+        }
+
+        bookedBy.push({
+          name: t.fullName,
+          age: ageValue,
+          sex: t.sex || "N/A",
+          destination: b.destination || "N/A",
+          payment: b.paymentMethod || "N/A",
+          bookingId: b.bookingId
         });
-      }
+      });
     });
 
     // 📋 Active filters text
@@ -3157,7 +3233,8 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
     res.json({
       labels,
       datasets,
-      total,
+      totalBookings,
+      totalPeople,
       bookedBy,
       insight: `📊 Showing ${timePeriod || "overall"} performance data. ${whoBookedSummary}`
     });
@@ -3167,16 +3244,17 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
     res.status(500).json({ message: "Failed to fetch performance data" });
   }
 });
-// ✅ Grouped travelers by transaction for analytics
+
+// ✅ Grouped travelers by transaction for analytics (fully aligned with filters)
 app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin','employee']), async (req, res) => {
   try {
-    const { destination, paymentMethod, gender, ageRange, period, month, year } = req.query;
+    const { destination, paymentMethod, gender, ageRange, month, year } = req.query;
+    const now = new Date();
 
-    // 🧩 Build filters
+    // 🧩 Base filters for bookings
     const filter = {};
     if (destination && destination !== "all") filter.destination = destination;
     if (paymentMethod && paymentMethod !== "all") filter.paymentMethod = paymentMethod;
-    if (gender && gender !== "all") filter["travelerDetails.sex"] = gender;
 
     // 🗓️ Optional: filter by year/month
     if (year) {
@@ -3188,17 +3266,35 @@ app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin','employe
     }
 
     // 📦 Fetch bookings
-    const bookings = await Booking.find(filter)
-      .sort({ createdAt: -1 })
-      .lean();
+    const bookings = await Booking.find(filter).sort({ createdAt: -1 }).lean();
 
-    // 👥 Build grouped traveler list per booking
+    // 👥 Process travelers per booking (apply gender + ageRange filters)
     const grouped = bookings.map(b => {
-      // travelerDetails is always an array (even if empty)
-      const peopleArray = Array.isArray(b.travelerDetails) ? b.travelerDetails : [];
+      let travelers = Array.isArray(b.travelerDetails) ? b.travelerDetails : [];
 
-      const travelers = peopleArray.map(t => {
-        // calculate age if birthdate exists
+      // 🧮 Filter each traveler by gender and age range
+      travelers = travelers.filter(t => {
+        let genderMatch = true;
+        let ageMatch = true;
+
+        // 🚻 Gender filter
+        if (gender && gender !== "all") genderMatch = t.sex === gender;
+
+        // 👥 Age filter
+        if (ageRange && ageRange !== "all" && t.birthdate) {
+          const [min, max] = ageRange.replace("+", "").split("-").map(Number);
+          const age = now.getFullYear() - new Date(t.birthdate).getFullYear();
+          ageMatch = age >= min && (max ? age <= max : true);
+        }
+
+        return genderMatch && ageMatch;
+      });
+
+      // ❌ Skip if no matching travelers left
+      if (travelers.length === 0) return null;
+
+      // ✅ Format traveler objects for frontend display
+      const formattedTravelers = travelers.map(t => {
         let computedAge = "N/A";
         if (t.birthdate) {
           const birth = new Date(t.birthdate);
@@ -3220,14 +3316,19 @@ app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin','employe
         destination: b.destination,
         paymentMethod: b.paymentMethod,
         bookedAt: b.createdAt,
-        travelers
+        travelers: formattedTravelers
       };
-    });
+    }).filter(g => g !== null && g.travelers.length > 0); // keep only valid bookings
 
+    // 🧮 Compute totals only from filtered list
+    const totalBookings = grouped.length;
+    const totalPeople = grouped.reduce((sum, g) => sum + g.travelers.length, 0);
+
+    // ✅ Send aligned data
     res.json({
       success: true,
-      totalBookings: bookings.length,
-      totalPeople: grouped.reduce((sum, g) => sum + g.travelers.length, 0),
+      totalBookings,     // only bookings that actually have filtered travelers
+      totalPeople,       // total number of matching travelers
       grouped
     });
 
