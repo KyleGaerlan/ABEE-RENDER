@@ -3019,7 +3019,7 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
 
     let start, end, groupStage, labels;
 
-    // 🗓️ Time range setup
+    // 🗓️ Time range setup for chart + totals
     if (timePeriod === "weekly") {
       start = new Date(selectedYear, selectedMonth, 1);
       end = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
@@ -3027,12 +3027,21 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
       const weekCount = Math.ceil(totalDays / 7);
       groupStage = { $ceil: { $divide: [{ $dayOfMonth: "$createdAt" }, 7] } };
       labels = Array.from({ length: weekCount }, (_, i) => `Week ${i + 1}`);
-    } else if (timePeriod === "monthly") {
+    } 
+    else if (timePeriod === "monthly") {
       start = new Date(selectedYear, 0, 1);
       end = new Date(selectedYear, 11, 31, 23, 59, 59);
       groupStage = { $month: "$createdAt" };
       labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    } else {
+    } 
+    else if (timePeriod === "yearly") {
+      const latestYear = selectedYear || now.getFullYear();
+      start = new Date(latestYear - 5, 0, 1);
+      end = new Date(latestYear, 11, 31, 23, 59, 59);
+      groupStage = { $year: "$createdAt" };
+      labels = Array.from({ length: 6 }, (_, i) => (latestYear - 5 + i).toString());
+    } 
+    else {
       const currentYear = now.getFullYear();
       start = new Date(currentYear - 5, 0, 1);
       end = new Date(currentYear, 11, 31, 23, 59, 59);
@@ -3044,80 +3053,70 @@ app.get('/api/analytics/dynamic-performance', checkAdminAuth, async (req, res) =
     const match = { createdAt: { $gte: start, $lte: end } };
     if (destination && destination !== "" && destination !== "all") match.destination = destination;
     if (payment && payment !== "" && payment !== "all") match.paymentMethod = payment;
-const pipeline = [
-  { $match: match },
-  {
-    $addFields: {
-      hasMatchingTraveler: {
-        $gt: [
-          {
-            $size: {
-              $filter: {
-                input: "$travelerDetails",
-                as: "t",
-                cond: {
-                  $and: [
-                    // 🚻 Gender filter
-                    ...(sex && sex !== "all"
-                      ? [{ $eq: ["$$t.sex", sex] }]
-                      : []),
-                    // 👥 Age range filter
-                    ...(age && age !== "all"
-                      ? [
-                          {
-                            $let: {
-                              vars: {
-                                ageValue: {
-                                  $subtract: [
-                                    { $year: new Date() },
-                                    { $year: "$$t.birthdate" }
+
+    // 📊 Aggregation for chart
+    const pipeline = [
+      { $match: match },
+      {
+        $addFields: {
+          hasMatchingTraveler: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$travelerDetails",
+                    as: "t",
+                    cond: {
+                      $and: [
+                        ...(sex && sex !== "all" ? [{ $eq: ["$$t.sex", sex] }] : []),
+                        ...(age && age !== "all"
+                          ? [{
+                              $let: {
+                                vars: {
+                                  ageValue: {
+                                    $subtract: [
+                                      { $year: new Date() },
+                                      { $year: "$$t.birthdate" }
+                                    ]
+                                  }
+                                },
+                                in: {
+                                  $and: [
+                                    { $gte: ["$$ageValue", parseInt(age.split("-")[0])] },
+                                    ...(age.includes("-")
+                                      ? [{ $lte: ["$$ageValue", parseInt(age.split("-")[1])] }]
+                                      : [])
                                   ]
                                 }
-                              },
-                              in: {
-                                $and: [
-                                  { $gte: ["$$ageValue", parseInt(age.split("-")[0])] },
-                                  ...(age.includes("-")
-                                    ? [{ $lte: ["$$ageValue", parseInt(age.split("-")[1])] }]
-                                    : [])
-                                ]
                               }
-                            }
-                          }
-                        ]
-                      : [])
-                  ]
+                            }]
+                          : [])
+                      ]
+                    }
+                  }
                 }
-              }
-            }
-          },
-          0
-        ]
-      }
-    }
-  },
-  { $match: { hasMatchingTraveler: true } },
-  {
-    $group: {
-      _id: {
-        period: groupStage,
-        destination: destination === "all" ? "$destination" : destination || "$destination",
-        payment: payment === "all" ? "$paymentMethod" : payment || "$paymentMethod",
-        sex: sex === "all" ? "All" : sex,
-        ageRange: age === "all" ? "All" : age
+              },
+              0
+            ]
+          }
+        }
       },
-      bookings: { $addToSet: "$_id" } // Unique bookings per group
-    }
-  },
-  {
-    $project: {
-      _id: 1,
-      count: { $size: "$bookings" }
-    }
-  },
-  { $sort: { "_id.period": 1 } }
-];
-
+      { $match: { hasMatchingTraveler: true } },
+      {
+        $group: {
+          _id: {
+            period: groupStage,
+            destination: destination === "all" ? "$destination" : destination || "$destination",
+            payment: payment === "all" ? "$paymentMethod" : payment || "$paymentMethod",
+            sex: sex === "all" ? "All" : sex,
+            ageRange: age === "all" ? "All" : age
+          },
+          bookings: { $addToSet: "$_id" }
+        }
+      },
+      { $project: { _id: 1, count: { $size: "$bookings" } } },
+      { $sort: { "_id.period": 1 } }
+    ];
 
     const result = await Booking.aggregate(pipeline);
     const dataMap = {};
@@ -3154,154 +3153,103 @@ const pipeline = [
       tension: 0.3
     }));
 
-    // 📦 Fetch and filter bookings for traveler-based totals
+    // 🧮 Totals restricted to same range
     const bookingsRaw = await Booking.find(match)
-      .select("bookingId destination paymentMethod travelerDetails createdAt")
+      .select("travelerDetails createdAt destination paymentMethod bookingId")
       .lean();
 
-    // Filter travelers first before counting
     const filteredBookings = bookingsRaw.map(b => {
-      let travelers = Array.isArray(b.travelerDetails) ? b.travelerDetails : [];
-
-      travelers = travelers.filter(t => {
-        let genderMatch = true;
+      let travelers = (b.travelerDetails || []).filter(t => {
+        let genderMatch = !sex || sex === "all" || t.sex === sex;
         let ageMatch = true;
-
-        // 🚻 Gender filter
-        if (sex && sex !== "all") genderMatch = t.sex === sex;
-
-        // 👥 Age filter
         if (age && age !== "all" && t.birthdate) {
           const [min, max] = age.replace("+", "").split("-").map(Number);
           const travelerAge = now.getFullYear() - new Date(t.birthdate).getFullYear();
           ageMatch = travelerAge >= min && (max ? travelerAge <= max : true);
         }
-
         return genderMatch && ageMatch;
       });
-
       if (travelers.length === 0) return null;
+      return { ...b, travelers };
+    }).filter(Boolean);
 
-      return {
-        bookingId: b.bookingId,
-        destination: b.destination,
-        paymentMethod: b.paymentMethod,
-        bookedAt: b.createdAt,
-        travelers
-      };
-    }).filter(b => b !== null && b.travelers.length > 0);
-
-    // 🧮 Compute correct totals
+    // ✅ Totals correctly reflect timePeriod
     const totalBookings = filteredBookings.length;
     const totalPeople = filteredBookings.reduce((sum, b) => sum + b.travelers.length, 0);
 
-    // 👥 Collect traveler info
-    const bookedBy = [];
-    filteredBookings.forEach(b => {
-      b.travelers.forEach(t => {
-        let ageValue = "N/A";
-        if (t.birthdate) {
-          const birth = new Date(t.birthdate);
-          const ageNow = now.getFullYear() - birth.getFullYear();
-          ageValue = ageNow >= 0 ? ageNow : "N/A";
-        }
-
-        bookedBy.push({
-          name: t.fullName,
-          age: ageValue,
-          sex: t.sex || "N/A",
-          destination: b.destination || "N/A",
-          payment: b.paymentMethod || "N/A",
-          bookingId: b.bookingId
-        });
-      });
-    });
-
-    // 📋 Active filters text
-    const activeFilters = [];
-    if (destination && destination !== "all") activeFilters.push(destination);
-    if (payment && payment !== "all") activeFilters.push(payment);
-    if (age && age !== "all") activeFilters.push(age);
-    if (sex && sex !== "all") activeFilters.push(sex);
-
-    const whoBookedSummary =
-      activeFilters.length > 0
-        ? `🧾 Booked primarily by: ${activeFilters.join(", ")} travelers.`
-        : "";
-
-    // ✅ Send Response
-    res.json({
-      labels,
-      datasets,
-      totalBookings,
-      totalPeople,
-      bookedBy,
-      insight: `📊 Showing ${timePeriod || "overall"} performance data. ${whoBookedSummary}`
-    });
-
+    res.json({ labels, datasets, totalBookings, totalPeople });
   } catch (err) {
     console.error("❌ Dynamic performance error:", err);
     res.status(500).json({ message: "Failed to fetch performance data" });
   }
 });
-
-// ✅ Grouped travelers by transaction for analytics (fully aligned with filters)
-app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin','employee']), async (req, res) => {
+// ✅ Grouped travelers by transaction (fully aligned with dynamic-performance)
+app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin', 'employee']), async (req, res) => {
   try {
-    const { destination, paymentMethod, gender, ageRange, month, year } = req.query;
+    const { destination, paymentMethod, gender, ageRange, timePeriod, month, year } = req.query;
     const now = new Date();
+    const selectedYear = parseInt(year) || now.getFullYear();
+    const selectedMonth = month ? parseInt(month) : now.getMonth();
 
-    // 🧩 Base filters for bookings
-    const filter = {};
+    // 🗓️ Use the exact same time range logic as /api/analytics/dynamic-performance
+    let start, end;
+    if (timePeriod === "weekly") {
+      // specific month of the year
+      start = new Date(selectedYear, selectedMonth, 1);
+      end = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+    } else if (timePeriod === "monthly") {
+      // full year view
+      start = new Date(selectedYear, 0, 1);
+      end = new Date(selectedYear, 11, 31, 23, 59, 59);
+    } else if (timePeriod === "yearly") {
+      // past 6 years
+      start = new Date(selectedYear - 5, 0, 1);
+      end = new Date(selectedYear, 11, 31, 23, 59, 59);
+    } else {
+      // fallback (past 6 years)
+      const currentYear = now.getFullYear();
+      start = new Date(currentYear - 5, 0, 1);
+      end = new Date(currentYear, 11, 31, 23, 59, 59);
+    }
+
+    // 🧩 Base filters
+    const filter = { createdAt: { $gte: start, $lte: end } };
     if (destination && destination !== "all") filter.destination = destination;
     if (paymentMethod && paymentMethod !== "all") filter.paymentMethod = paymentMethod;
 
-    // 🗓️ Optional: filter by year/month
-    if (year) {
-      const start = new Date(year, month ? month - 1 : 0, 1);
-      const end = month
-        ? new Date(year, month, 0, 23, 59, 59)
-        : new Date(year, 11, 31, 23, 59, 59);
-      filter.createdAt = { $gte: start, $lte: end };
-    }
-
-    // 📦 Fetch bookings
+    // 📦 Fetch filtered bookings
     const bookings = await Booking.find(filter).sort({ createdAt: -1 }).lean();
 
-    // 👥 Process travelers per booking (apply gender + ageRange filters)
+    // 👥 Filter travelers
     const grouped = bookings.map(b => {
       let travelers = Array.isArray(b.travelerDetails) ? b.travelerDetails : [];
 
-      // 🧮 Filter each traveler by gender and age range
       travelers = travelers.filter(t => {
-        let genderMatch = true;
+        let genderMatch = !gender || gender === "all" || t.sex === gender;
         let ageMatch = true;
 
-        // 🚻 Gender filter
-        if (gender && gender !== "all") genderMatch = t.sex === gender;
-
-        // 👥 Age filter
         if (ageRange && ageRange !== "all" && t.birthdate) {
           const [min, max] = ageRange.replace("+", "").split("-").map(Number);
-          const age = now.getFullYear() - new Date(t.birthdate).getFullYear();
+          const birth = new Date(t.birthdate);
+          let age = now.getFullYear() - birth.getFullYear();
+          const m = now.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
           ageMatch = age >= min && (max ? age <= max : true);
         }
 
         return genderMatch && ageMatch;
       });
 
-      // ❌ Skip if no matching travelers left
       if (travelers.length === 0) return null;
 
-      // ✅ Format traveler objects for frontend display
+      // Format safely
       const formattedTravelers = travelers.map(t => {
         let computedAge = "N/A";
         if (t.birthdate) {
           const birth = new Date(t.birthdate);
-          const today = new Date();
-          computedAge = today.getFullYear() - birth.getFullYear();
-          const m = today.getMonth() - birth.getMonth();
-          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) computedAge--;
+          computedAge = now.getFullYear() - birth.getFullYear();
+          const m = now.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) computedAge--;
         }
 
         return {
@@ -3318,17 +3266,16 @@ app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin','employe
         bookedAt: b.createdAt,
         travelers: formattedTravelers
       };
-    }).filter(g => g !== null && g.travelers.length > 0); // keep only valid bookings
+    }).filter(Boolean);
 
-    // 🧮 Compute totals only from filtered list
+    // 🧮 Totals — only from the active filtered period
     const totalBookings = grouped.length;
     const totalPeople = grouped.reduce((sum, g) => sum + g.travelers.length, 0);
 
-    // ✅ Send aligned data
     res.json({
       success: true,
-      totalBookings,     // only bookings that actually have filtered travelers
-      totalPeople,       // total number of matching travelers
+      totalBookings,
+      totalPeople,
       grouped
     });
 
@@ -3337,6 +3284,8 @@ app.get('/api/admin/booking-groups', checkAdminAuth, checkRole(['admin','employe
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
+
 
 app.post('/api/admin/forgot-password', async (req, res) => {
     const { email, role } = req.body;
