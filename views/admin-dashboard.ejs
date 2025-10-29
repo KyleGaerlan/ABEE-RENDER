@@ -5281,11 +5281,11 @@ async function fetchDynamicPerformance() {
   const query = new URLSearchParams(filters).toString();
 
   try {
-    // ⏱️ Fetch both endpoints at once
+    // ⏱️ Fetch both endpoints simultaneously
     const [perfRes, groupRes] = await Promise.all([
       fetch(`/api/analytics/dynamic-performance?${query}`),
-      fetch(`/api/admin/booking-groups?destination=${filters.destination || ''}&paymentMethod=${filters.payment || ''}&gender=${filters.sex || ''}&ageRange=${filters.age || ''}&year=${filters.year || ''}&month=${filters.month || ''}`)
-    ]);
+    fetch(`/api/admin/booking-groups?destination=${filters.destination || ''}&paymentMethod=${filters.payment || ''}&gender=${filters.sex || ''}&ageRange=${filters.age || ''}&timePeriod=${filters.timePeriod || ''}&year=${filters.year || ''}&month=${filters.month || ''}`)
+]);
 
     const perfData = await perfRes.json();
     const groupData = await groupRes.json();
@@ -5388,7 +5388,7 @@ function generateDynamicInsights(data, filters) {
     "July","August","September","October","November","December"
   ];
 
-  // 🗓️ Determine time context
+  // 🗓️ Determine time context (Weekly, Monthly, Yearly)
   let timeContext = "";
   if (timePeriod === "weekly" && month && year) timeContext = `${monthNames[month]} ${year}`;
   else if (timePeriod === "monthly" && year) timeContext = `Year ${year}`;
@@ -5403,24 +5403,31 @@ function generateDynamicInsights(data, filters) {
   if (payment && payment !== "") insights.push(`💳 Payment Method: ${payment === "all" ? "All Payment Methods" : payment}`);
   if (age && age !== "") insights.push(`👥 Age Range: ${age === "all" ? "All Age Groups" : age}`);
   if (sex && sex !== "") insights.push(`🚻 Gender: ${sex === "all" ? "All Genders" : sex}`);
+// 📈 Totals (Bookings vs Travelers)
+const totalBookings = Math.round(data.totalBookings || 0);
+const totalPeople = Math.round(data.totalPeople || 0);
+const hasData = (datasets && datasets.length > 0 && datasets.some(ds => ds.data.some(v => v > 0)));
 
-  // 📈 Totals
-  const totalBookings = Math.round(data.totalBookings || 0);
-  const totalPeople = Math.round(data.totalPeople || 0);
-  const hasData = (datasets && datasets.length > 0 && datasets.some(ds => ds.data.some(v => v > 0)));
+if (hasData || totalBookings > 0 || totalPeople > 0) {
+  const formattedBookings = totalBookings >= 1_000_000
+    ? `${(totalBookings / 1_000_000).toFixed(2)}M`
+    : totalBookings >= 1_000
+    ? `${(totalBookings / 1_000).toFixed(1)}K`
+    : totalBookings;
 
-  if (hasData || totalBookings > 0) {
-    const formatted = totalBookings >= 1_000_000
-      ? `${(totalBookings / 1_000_000).toFixed(2)}M`
-      : totalBookings >= 1_000
-      ? `${(totalBookings / 1_000).toFixed(1)}K`
-      : totalBookings;
+  const formattedPeople = totalPeople >= 1_000_000
+    ? `${(totalPeople / 1_000_000).toFixed(2)}M`
+    : totalPeople >= 1_000
+    ? `${(totalPeople / 1_000).toFixed(1)}K`
+    : totalPeople;
 
-    insights.push(`📈 Total Bookings: ${formatted}`);
-    if (totalPeople > 0) insights.push(`👥 People Who Booked: ${totalPeople}`);
-  } else {
-    insights.push(`⚠️ No booking data available for the selected filters.`);
-  }
+  // Always show both clearly
+  insights.push(`📈 Total Bookings (Transactions): ${formattedBookings}`);
+  if (totalPeople > 0) insights.push(`👥 Total Travelers (People): ${formattedPeople}`);
+} else {
+  insights.push(`⚠️ No booking or traveler data available for the selected filters.`);
+}
+
 
   // 📊 Dataset summaries
   if (datasets.length > 0) {
@@ -5453,12 +5460,39 @@ function generateDynamicInsights(data, filters) {
 
   return insights.map(i => `<p>${i}</p>`).join("");
 }
+// 🕒 Handle Time Period change (show/hide selectors + reset filters)
+document.getElementById('filterTimePeriod').addEventListener('change', function () {
+  const val = this.value;
+  const monthSel = document.getElementById('monthSelector');
+  const yearSel = document.getElementById('yearSelector');
+  const monthInput = document.getElementById('filterMonth');
+  const yearInput = document.getElementById('filterYear');
+
+  // Reset previous filters to prevent carry-over
+  monthInput.value = '';
+  yearInput.value = new Date().getFullYear();
+
+  if (val === 'weekly') {
+    monthSel.style.display = 'block';
+    yearSel.style.display = 'block';
+  } else if (val === 'monthly') {
+    monthSel.style.display = 'none';
+    yearSel.style.display = 'block';
+  } else {
+    // yearly
+    monthSel.style.display = 'none';
+    yearSel.style.display = 'none';
+  }
+
+  // Optionally auto-refresh chart when switching modes
+  fetchDynamicPerformance();
+});
+
 
 // ⚙️ Initialize
 document.getElementById('applyDynamicFilters').addEventListener('click', fetchDynamicPerformance);
 document.addEventListener('DOMContentLoaded', loadDynamicFilterOptions);
 </script>
-
 
 </body>
 </html>
