@@ -5275,18 +5275,30 @@ function getActiveFilters() {
   return filters;
 }
 
-// 📊 Fetch filtered data and render
+// 📊 Fetch performance + grouped bookings together
 async function fetchDynamicPerformance() {
   const filters = getActiveFilters();
   const query = new URLSearchParams(filters).toString();
 
   try {
-    const res = await fetch(`/api/analytics/dynamic-performance?${query}`);
-    const data = await res.json();
-    renderDynamicPerformanceChart(data, filters);
+    // ⏱️ Fetch both endpoints at once
+    const [perfRes, groupRes] = await Promise.all([
+      fetch(`/api/analytics/dynamic-performance?${query}`),
+      fetch(`/api/admin/booking-groups?destination=${filters.destination || ''}&paymentMethod=${filters.payment || ''}&gender=${filters.sex || ''}&ageRange=${filters.age || ''}&year=${filters.year || ''}&month=${filters.month || ''}`)
+    ]);
 
-    // 🧾 Fetch grouped bookings (people who booked)
-    fetchGroupedBookings(filters);
+    const perfData = await perfRes.json();
+    const groupData = await groupRes.json();
+
+    // 🔄 Sync totals for consistency
+    if (groupData.success) {
+      perfData.totalBookings = groupData.totalBookings;
+      perfData.totalPeople = groupData.totalPeople;
+    }
+
+    // 🎨 Render chart + traveler groups
+    renderDynamicPerformanceChart(perfData, filters);
+    renderGroupedBookings(groupData);
 
   } catch (err) {
     console.error("❌ Error fetching performance data:", err);
@@ -5330,57 +5342,45 @@ function renderDynamicPerformanceChart(data, filters) {
   document.getElementById('dynamicPerformanceInsights').innerHTML = generateDynamicInsights(data, filters);
 }
 
-// 🧾 Fetch grouped traveler data
-async function fetchGroupedBookings(filters) {
-  const query = new URLSearchParams({
-    destination: filters.destination || '',
-    paymentMethod: filters.payment || '',
-    gender: filters.sex || '',
-    year: filters.year || '',
-    month: filters.month || ''
-  }).toString();
-
-  try {
-    const res = await fetch(`/api/admin/booking-groups?${query}`);
-    const data = await res.json();
-
-    const container = document.getElementById('groupedBookingsList');
-    if (!data.success || !data.grouped?.length) {
-      container.innerHTML = '<p>😕 No traveler data available for this selection.</p>';
-      return;
-    }
-
-    const groupsHtml = data.grouped.map(group => {
-      const bookedDate = new Date(group.bookedAt).toLocaleString('en-PH', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      });
-      const travelersHtml = group.travelers.map(t =>
-        `<li>• <strong>${t.name}</strong> (${t.age}, ${t.gender})</li>`
-      ).join('');
-
-      return `
-        <div class="booking-group">
-          <p><strong>🧾 ${group.bookingId}</strong> — ${group.destination} — ${group.paymentMethod}
-          <span class="list-time">(Booked: ${bookedDate})</span></p>
-          <ul style="margin-left:20px; list-style:none;">${travelersHtml}</ul>
-        </div>`;
-    }).join('');
-
-    container.innerHTML = `
-      <details open style="margin-top:10px;">
-        <summary style="cursor:pointer; font-weight:bold;">👥 View People Who Booked</summary>
-        ${groupsHtml}
-      </details>
-    `;
-  } catch (err) {
-    console.error("❌ Error fetching grouped bookings:", err);
+// 🧾 Render grouped traveler data
+function renderGroupedBookings(data) {
+  const container = document.getElementById('groupedBookingsList');
+  if (!data.success || !data.grouped?.length) {
+    container.innerHTML = '<p>😕 No traveler data available for this selection.</p>';
+    return;
   }
+
+  const groupsHtml = data.grouped.map(group => {
+    const bookedDate = new Date(group.bookedAt).toLocaleString('en-PH', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+    const travelersHtml = group.travelers.map(t =>
+      `<li>• <strong>${t.name}</strong> (${t.age}, ${t.gender})</li>`
+    ).join('');
+
+    return `
+      <div class="booking-group">
+        <p><strong>🧾 ${group.bookingId}</strong> — ${group.destination} — ${group.paymentMethod}
+        <span class="list-time">(Booked: ${bookedDate})</span></p>
+        <ul style="margin-left:20px; list-style:none;">${travelersHtml}</ul>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <details open style="margin-top:10px;">
+      <summary style="cursor:pointer; font-weight:bold;">👥 View People Who Booked</summary>
+      <p style="color:#555; margin-bottom:5px;">
+        Showing ${data.totalPeople} travelers across ${data.totalBookings} bookings
+      </p>
+      ${groupsHtml}
+    </details>
+  `;
 }
 
+// 📊 Generate performance insights
 function generateDynamicInsights(data, filters) {
   const { timePeriod, year, month, destination, payment, age, sex } = filters;
-  const total = Math.round(data.total || 0);
   const datasets = data.datasets || [];
   const insights = [];
   const monthNames = [
@@ -5404,11 +5404,20 @@ function generateDynamicInsights(data, filters) {
   if (age && age !== "") insights.push(`👥 Age Range: ${age === "all" ? "All Age Groups" : age}`);
   if (sex && sex !== "") insights.push(`🚻 Gender: ${sex === "all" ? "All Genders" : sex}`);
 
-  // 📈 Total bookings
-  if (total > 0) {
-    const formatted = total >= 1_000_000 ? `${(total / 1_000_000).toFixed(2)}M` :
-                     total >= 1_000 ? `${(total / 1_000).toFixed(1)}K` : total;
+  // 📈 Totals
+  const totalBookings = Math.round(data.totalBookings || 0);
+  const totalPeople = Math.round(data.totalPeople || 0);
+  const hasData = (datasets && datasets.length > 0 && datasets.some(ds => ds.data.some(v => v > 0)));
+
+  if (hasData || totalBookings > 0) {
+    const formatted = totalBookings >= 1_000_000
+      ? `${(totalBookings / 1_000_000).toFixed(2)}M`
+      : totalBookings >= 1_000
+      ? `${(totalBookings / 1_000).toFixed(1)}K`
+      : totalBookings;
+
     insights.push(`📈 Total Bookings: ${formatted}`);
+    if (totalPeople > 0) insights.push(`👥 People Who Booked: ${totalPeople}`);
   } else {
     insights.push(`⚠️ No booking data available for the selected filters.`);
   }
@@ -5449,6 +5458,7 @@ function generateDynamicInsights(data, filters) {
 document.getElementById('applyDynamicFilters').addEventListener('click', fetchDynamicPerformance);
 document.addEventListener('DOMContentLoaded', loadDynamicFilterOptions);
 </script>
+
 
 </body>
 </html>
